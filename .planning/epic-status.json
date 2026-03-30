@@ -1,0 +1,55 @@
+{
+  "lastUpdated": "2026-03-31",
+  "epics": [
+    {
+      "id": "E1",
+      "title": "Platform Foundation",
+      "status": "pending"
+    },
+    {
+      "id": "E2",
+      "title": "Microsoft Graph and Mailbox Connectivity",
+      "status": "pending"
+    },
+    {
+      "id": "E3",
+      "title": "Message Ingestion and Attachment Extraction",
+      "status": "pending"
+    },
+    {
+      "id": "E4",
+      "title": "Classification and Workflow Intelligence",
+      "status": "pending"
+    },
+    {
+      "id": "E5",
+      "title": "Task and Workflow State Engine",
+      "status": "pending"
+    },
+    {
+      "id": "E6",
+      "title": "Delayed Filing and Mailbox Actions",
+      "status": "pending"
+    },
+    {
+      "id": "E7",
+      "title": "Outlook Add-in Experience",
+      "status": "pending"
+    },
+    {
+      "id": "E8",
+      "title": "Companion Web Dashboard and Admin",
+      "status": "pending"
+    },
+    {
+      "id": "E9",
+      "title": "Digests, Alerts, and Reminder Operations",
+      "status": "pending"
+    },
+    {
+      "id": "E10",
+      "title": "Quality, Evaluation, and Pilot Readiness",
+      "status": "pending"
+    }
+  ]
+}
