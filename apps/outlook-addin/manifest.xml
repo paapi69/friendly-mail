@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xsi:type="MailApp" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Id>00000000-0000-0000-0000-000000000001</Id>
+  <Version>0.1.0.0</Version>
+  <ProviderName>Friendly Mail</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Friendly Mail" />
+  <Description DefaultValue="Outlook-native workflow layer for email triage and delayed filing." />
+  <Hosts>
+    <Host Name="Mailbox" />
+  </Hosts>
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://localhost:4173" />
+        <RequestedHeight>450</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+  <Permissions>ReadWriteItem</Permissions>
+  <Rule xsi:type="RuleCollection" Mode="Or">
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read" />
+  </Rule>
+</OfficeApp>

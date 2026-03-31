@@ -59,7 +59,7 @@ When relevant, use the installed ECC skills in `~/.codex/skills`, especially:
 - Treat filing eligibility as an explicit workflow decision, not a side effect of message arrival.
 - Design for legal, executive, finance, and shared-mailbox workflows with clear auditability.
 - Do not silently move or hide important emails before they are safe to archive.
-- Keep `checklist.md` aligned with `.planning/epic-status.json` when epic status changes.
+- Keep `checklist.md` aligned with `.planning/epic-status.json` when epic or ticket status changes.
 
 ## Quality Bar
 

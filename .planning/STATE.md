@@ -13,12 +13,14 @@ See: `.planning/PROJECT.md`
 - The technical design exists at `friendly-mail-technical-design.md`
 - The MVP roadmap exists at `friendly-mail-mvp-roadmap.md`
 - The MVP epic breakdown exists at `friendly-mail-mvp-epics.md`
+- The Epic 1 ticket breakdown exists at `friendly-mail-epic-1-tickets.md`
 - The delayed filing rule has been incorporated into the PRD
 - A high-level Microsoft Graph-based architecture has now been formalized into a technical design document
 
 ## Immediate Next Steps
 
-- Break the MVP epics into milestone-level implementation tickets
+- Finish remaining Epic 1 tickets after the logging baseline
+- Break Epic 2 into milestone-level implementation tickets
 - Define user flows for delayed filing, task completion, and informational-email read state
 - Define the data model and Graph integration details more concretely if implementation begins
 

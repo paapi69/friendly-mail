@@ -4,7 +4,54 @@
     {
       "id": "E1",
       "title": "Platform Foundation",
-      "status": "pending"
+      "status": "pending",
+      "tickets": [
+        {
+          "id": "E1-T1",
+          "title": "Choose and Scaffold the Repository Architecture",
+          "status": "done"
+        },
+        {
+          "id": "E1-T2",
+          "title": "Establish Environment and Secrets Management",
+          "status": "done"
+        },
+        {
+          "id": "E1-T3",
+          "title": "Set Up the Database and Migration Baseline",
+          "status": "done"
+        },
+        {
+          "id": "E1-T4",
+          "title": "Set Up Queue and Background Job Infrastructure",
+          "status": "done"
+        },
+        {
+          "id": "E1-T5",
+          "title": "Create Shared Domain Contracts and Package Boundaries",
+          "status": "pending"
+        },
+        {
+          "id": "E1-T6",
+          "title": "Implement Logging, Error Handling, and Audit Foundations",
+          "status": "done"
+        },
+        {
+          "id": "E1-T7",
+          "title": "Establish Authentication and Session Baseline",
+          "status": "pending"
+        },
+        {
+          "id": "E1-T8",
+          "title": "Configure CI, Code Quality, and Verification Defaults",
+          "status": "done"
+        },
+        {
+          "id": "E1-T9",
+          "title": "Create Developer Onboarding and Local Runbook",
+          "status": "pending"
+        }
+      ]
     },
     {
       "id": "E2",

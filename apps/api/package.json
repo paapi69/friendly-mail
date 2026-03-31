@@ -1,0 +1,16 @@
+{
+  "name": "@friendly-mail/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx watch src/index.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@friendly-mail/config": "0.1.0",
+    "@friendly-mail/contracts": "0.1.0",
+    "@friendly-mail/observability": "0.1.0"
+  }
+}

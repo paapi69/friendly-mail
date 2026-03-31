@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MailboxKind {
+  USER
+  SHARED
+}
+
+enum MessageActionability {
+  ACTIONABLE
+  INFORMATIONAL
+}
+
+enum FilingState {
+  PENDING_CLASSIFICATION
+  ACTIVE_ACTIONABLE
+  ACTIVE_INFORMATIONAL_UNREAD
+  ELIGIBLE_TO_FILE
+  FILED
+  FILING_BLOCKED
+}
+
+enum TaskStatus {
+  OPEN
+  SNOOZED
+  DELEGATED
+  DONE
+  DISMISSED
+}
+
+model Tenant {
+  id          String      @id @default(cuid())
+  name        String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  mailboxes   Mailbox[]
+  auditEvents AuditEvent[]
+}
+
+model Mailbox {
+  id             String      @id @default(cuid())
+  tenantId       String
+  displayName    String
+  emailAddress   String      @unique
+  graphMailboxId String?     @unique
+  kind           MailboxKind
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  tenant         Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  folders        Folder[]
+  messages       Message[]
+  tasks          Task[]
+
+  @@index([tenantId])
+}
+
+model Folder {
+  id                String    @id @default(cuid())
+  mailboxId         String
+  graphFolderId     String    @unique
+  displayName       String
+  parentGraphFolderId String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  mailbox           Mailbox   @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  messages          Message[]
+
+  @@index([mailboxId])
+}
+
+model Message {
+  id                 String               @id @default(cuid())
+  mailboxId          String
+  folderId           String?
+  graphMessageId     String               @unique
+  internetMessageId  String?              @unique
+  conversationId     String?
+  subject            String
+  fromAddress        String?
+  receivedAt         DateTime?
+  isRead             Boolean              @default(false)
+  actionability      MessageActionability?
+  filingState        FilingState          @default(PENDING_CLASSIFICATION)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  mailbox            Mailbox              @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  folder             Folder?              @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  tasks              Task[]
+  auditEvents        AuditEvent[]
+
+  @@index([mailboxId])
+  @@index([folderId])
+  @@index([conversationId])
+}
+
+model Task {
+  id            String      @id @default(cuid())
+  mailboxId     String
+  messageId     String?
+  title         String
+  description   String?
+  status        TaskStatus  @default(OPEN)
+  dueAt         DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  resolvedAt    DateTime?
+  mailbox       Mailbox     @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  message       Message?    @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@index([mailboxId])
+  @@index([messageId])
+  @@index([status])
+}
+
+model AuditEvent {
+  id           String    @id @default(cuid())
+  tenantId     String
+  messageId    String?
+  actor        String?
+  action       String
+  entityType   String
+  entityId     String
+  payloadJson  String?
+  createdAt    DateTime  @default(now())
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  message      Message?  @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([messageId])
+  @@index([entityType, entityId])
+}

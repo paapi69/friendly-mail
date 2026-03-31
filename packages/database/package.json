@@ -1,0 +1,19 @@
+{
+  "name": "@friendly-mail/database",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "db:generate": "node scripts/run-prisma.mjs generate --schema prisma/schema.prisma",
+    "db:migrate:deploy": "node scripts/run-prisma.mjs migrate deploy --schema prisma/schema.prisma",
+    "db:migrate:status": "node scripts/run-prisma.mjs migrate status --schema prisma/schema.prisma",
+    "db:validate": "node scripts/run-prisma.mjs validate --schema prisma/schema.prisma",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.16.3"
+  }
+}
