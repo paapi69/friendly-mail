@@ -16,10 +16,15 @@ See: `.planning/PROJECT.md`
 - The Epic 1 ticket breakdown exists at `friendly-mail-epic-1-tickets.md`
 - The delayed filing rule has been incorporated into the PRD
 - A high-level Microsoft Graph-based architecture has now been formalized into a technical design document
+- The internal auth baseline now exists with separate `User`, `TenantMembership`, and `Session` models
+- Friendly Mail product auth is now explicitly separated from future Microsoft Graph mailbox auth
+- The shared contract baseline now covers mailbox, message, filing, task, and audit vocabulary across surfaces
+- Workspace package direction rules are now documented and enforced with a package-boundary test
 
 ## Immediate Next Steps
 
-- Finish remaining Epic 1 tickets after the logging baseline
+- Finish the remaining Epic 1 ticket after the contracts and auth baselines
+- Finish developer onboarding and local runbook work in `E1-T9`
 - Break Epic 2 into milestone-level implementation tickets
 - Define user flows for delayed filing, task completion, and informational-email read state
 - Define the data model and Graph integration details more concretely if implementation begins

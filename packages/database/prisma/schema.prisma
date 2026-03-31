@@ -12,6 +12,21 @@ enum MailboxKind {
   SHARED
 }
 
+enum AuthProvider {
+  LOCAL_PASSWORD
+  MICROSOFT_ENTRA
+}
+
+enum UserRole {
+  ADMIN
+  MEMBER
+}
+
+enum AppSurface {
+  DASHBOARD
+  OUTLOOK_ADDIN
+}
+
 enum MessageActionability {
   ACTIONABLE
   INFORMATIONAL
@@ -39,8 +54,59 @@ model Tenant {
   name        String
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+  memberships TenantMembership[]
   mailboxes   Mailbox[]
+  sessions    Session[]
   auditEvents AuditEvent[]
+}
+
+model User {
+  id           String             @id @default(cuid())
+  email        String             @unique
+  displayName  String
+  authProvider AuthProvider
+  passwordHash String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  memberships  TenantMembership[]
+  sessions     Session[]
+}
+
+model TenantMembership {
+  id        String    @id @default(cuid())
+  tenantId  String
+  userId    String
+  role      UserRole
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([userId])
+}
+
+model Session {
+  id           String       @id @default(cuid())
+  userId       String
+  tenantId     String
+  tokenHash    String       @unique
+  authProvider AuthProvider
+  role         UserRole
+  surface      AppSurface
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  lastSeenAt   DateTime?
+  revokedAt    DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Mailbox {

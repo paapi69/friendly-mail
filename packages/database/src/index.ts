@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { AuthProvider, PrismaClient, UserRole } from "@prisma/client";
 
 declare global {
   var __friendlyMailPrisma__: PrismaClient | undefined;
@@ -6,6 +6,9 @@ declare global {
 
 export const databaseTables = [
   "Tenant",
+  "User",
+  "TenantMembership",
+  "Session",
   "Mailbox",
   "Folder",
   "Message",
@@ -25,6 +28,14 @@ export type RecordAuditEventInput = {
   payload?: Record<string, unknown>;
 };
 
+export type CreateLocalUserInput = {
+  email: string;
+  displayName: string;
+  passwordHash: string;
+  tenantId: string;
+  role: UserRole;
+};
+
 type AuditEventWriter = {
   auditEvent: {
     create: (args: {
@@ -36,6 +47,34 @@ type AuditEventWriter = {
         entityId: string;
         messageId?: string;
         payloadJson: string | null;
+      };
+    }) => Promise<unknown>;
+  };
+};
+
+type LocalUserWriter = {
+  user: {
+    upsert: (args: {
+      where: { email: string };
+      update: {
+        displayName: string;
+        authProvider: AuthProvider;
+        passwordHash: string;
+      };
+      create: {
+        email: string;
+        displayName: string;
+        authProvider: AuthProvider;
+        passwordHash: string;
+        memberships: {
+          create: {
+            tenantId: string;
+            role: UserRole;
+          };
+        };
+      };
+      include: {
+        memberships: true;
       };
     }) => Promise<unknown>;
   };
@@ -73,6 +112,34 @@ export async function recordAuditEvent(
       entityId: input.entityId,
       messageId: input.messageId,
       payloadJson: input.payload ? JSON.stringify(input.payload) : null
+    }
+  });
+}
+
+export async function createLocalUser(writer: LocalUserWriter, input: CreateLocalUserInput) {
+  return writer.user.upsert({
+    where: {
+      email: input.email
+    },
+    update: {
+      displayName: input.displayName,
+      authProvider: AuthProvider.LOCAL_PASSWORD,
+      passwordHash: input.passwordHash
+    },
+    create: {
+      email: input.email,
+      displayName: input.displayName,
+      authProvider: AuthProvider.LOCAL_PASSWORD,
+      passwordHash: input.passwordHash,
+      memberships: {
+        create: {
+          tenantId: input.tenantId,
+          role: input.role
+        }
+      }
+    },
+    include: {
+      memberships: true
     }
   });
 }

@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { databaseTables, recordAuditEvent } from "./index";
+import { createLocalUser, databaseTables, recordAuditEvent, UserRole } from "./index";
 
 describe("database baseline", () => {
   it("tracks the core MVP tables", () => {
     expect(databaseTables).toEqual([
       "Tenant",
+      "User",
+      "TenantMembership",
+      "Session",
       "Mailbox",
       "Folder",
       "Message",
@@ -48,6 +51,53 @@ describe("database baseline", () => {
           fromFolderId: "inbox",
           toFolderId: "archive"
         })
+      }
+    });
+  });
+
+  it("creates local users with a tenant membership", async () => {
+    const upsert = vi.fn().mockResolvedValue({
+      id: "user_123"
+    });
+
+    await createLocalUser(
+      {
+        user: {
+          upsert
+        }
+      },
+      {
+        email: "owner@friendlymail.dev",
+        displayName: "Owner",
+        passwordHash: "hash",
+        tenantId: "tenant_123",
+        role: UserRole.ADMIN
+      }
+    );
+
+    expect(upsert).toHaveBeenCalledWith({
+      where: {
+        email: "owner@friendlymail.dev"
+      },
+      update: {
+        displayName: "Owner",
+        authProvider: "LOCAL_PASSWORD",
+        passwordHash: "hash"
+      },
+      create: {
+        email: "owner@friendlymail.dev",
+        displayName: "Owner",
+        authProvider: "LOCAL_PASSWORD",
+        passwordHash: "hash",
+        memberships: {
+          create: {
+            tenantId: "tenant_123",
+            role: UserRole.ADMIN
+          }
+        }
+      },
+      include: {
+        memberships: true
       }
     });
   });

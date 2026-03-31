@@ -54,7 +54,7 @@ type LoggerOptions = {
   context?: LogContext;
 };
 
-type Logger = {
+export type Logger = {
   child: (context: LogContext) => Logger;
   debug: (message: string, context?: LogContext) => void;
   info: (message: string, context?: LogContext) => void;

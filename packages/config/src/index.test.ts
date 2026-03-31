@@ -9,6 +9,8 @@ describe("getServerEnv", () => {
       APP_BASE_URL: "http://localhost:3000",
       LOG_LEVEL: "info",
       SESSION_SECRET: "secret",
+      SESSION_COOKIE_NAME: "friendly_mail_session",
+      SESSION_MAX_AGE_HOURS: "12",
       DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/friendly_mail",
       QUEUE_DRIVER: "redis",
       QUEUE_URL: "redis://localhost:6379",
@@ -23,6 +25,8 @@ describe("getServerEnv", () => {
     expect(env.API_PORT).toBe(4000);
     expect(env.NODE_ENV).toBe("development");
     expect(env.QUEUE_DRIVER).toBe("redis");
+    expect(env.SESSION_COOKIE_NAME).toBe("friendly_mail_session");
+    expect(env.SESSION_MAX_AGE_HOURS).toBe(12);
   });
 
   it("parses the queue environment contract independently", () => {

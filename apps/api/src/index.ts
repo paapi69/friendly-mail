@@ -1,56 +1,27 @@
-import http from "node:http";
 import { getServerEnv } from "@friendly-mail/config";
-import { WorkflowStatus } from "@friendly-mail/contracts";
+import { getPrismaClient } from "@friendly-mail/database";
 import {
-  AppError,
-  createCorrelationId,
   createLogger,
-  toErrorResponse
+  type Logger
 } from "@friendly-mail/observability";
+import { createPrismaAuthService } from "./auth-service";
+import { createServer } from "./server";
 
 const env = getServerEnv();
 const logger = createLogger({
   service: "friendly-mail-api"
 });
-
-const server = http.createServer((request, response) => {
-  const correlationId = createCorrelationId();
-  const requestLogger = logger.child({
-    correlationId,
-    method: request.method ?? "GET",
-    path: request.url ?? "/"
-  });
-
-  try {
-    if (request.url !== "/" && request.url !== "/health") {
-      throw new AppError("ROUTE_NOT_FOUND", "Route not found", {
-        statusCode: 404
-      });
-    }
-
-    const payload = {
-      service: "friendly-mail-api",
-      status: WorkflowStatus.Healthy,
-      environment: env.NODE_ENV,
-      correlationId
-    };
-
-    response.writeHead(200, { "content-type": "application/json" });
-    response.end(JSON.stringify(payload));
-    requestLogger.info("Request completed", {
-      statusCode: 200
-    });
-  } catch (error) {
-    const errorResponse = toErrorResponse(error, correlationId);
-    response.writeHead(errorResponse.statusCode, {
-      "content-type": "application/json"
-    });
-    response.end(JSON.stringify(errorResponse.body));
-    requestLogger.error("Request failed", {
-      statusCode: errorResponse.statusCode,
-      error
-    });
-  }
+const prisma = getPrismaClient();
+const authService = createPrismaAuthService({
+  prisma,
+  sessionSecret: env.SESSION_SECRET,
+  sessionMaxAgeHours: env.SESSION_MAX_AGE_HOURS,
+  logger: logger as Logger
+});
+const server = createServer({
+  env,
+  authService,
+  logger: logger as Logger
 });
 
 server.listen(env.API_PORT, () => {

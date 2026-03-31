@@ -8,6 +8,7 @@ Friendly Mail is an AI workflow layer for Outlook. This repository contains the 
 - `apps/dashboard` - companion web dashboard shell
 - `apps/outlook-addin` - Outlook add-in shell
 - `packages/contracts` - shared domain contracts
+- `packages/auth` - internal authentication and session utilities
 - `packages/config` - environment and configuration helpers
 - `packages/database` - Prisma client and audit write helpers
 - `packages/observability` - structured logging and shared error handling
@@ -34,6 +35,12 @@ Useful dev commands:
 - `npm run queue:health`
 - `docker compose up -d postgres redis`
 
+## Shared Contracts
+
+- Shared product-domain types live in `@friendly-mail/contracts`.
+- Package direction rules are documented in `docs/package-boundaries.md`.
+- The current boundary baseline is enforced by `packages/contracts/src/package-boundaries.test.ts`.
+
 ## Current Scope
 
 This repo currently implements the Epic 1 foundation slice:
@@ -44,3 +51,4 @@ This repo currently implements the Epic 1 foundation slice:
 - Prisma database and migration baseline
 - Redis and BullMQ queue baseline
 - structured logging, shared error handling, and audit write baseline
+- internal auth and session baseline with explicit separation from future Microsoft Graph mailbox auth

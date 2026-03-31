@@ -12,6 +12,8 @@ const serverOnlyEnvSchema = z.object({
   API_PORT: z.coerce.number().int().positive().default(4000),
   APP_BASE_URL: z.string().url(),
   SESSION_SECRET: z.string().min(1),
+  SESSION_COOKIE_NAME: z.string().min(1).default("friendly_mail_session"),
+  SESSION_MAX_AGE_HOURS: z.coerce.number().int().positive().default(12),
   DATABASE_URL: z.string().min(1),
   MICROSOFT_TENANT_ID: z.string().min(1),
   MICROSOFT_CLIENT_ID: z.string().min(1),
