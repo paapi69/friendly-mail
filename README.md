@@ -16,13 +16,18 @@ Friendly Mail is an AI workflow layer for Outlook. This repository contains the 
 
 ## Quick Start
 
-1. Copy `.env.example` to `.env` and fill in the required values.
+1. Copy `.env.example` to `.env`.
 2. Install dependencies with `npm install`.
-3. Generate the Prisma client with `npm run db:generate`.
-4. Start local infrastructure with `docker compose up -d postgres redis`.
-5. Check schema and migration status with `npm run db:validate` and `npm run db:migrate:status`.
-6. Verify queue health with `npm run queue:health`.
-7. Run `npm run verify`.
+3. Start local infrastructure with `docker compose up -d postgres redis`.
+4. Generate the Prisma client with `npm run db:generate`.
+5. Apply local migrations with `npm run db:migrate:deploy`.
+6. Verify the schema and queue with `npm run db:validate` and `npm run queue:health`.
+7. Start the services you need:
+   - `npm run dev:api`
+   - `npm run dev:dashboard`
+   - `npm run dev:addin`
+   - `npm run dev:worker`
+8. Run `npm run verify` before pushing changes.
 
 Useful dev commands:
 
@@ -30,10 +35,18 @@ Useful dev commands:
 - `npm run dev:dashboard`
 - `npm run dev:addin`
 - `npm run dev:worker`
+- `npm run db:migrate:deploy`
 - `npm run db:validate`
 - `npm run db:migrate:status`
 - `npm run queue:health`
 - `docker compose up -d postgres redis`
+
+## Local Runbook
+
+- Full onboarding and troubleshooting notes live in `docs/local-runbook.md`.
+- The Epic 2 Microsoft Entra and Graph connectivity contract lives in `docs/graph-connectivity-contract.md`.
+- The Outlook add-in manifest expects `https://localhost:4173`, and the local Vite config is now aligned to that dev URL.
+- The current UI surfaces are still product shells; Graph onboarding, real mailbox sync, and user provisioning beyond the auth baseline are future work.
 
 ## Shared Contracts
 

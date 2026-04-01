@@ -1,7 +1,7 @@
 <sessionSummary>
   <metadata>
     <project>Friendly Mail</project>
-    <updatedAt>2026-03-31T16:25:51+05:30</updatedAt>
+    <updatedAt>2026-03-31T17:48:37+05:30</updatedAt>
     <workspacePath>C:\Users\Sahil\OneDrive\Desktop\Friendly Mail</workspacePath>
     <repoUrl>https://github.com/paapi69/friendly-mail</repoUrl>
   </metadata>
@@ -25,7 +25,7 @@
     <document>friendly-mail-frontend-strategy.md</document>
     <document>friendly-mail-mvp-roadmap.md</document>
     <document>friendly-mail-mvp-epics.md</document>
-    <document>friendly-mail-epic-1-tickets.md</document>
+    <document>friendly-mail-epic-tickets.md</document>
     <document>checklist.md</document>
     <document>.planning/PROJECT.md</document>
     <document>.planning/ROADMAP.md</document>
@@ -34,6 +34,7 @@
 
   <sessionWork>
     <completed>
+      <ticket id="E2-T1">Delegated-first Microsoft Entra and Graph connectivity contract documented, including mailbox auth boundaries, immutable-ID requirements, webhook expectations, and shared-mailbox fallback assumptions.</ticket>
       <ticket id="E1-T1">Repository architecture scaffolded with apps and packages workspace structure.</ticket>
       <ticket id="E1-T2">Environment and secrets baseline created with typed config parsing and .env.example.</ticket>
       <ticket id="E1-T3">Prisma database baseline created with initial schema, migration, and local Postgres workflow.</ticket>
@@ -42,6 +43,7 @@
       <ticket id="E1-T6">Structured logging, shared error handling, and audit event write baseline implemented.</ticket>
       <ticket id="E1-T7">Internal authentication and session baseline implemented with explicit separation from future Microsoft Graph mailbox auth.</ticket>
       <ticket id="E1-T8">CI, lint, typecheck, test, and build defaults configured.</ticket>
+      <ticket id="E1-T9">Developer onboarding and a local runbook were added for setup, service startup, verification, and troubleshooting.</ticket>
     </completed>
 
     <keyImplementationNotes>
@@ -57,6 +59,11 @@
       <item>@friendly-mail/contracts now includes mailbox, message, task, filing-eligibility, and audit-event records plus richer enums for message type and priority.</item>
       <item>Package direction rules are documented in docs/package-boundaries.md and enforced by packages/contracts/src/package-boundaries.test.ts.</item>
       <item>Dashboard and Outlook add-in shells now consume richer shared contract types instead of local ad hoc placeholders.</item>
+      <item>docs/local-runbook.md now covers first-time setup, daily startup flow, verification commands, environment notes, and troubleshooting.</item>
+      <item>The Outlook add-in Vite config now uses the basic SSL plugin and serves on localhost:4173 to match the sideload manifest.</item>
+      <item>Epic ticket planning is now consolidated in friendly-mail-epic-tickets.md, and Epic 2 is broken into nested implementation tickets.</item>
+      <item>Epic 2 now has a written Microsoft Entra and Graph connectivity contract that chooses a delegated-primary-mailbox-first path and keeps shared-mailbox eventing as a later readiness stream.</item>
+      <item>The connectivity contract requires immutable IDs on supported message operations and treats webhook plus delta reconciliation as the mailbox-sync baseline.</item>
     </keyImplementationNotes>
 
     <filesAddedOrUpdated>
@@ -77,7 +84,10 @@
       <file>apps/api/src/auth-service.ts</file>
       <file>apps/api/src/server.ts</file>
       <file>docs/auth-baseline.md</file>
+      <file>docs/graph-connectivity-contract.md</file>
       <file>docs/package-boundaries.md</file>
+      <file>docs/local-runbook.md</file>
+      <file>friendly-mail-epic-tickets.md</file>
       <file>checklist.md</file>
       <file>.planning/epic-status.json</file>
       <file>.planning/STATE.md</file>
@@ -88,7 +98,7 @@
   </sessionWork>
 
   <status>
-    <epic id="E1" state="in_progress">
+    <epic id="E1" state="done">
       <done>E1-T1</done>
       <done>E1-T2</done>
       <done>E1-T3</done>
@@ -97,9 +107,12 @@
       <done>E1-T6</done>
       <done>E1-T7</done>
       <done>E1-T8</done>
-      <pending>E1-T9</pending>
+      <done>E1-T9</done>
     </epic>
-    <nextRecommendedTicket>E1-T9</nextRecommendedTicket>
+    <epic id="E2" state="pending">
+      <done>E2-T1</done>
+    </epic>
+    <nextRecommendedTicket>E2-T2</nextRecommendedTicket>
   </status>
 
   <verification>
@@ -116,6 +129,6 @@
   <continuationNotes>
     <item>When a new session starts, read this file first, then read checklist.md and .planning/STATE.md.</item>
     <item>The checklist generator may need a clean rerun with node scripts/sync-checklist.mjs after status updates if the Markdown view appears stale.</item>
-    <item>The best next move is E1-T9 developer onboarding and local runbook work before starting Epic 2.</item>
+    <item>The best next move is to start E2-T2 and persist mailbox linkage, subscription state, and per-folder delta cursors in the schema.</item>
   </continuationNotes>
 </sessionSummary>

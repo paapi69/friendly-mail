@@ -4,7 +4,7 @@
     {
       "id": "E1",
       "title": "Platform Foundation",
-      "status": "pending",
+      "status": "done",
       "tickets": [
         {
           "id": "E1-T1",
@@ -49,14 +49,61 @@
         {
           "id": "E1-T9",
           "title": "Create Developer Onboarding and Local Runbook",
-          "status": "pending"
+          "status": "done"
         }
       ]
     },
     {
       "id": "E2",
       "title": "Microsoft Graph and Mailbox Connectivity",
-      "status": "pending"
+      "status": "pending",
+      "tickets": [
+        {
+          "id": "E2-T1",
+          "title": "Define Microsoft Entra and Graph Connectivity Contract",
+          "status": "done"
+        },
+        {
+          "id": "E2-T2",
+          "title": "Extend Persistence for Mailbox Connectivity and Sync State",
+          "status": "pending"
+        },
+        {
+          "id": "E2-T3",
+          "title": "Implement the Core Microsoft Graph Connector",
+          "status": "pending"
+        },
+        {
+          "id": "E2-T4",
+          "title": "Build Delegated Mailbox Onboarding",
+          "status": "pending"
+        },
+        {
+          "id": "E2-T5",
+          "title": "Implement Folder Discovery and Initial Folder Sync",
+          "status": "pending"
+        },
+        {
+          "id": "E2-T6",
+          "title": "Implement Message Metadata Sync with Delta Links",
+          "status": "pending"
+        },
+        {
+          "id": "E2-T7",
+          "title": "Implement Graph Subscription and Webhook Lifecycle",
+          "status": "pending"
+        },
+        {
+          "id": "E2-T8",
+          "title": "Implement Reconciliation Between Webhooks and Delta Sync",
+          "status": "pending"
+        },
+        {
+          "id": "E2-T9",
+          "title": "Add Shared-Mailbox Readiness and Operational Verification",
+          "status": "pending"
+        }
+      ]
     },
     {
       "id": "E3",

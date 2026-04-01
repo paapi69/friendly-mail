@@ -2,11 +2,11 @@
 
 Generated from `.planning/epic-status.json`.
 
-Progress: 0/10 epics complete
+Progress: 1/10 epics complete
 
 ## Epics
 
-- [ ] E1: Platform Foundation
+- [x] E1: Platform Foundation
 - [ ] E2: Microsoft Graph and Mailbox Connectivity
 - [ ] E3: Message Ingestion and Attachment Extraction
 - [ ] E4: Classification and Workflow Intelligence
@@ -17,7 +17,7 @@ Progress: 0/10 epics complete
 - [ ] E9: Digests, Alerts, and Reminder Operations
 - [ ] E10: Quality, Evaluation, and Pilot Readiness
 
-## Epic 1 Tickets
+## E1 Tickets
 
 - [x] E1-T1: Choose and Scaffold the Repository Architecture
 - [x] E1-T2: Establish Environment and Secrets Management
@@ -27,7 +27,19 @@ Progress: 0/10 epics complete
 - [x] E1-T6: Implement Logging, Error Handling, and Audit Foundations
 - [x] E1-T7: Establish Authentication and Session Baseline
 - [x] E1-T8: Configure CI, Code Quality, and Verification Defaults
-- [ ] E1-T9: Create Developer Onboarding and Local Runbook
+- [x] E1-T9: Create Developer Onboarding and Local Runbook
+
+## E2 Tickets
+
+- [x] E2-T1: Define Microsoft Entra and Graph Connectivity Contract
+- [ ] E2-T2: Extend Persistence for Mailbox Connectivity and Sync State
+- [ ] E2-T3: Implement the Core Microsoft Graph Connector
+- [ ] E2-T4: Build Delegated Mailbox Onboarding
+- [ ] E2-T5: Implement Folder Discovery and Initial Folder Sync
+- [ ] E2-T6: Implement Message Metadata Sync with Delta Links
+- [ ] E2-T7: Implement Graph Subscription and Webhook Lifecycle
+- [ ] E2-T8: Implement Reconciliation Between Webhooks and Delta Sync
+- [ ] E2-T9: Add Shared-Mailbox Readiness and Operational Verification
 
 ## Notes
 

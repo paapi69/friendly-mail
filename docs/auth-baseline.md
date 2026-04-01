@@ -37,3 +37,7 @@ References:
 
 - [Nested app authentication FAQ](https://learn.microsoft.com/en-us/office/dev/add-ins/outlook/faq-nested-app-auth-outlook-legacy-tokens)
 - [Outlook add-ins overview](https://learn.microsoft.com/en-us/office/dev/add-ins/outlook/)
+
+## Epic 2 Follow-On
+
+The concrete Microsoft Entra and Graph mailbox-connect contract for Epic 2 now lives in `docs/graph-connectivity-contract.md`.

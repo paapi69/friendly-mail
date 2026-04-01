@@ -42,13 +42,16 @@ function buildChecklist(data) {
     lines.push(`- [${checked}] ${epic.id}: ${epic.title}`);
   }
 
-  lines.push("");
-  lines.push("## Epic 1 Tickets");
-  lines.push("");
+  const epicsWithTickets = data.epics.filter(
+    (epic) => epic.tickets && epic.tickets.length > 0
+  );
 
-  const epicOne = data.epics.find((epic) => epic.id === "E1");
-  if (epicOne?.tickets) {
-    for (const ticket of epicOne.tickets) {
+  for (const epic of epicsWithTickets) {
+    lines.push("");
+    lines.push(`## ${epic.id} Tickets`);
+    lines.push("");
+
+    for (const ticket of epic.tickets) {
       const checked = ticket.status === "done" ? "x" : " ";
       lines.push(`- [${checked}] ${ticket.id}: ${ticket.title}`);
     }
