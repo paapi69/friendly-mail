@@ -5,7 +5,7 @@
 See: `.planning/PROJECT.md`
 
 **Core value:** Never let important email-driven work disappear before it is safely handled.
-**Current focus:** Epic 2 Graph connector baseline complete - ready to build delegated mailbox onboarding
+**Current focus:** Epic 2 delegated mailbox onboarding baseline complete - ready to build folder discovery and initial sync
 
 ## Current Truth
 
@@ -21,6 +21,7 @@ See: `.planning/PROJECT.md`
 - The Microsoft Entra and Graph connectivity contract now exists for delegated-first Epic 2 onboarding
 - The database schema now includes mailbox connection state, Graph subscription state, and per-folder delta sync state
 - A shared Microsoft Graph connector package now centralizes auth headers, immutable IDs, retries, pagination, and mailbox DTO mapping
+- The API now supports delegated mailbox onboarding start and callback flows with server-side code exchange and mailbox registration
 - The shared contract baseline now covers mailbox, message, filing, task, and audit vocabulary across surfaces
 - Workspace package direction rules are now documented and enforced with a package-boundary test
 - A local onboarding and runbook guide now exists for API, dashboard, Outlook add-in, worker, database, and queue setup
@@ -28,10 +29,10 @@ See: `.planning/PROJECT.md`
 
 ## Immediate Next Steps
 
-- Start `E2-T4` by building the delegated mailbox onboarding flow on top of the new Graph connector and persistence baseline
-- Turn the new mailbox connection and sync-state tables into concrete onboarding code paths
+- Start `E2-T5` by discovering and persisting the mailbox folder tree after onboarding succeeds
+- Reuse the new delegated onboarding and Graph connector baseline for initial folder sync
 - Define user flows for delayed filing, task completion, and informational-email read state
-- Add API-level onboarding endpoints and validation around supported primary-mailbox connectivity
+- Prepare per-folder bootstrap logic that can feed later delta sync work
 
 ## Open Questions
 

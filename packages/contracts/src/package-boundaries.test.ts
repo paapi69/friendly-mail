@@ -23,6 +23,7 @@ describe("workspace package boundaries", () => {
       "@friendly-mail/config",
       "@friendly-mail/contracts",
       "@friendly-mail/database",
+      "@friendly-mail/graph",
       "@friendly-mail/observability"
     ]);
     expect(readWorkspaceDependencies("apps/dashboard/package.json")).toEqual([

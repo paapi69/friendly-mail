@@ -1,5 +1,6 @@
 import http from "node:http";
 import {
+  parseCookieHeader,
   readSessionTokenFromHeaders,
   serializeClearedSessionCookie,
   serializeSessionCookie
@@ -12,6 +13,9 @@ import {
   toErrorResponse
 } from "@friendly-mail/observability";
 import type { AuthService, LoginInput } from "./auth-service";
+import type {
+  MailboxOnboardingService
+} from "./mailbox-onboarding-service";
 
 type ApiEnv = {
   NODE_ENV: "development" | "test" | "production";
@@ -21,24 +25,33 @@ type ApiEnv = {
 };
 
 export type ApiAuthService = Pick<AuthService, "login" | "getSession" | "logout">;
+export type ApiMailboxOnboardingService = Pick<
+  MailboxOnboardingService,
+  "beginConnect" | "completeConnect"
+>;
 
 export type CreateServerInput = {
   env: ApiEnv;
   authService: ApiAuthService;
+  mailboxOnboardingService: ApiMailboxOnboardingService;
   logger: Logger;
 };
 
 export function createServer(input: CreateServerInput) {
   return http.createServer(async (request, response) => {
+    const requestUrl = new URL(request.url ?? "/", "http://localhost");
     const correlationId = createCorrelationId();
     const requestLogger = input.logger.child({
       correlationId,
       method: request.method ?? "GET",
-      path: request.url ?? "/"
+      path: requestUrl.pathname
     });
 
     try {
-      if (request.method === "GET" && (request.url === "/" || request.url === "/health")) {
+      if (
+        request.method === "GET" &&
+        (requestUrl.pathname === "/" || requestUrl.pathname === "/health")
+      ) {
         writeJson(response, 200, {
           service: "friendly-mail-api",
           status: WorkflowStatus.Healthy,
@@ -51,7 +64,7 @@ export function createServer(input: CreateServerInput) {
         return;
       }
 
-      if (request.method === "POST" && request.url === "/auth/login") {
+      if (request.method === "POST" && requestUrl.pathname === "/auth/login") {
         const body = await readJsonBody(request);
         const loginInput = parseLoginInput(body, request);
         const result = await input.authService.login(loginInput);
@@ -79,7 +92,7 @@ export function createServer(input: CreateServerInput) {
         return;
       }
 
-      if (request.method === "GET" && request.url === "/auth/session") {
+      if (request.method === "GET" && requestUrl.pathname === "/auth/session") {
         const session = await requireSession(
           input.authService,
           request,
@@ -96,7 +109,7 @@ export function createServer(input: CreateServerInput) {
         return;
       }
 
-      if (request.method === "POST" && request.url === "/auth/logout") {
+      if (request.method === "POST" && requestUrl.pathname === "/auth/logout") {
         const token = readSessionTokenFromHeaders(request.headers, input.env.SESSION_COOKIE_NAME);
 
         if (token) {
@@ -112,6 +125,105 @@ export function createServer(input: CreateServerInput) {
         response.end();
         requestLogger.info("Session cleared", {
           statusCode: 204
+        });
+        return;
+      }
+
+      if (request.method === "POST" && requestUrl.pathname === "/mailboxes/connect/start") {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const body = await readJsonBody(request);
+        const surface = parseSurface(body, session.surface);
+        const result = await input.mailboxOnboardingService.beginConnect({
+          session,
+          surface
+        });
+
+        writeJson(
+          response,
+          200,
+          {
+            authorizationUrl: result.authorizationUrl
+          },
+          {
+            "set-cookie": [
+              serializeSessionCookie({
+                token: result.state,
+                name: getGraphStateCookieName(input.env.SESSION_COOKIE_NAME),
+                maxAgeSeconds: 10 * 60,
+                secure: input.env.NODE_ENV === "production"
+              }),
+              serializeSessionCookie({
+                token: result.codeVerifier,
+                name: getGraphPkceCookieName(input.env.SESSION_COOKIE_NAME),
+                maxAgeSeconds: 10 * 60,
+                secure: input.env.NODE_ENV === "production"
+              })
+            ]
+          }
+        );
+        requestLogger.info("Prepared mailbox connect redirect", {
+          statusCode: 200,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId
+        });
+        return;
+      }
+
+      if (request.method === "GET" && requestUrl.pathname === "/auth/microsoft/callback") {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const code = requestUrl.searchParams.get("code");
+        const state = requestUrl.searchParams.get("state");
+        const cookies = parseCookieHeader(request.headers.cookie);
+        const expectedState = cookies[getGraphStateCookieName(input.env.SESSION_COOKIE_NAME)];
+        const codeVerifier = cookies[getGraphPkceCookieName(input.env.SESSION_COOKIE_NAME)];
+
+        if (!code || !state || !expectedState || !codeVerifier) {
+          throw new AppError(
+            "GRAPH_CONNECT_CALLBACK_INVALID",
+            "Microsoft mailbox callback is missing required parameters.",
+            {
+              statusCode: 400
+            }
+          );
+        }
+
+        const result = await input.mailboxOnboardingService.completeConnect({
+          session,
+          code,
+          state,
+          expectedState,
+          codeVerifier
+        });
+
+        writeJson(
+          response,
+          200,
+          result,
+          {
+            "set-cookie": [
+              serializeClearedSessionCookie({
+                name: getGraphStateCookieName(input.env.SESSION_COOKIE_NAME),
+                secure: input.env.NODE_ENV === "production"
+              }),
+              serializeClearedSessionCookie({
+                name: getGraphPkceCookieName(input.env.SESSION_COOKIE_NAME),
+                secure: input.env.NODE_ENV === "production"
+              })
+            ]
+          }
+        );
+        requestLogger.info("Connected mailbox through Microsoft callback", {
+          statusCode: 200,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId
         });
         return;
       }
@@ -220,7 +332,7 @@ function writeJson(
   response: http.ServerResponse,
   statusCode: number,
   body: unknown,
-  headers?: Record<string, string>
+  headers?: Record<string, string | string[]>
 ) {
   response.writeHead(statusCode, {
     "content-type": "application/json",
@@ -235,4 +347,24 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function parseSurface(body: unknown, fallbackSurface: MailSurface) {
+  if (!isObject(body)) {
+    return fallbackSurface;
+  }
+
+  return body.surface === MailSurface.OutlookAddIn
+    ? MailSurface.OutlookAddIn
+    : body.surface === MailSurface.Dashboard
+      ? MailSurface.Dashboard
+      : fallbackSurface;
+}
+
+function getGraphStateCookieName(sessionCookieName: string) {
+  return `${sessionCookieName}_graph_state`;
+}
+
+function getGraphPkceCookieName(sessionCookieName: string) {
+  return `${sessionCookieName}_graph_pkce`;
 }

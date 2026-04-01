@@ -47,6 +47,13 @@ export type GraphMailFolder = {
   isHidden: boolean;
 };
 
+export type GraphUser = {
+  id: string;
+  displayName: string;
+  mail?: string;
+  userPrincipalName?: string;
+};
+
 export type GraphMessage = {
   id: string;
   parentFolderId?: string;
@@ -276,6 +283,17 @@ export function createGraphConnector(options: CreateGraphConnectorOptions) {
       return mapMessage(payload);
     },
 
+    async getCurrentUser() {
+      const payload = await requestJson<Record<string, unknown>>({
+        path: "/me",
+        query: {
+          $select: "id,displayName,mail,userPrincipalName"
+        }
+      });
+
+      return mapUser(payload);
+    },
+
     async createMessageSubscription(input: {
       userId?: string;
       folderId?: string;
@@ -438,6 +456,15 @@ function mapMessage(value: Record<string, unknown>): GraphMessage {
       ? value.categories.map((category) => String(category))
       : [],
     webLink: asOptionalString(value.webLink)
+  };
+}
+
+function mapUser(value: Record<string, unknown>): GraphUser {
+  return {
+    id: asRequiredString(value.id, "user id"),
+    displayName: asOptionalString(value.displayName) ?? "",
+    mail: asOptionalString(value.mail),
+    userPrincipalName: asOptionalString(value.userPrincipalName)
   };
 }
 

@@ -18,6 +18,10 @@ const serverOnlyEnvSchema = z.object({
   MICROSOFT_TENANT_ID: z.string().min(1),
   MICROSOFT_CLIENT_ID: z.string().min(1),
   MICROSOFT_CLIENT_SECRET: z.string().min(1),
+  MICROSOFT_AUTHORITY_URL: z.string().url(),
+  MICROSOFT_GRAPH_REDIRECT_URI: z.string().url(),
+  MICROSOFT_GRAPH_SCOPES: z.string().min(1).transform(parseScopes),
+  MICROSOFT_TOKEN_ENCRYPTION_KEY: z.string().min(32),
   MICROSOFT_WEBHOOK_BASE_URL: z.string().url(),
   VITE_API_BASE_URL: z.string().url()
 });
@@ -43,3 +47,7 @@ export function getQueueEnv(input: NodeJS.ProcessEnv = process.env): QueueEnv {
 }
 
 export { queueEnvSchema, serverEnvSchema };
+
+function parseScopes(value: string) {
+  return [...new Set(value.split(/\s+/).map((scope) => scope.trim()).filter(Boolean))];
+}

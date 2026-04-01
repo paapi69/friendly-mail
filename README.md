@@ -67,3 +67,4 @@ This repo currently implements the Epic 1 foundation slice:
 - structured logging, shared error handling, and audit write baseline
 - internal auth and session baseline with explicit separation from future Microsoft Graph mailbox auth
 - Microsoft Graph connector baseline for folders, messages, delta sync, and subscriptions
+- delegated mailbox onboarding baseline with Microsoft authorization redirect and callback handling

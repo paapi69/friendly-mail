@@ -1,7 +1,17 @@
 import http from "node:http";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { AuthProvider, MailSurface, TenantUserRole } from "@friendly-mail/contracts";
-import { createServer, type ApiAuthService } from "./server";
+import {
+  AuthProvider,
+  MailSurface,
+  MailboxConnectionStatus,
+  MailboxKind,
+  TenantUserRole
+} from "@friendly-mail/contracts";
+import {
+  createServer,
+  type ApiAuthService,
+  type ApiMailboxOnboardingService
+} from "./server";
 
 type SessionPayload = {
   session: {
@@ -156,9 +166,124 @@ describe("api auth routes", () => {
     expect(response.headers["set-cookie"]?.[0]).toContain("Max-Age=0");
     expect(authService.logout).toHaveBeenCalledWith("cookie-session-token");
   });
+
+  it("starts delegated mailbox onboarding and sets state cookies", async () => {
+    const onboardingService: ApiMailboxOnboardingService = {
+      beginConnect: vi.fn().mockResolvedValue({
+        authorizationUrl: "https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize",
+        state: "signed-state",
+        codeVerifier: "pkce-verifier"
+      }),
+      completeConnect: vi.fn()
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      onboardingService
+    );
+
+    const response = await request(server, {
+      method: "POST",
+      path: "/mailboxes/connect/start",
+      body: {
+        surface: MailSurface.OutlookAddIn
+      },
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual({
+      authorizationUrl: "https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize"
+    });
+    expect(response.headers["set-cookie"]).toHaveLength(2);
+    expect(response.headers["set-cookie"]?.[0]).toContain("friendly_mail_session_graph_state=");
+    expect(response.headers["set-cookie"]?.[1]).toContain("friendly_mail_session_graph_pkce=");
+    expect(onboardingService.beginConnect).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      surface: MailSurface.OutlookAddIn
+    });
+  });
+
+  it("completes delegated mailbox onboarding from the Microsoft callback", async () => {
+    const onboardingService: ApiMailboxOnboardingService = {
+      beginConnect: vi.fn(),
+      completeConnect: vi.fn().mockResolvedValue({
+        mailbox: {
+          id: "mailbox_123",
+          tenantId: "tenant_123",
+          displayName: "Owner",
+          emailAddress: "owner@friendlymail.dev",
+          graphMailboxId: "graph_user_123",
+          kind: MailboxKind.User
+        },
+        connection: {
+          id: "connection_123",
+          mailboxId: "mailbox_123",
+          tenantId: "tenant_123",
+          userId: "user_123",
+          graphTenantId: "graph_tenant_123",
+          graphUserId: "graph_user_123",
+          status: MailboxConnectionStatus.Active,
+          grantedScopes: ["Mail.Read", "User.Read"],
+          connectedAt: "2026-04-01T10:45:00.000Z",
+          lastValidatedAt: "2026-04-01T10:45:00.000Z"
+        }
+      }),
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      onboardingService
+    );
+
+    const response = await request(server, {
+      method: "GET",
+      path: "/auth/microsoft/callback?code=auth-code-123&state=signed-state",
+      headers: {
+        Cookie:
+          "friendly_mail_session=cookie-session-token; friendly_mail_session_graph_state=signed-state; friendly_mail_session_graph_pkce=pkce-verifier"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual({
+      mailbox: {
+        id: "mailbox_123",
+        tenantId: "tenant_123",
+        displayName: "Owner",
+        emailAddress: "owner@friendlymail.dev",
+        graphMailboxId: "graph_user_123",
+        kind: "user"
+      },
+      connection: expect.objectContaining({
+        id: "connection_123",
+        status: "active"
+      })
+    });
+    expect(response.headers["set-cookie"]?.[0]).toContain("friendly_mail_session_graph_state=");
+    expect(response.headers["set-cookie"]?.[1]).toContain("friendly_mail_session_graph_pkce=");
+    expect(onboardingService.completeConnect).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      code: "auth-code-123",
+      state: "signed-state",
+      expectedState: "signed-state",
+      codeVerifier: "pkce-verifier"
+    });
+  });
 });
 
-function createTestServer(authService: ApiAuthService) {
+function createTestServer(
+  authService: ApiAuthService,
+  mailboxOnboardingService?: ApiMailboxOnboardingService
+) {
   const server = createServer({
     env: {
       NODE_ENV: "test",
@@ -167,6 +292,10 @@ function createTestServer(authService: ApiAuthService) {
       SESSION_MAX_AGE_HOURS: 12
     },
     authService,
+    mailboxOnboardingService: mailboxOnboardingService ?? {
+      beginConnect: vi.fn(),
+      completeConnect: vi.fn()
+    },
     logger: {
       child() {
         return this;

@@ -34,7 +34,7 @@ Progress: 1/10 epics complete
 - [x] E2-T1: Define Microsoft Entra and Graph Connectivity Contract
 - [x] E2-T2: Extend Persistence for Mailbox Connectivity and Sync State
 - [x] E2-T3: Implement the Core Microsoft Graph Connector
-- [ ] E2-T4: Build Delegated Mailbox Onboarding
+- [x] E2-T4: Build Delegated Mailbox Onboarding
 - [ ] E2-T5: Implement Folder Discovery and Initial Folder Sync
 - [ ] E2-T6: Implement Message Metadata Sync with Delta Links
 - [ ] E2-T7: Implement Graph Subscription and Webhook Lifecycle

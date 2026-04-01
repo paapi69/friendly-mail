@@ -18,6 +18,10 @@ describe("getServerEnv", () => {
       MICROSOFT_TENANT_ID: "tenant",
       MICROSOFT_CLIENT_ID: "client",
       MICROSOFT_CLIENT_SECRET: "secret",
+      MICROSOFT_AUTHORITY_URL: "https://login.microsoftonline.com/organizations",
+      MICROSOFT_GRAPH_REDIRECT_URI: "http://localhost:4000/auth/microsoft/callback",
+      MICROSOFT_GRAPH_SCOPES: "openid profile email offline_access User.Read Mail.Read",
+      MICROSOFT_TOKEN_ENCRYPTION_KEY: "12345678901234567890123456789012",
       MICROSOFT_WEBHOOK_BASE_URL: "https://example.ngrok-free.app",
       VITE_API_BASE_URL: "http://localhost:4000"
     });
@@ -27,6 +31,14 @@ describe("getServerEnv", () => {
     expect(env.QUEUE_DRIVER).toBe("redis");
     expect(env.SESSION_COOKIE_NAME).toBe("friendly_mail_session");
     expect(env.SESSION_MAX_AGE_HOURS).toBe(12);
+    expect(env.MICROSOFT_GRAPH_SCOPES).toEqual([
+      "openid",
+      "profile",
+      "email",
+      "offline_access",
+      "User.Read",
+      "Mail.Read"
+    ]);
   });
 
   it("parses the queue environment contract independently", () => {

@@ -169,6 +169,32 @@ describe("graph connector", () => {
     expect(subscription.changeTypes).toEqual(["created", "updated"]);
   });
 
+  it("fetches the current user profile for onboarding", async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      jsonResponse({
+        id: "graph_user_123",
+        displayName: "Owner",
+        mail: "owner@friendlymail.dev",
+        userPrincipalName: "owner@friendlymail.dev"
+      })
+    );
+
+    const connector = createGraphConnector({
+      tokenProvider: async () => "token_123",
+      fetch
+    });
+
+    const user = await connector.getCurrentUser();
+
+    expect(String(fetch.mock.calls[0][0])).toContain("/me?%24select=id%2CdisplayName%2Cmail%2CuserPrincipalName");
+    expect(user).toEqual({
+      id: "graph_user_123",
+      displayName: "Owner",
+      mail: "owner@friendlymail.dev",
+      userPrincipalName: "owner@friendlymail.dev"
+    });
+  });
+
   it("raises app errors for non-retryable graph failures", async () => {
     const fetch = vi.fn().mockResolvedValue(
       new Response(

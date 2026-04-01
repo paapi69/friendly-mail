@@ -13,6 +13,7 @@
     "@friendly-mail/config": "0.1.0",
     "@friendly-mail/contracts": "0.1.0",
     "@friendly-mail/database": "0.1.0",
+    "@friendly-mail/graph": "0.1.0",
     "@friendly-mail/observability": "0.1.0"
   }
 }

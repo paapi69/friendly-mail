@@ -5,6 +5,7 @@ import {
   type Logger
 } from "@friendly-mail/observability";
 import { createPrismaAuthService } from "./auth-service";
+import { createPrismaMailboxOnboardingService } from "./mailbox-onboarding-service";
 import { createServer } from "./server";
 
 const env = getServerEnv();
@@ -18,9 +19,15 @@ const authService = createPrismaAuthService({
   sessionMaxAgeHours: env.SESSION_MAX_AGE_HOURS,
   logger: logger as Logger
 });
+const mailboxOnboardingService = createPrismaMailboxOnboardingService({
+  prisma,
+  env,
+  logger: logger as Logger
+});
 const server = createServer({
   env,
   authService,
+  mailboxOnboardingService,
   logger: logger as Logger
 });
 

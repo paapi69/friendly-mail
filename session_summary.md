@@ -1,7 +1,7 @@
 <sessionSummary>
   <metadata>
     <project>Friendly Mail</project>
-    <updatedAt>2026-04-01T10:40:00+05:30</updatedAt>
+    <updatedAt>2026-04-01T10:58:00+05:30</updatedAt>
     <workspacePath>C:\Users\Sahil\OneDrive\Desktop\Friendly Mail</workspacePath>
     <repoUrl>https://github.com/paapi69/friendly-mail</repoUrl>
   </metadata>
@@ -34,6 +34,7 @@
 
   <sessionWork>
     <completed>
+      <ticket id="E2-T4">Delegated mailbox onboarding baseline implemented with Microsoft authorization start and callback flows, server-side token exchange, mailbox validation, and persisted mailbox connection records.</ticket>
       <ticket id="E2-T3">Shared Microsoft Graph connector implemented with immutable-ID defaults, retry handling, pagination helpers, and normalized folder, message, and subscription DTOs.</ticket>
       <ticket id="E2-T2">Persistence extended for mailbox connection state, Graph subscriptions, folder delta cursors, and stable message sync metadata.</ticket>
       <ticket id="E2-T1">Delegated-first Microsoft Entra and Graph connectivity contract documented, including mailbox auth boundaries, immutable-ID requirements, webhook expectations, and shared-mailbox fallback assumptions.</ticket>
@@ -69,6 +70,8 @@
       <item>The Prisma schema now includes MailboxConnection, FolderSyncState, and GraphSubscription models plus stable message sync fields such as graph parent folder and change key.</item>
       <item>The database package now exposes typed upsert helpers for mailbox connections, folder sync cursors, and Graph subscriptions so later Epic 2 code can avoid raw ad hoc persistence writes.</item>
       <item>The new @friendly-mail/graph package now centralizes Graph auth headers, immutable-ID defaults, retry handling for 429 and 503 responses, pagination helpers, and normalized mailbox DTOs.</item>
+      <item>The API now exposes delegated mailbox onboarding endpoints that prepare the Microsoft authorize URL, validate callback state and PKCE, redeem the authorization code server-side, validate mailbox access, and persist mailbox registration.</item>
+      <item>Session reads now reflect whether an active mailbox connection exists for the user and tenant.</item>
     </keyImplementationNotes>
 
     <filesAddedOrUpdated>
@@ -88,7 +91,10 @@
       <file>packages/queue/src/healthcheck.ts</file>
       <file>packages/observability/src/index.ts</file>
       <file>apps/api/src/auth-service.ts</file>
+      <file>apps/api/src/mailbox-onboarding-service.ts</file>
+      <file>apps/api/src/mailbox-onboarding-service.test.ts</file>
       <file>apps/api/src/server.ts</file>
+      <file>apps/api/src/server.test.ts</file>
       <file>docs/auth-baseline.md</file>
       <file>docs/graph-connectivity-contract.md</file>
       <file>docs/package-boundaries.md</file>
@@ -125,8 +131,9 @@
       <done>E2-T1</done>
       <done>E2-T2</done>
       <done>E2-T3</done>
+      <done>E2-T4</done>
     </epic>
-    <nextRecommendedTicket>E2-T4</nextRecommendedTicket>
+    <nextRecommendedTicket>E2-T5</nextRecommendedTicket>
   </status>
 
   <verification>
@@ -143,6 +150,6 @@
   <continuationNotes>
     <item>When a new session starts, read this file first, then read checklist.md and .planning/STATE.md.</item>
     <item>The checklist generator may need a clean rerun with node scripts/sync-checklist.mjs after status updates if the Markdown view appears stale.</item>
-    <item>The best next move is to start E2-T4 and build delegated mailbox onboarding on top of the new Graph connector and mailbox connection persistence baseline.</item>
+    <item>The best next move is to start E2-T5 and use the new onboarding plus Graph connector baseline to discover and persist the folder tree for connected mailboxes.</item>
   </continuationNotes>
 </sessionSummary>

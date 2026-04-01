@@ -6,6 +6,7 @@ import {
 import {
   AuthProvider as PrismaAuthProvider,
   AppSurface as PrismaAppSurface,
+  MailboxConnectionStatus as PrismaMailboxConnectionStatus,
   type PrismaClient,
   UserRole as PrismaUserRole
 } from "@friendly-mail/database";
@@ -93,6 +94,12 @@ export function createPrismaAuthService(input: CreatePrismaAuthServiceInput): Au
         surface: loginInput.surface
       });
 
+      const graphConnectionState = await getGraphConnectionState(
+        input.prisma,
+        user.id,
+        membership.tenantId
+      );
+
       return {
         token: sessionToken,
         session: {
@@ -110,7 +117,7 @@ export function createPrismaAuthService(input: CreatePrismaAuthServiceInput): Au
           authBoundary: {
             productIdentity: "friendly_mail_internal",
             mailboxIdentity: "microsoft_graph",
-            graphConnectionState: "not_connected"
+            graphConnectionState
           }
         }
       };
@@ -130,6 +137,12 @@ export function createPrismaAuthService(input: CreatePrismaAuthServiceInput): Au
         return null;
       }
 
+      const graphConnectionState = await getGraphConnectionState(
+        input.prisma,
+        session.user.id,
+        session.tenantId
+      );
+
       return {
         id: session.id,
         expiresAt: session.expiresAt.toISOString(),
@@ -145,7 +158,7 @@ export function createPrismaAuthService(input: CreatePrismaAuthServiceInput): Au
         authBoundary: {
           productIdentity: "friendly_mail_internal",
           mailboxIdentity: "microsoft_graph",
-          graphConnectionState: "not_connected"
+          graphConnectionState
         }
       };
     },
@@ -230,4 +243,19 @@ function truncate(value: string | undefined) {
   }
 
   return value.slice(0, 512);
+}
+
+async function getGraphConnectionState(prisma: PrismaClient, userId: string, tenantId: string) {
+  const activeConnection = await prisma.mailboxConnection.findFirst({
+    where: {
+      userId,
+      tenantId,
+      status: PrismaMailboxConnectionStatus.ACTIVE
+    },
+    select: {
+      id: true
+    }
+  });
+
+  return activeConnection ? "connected" : "not_connected";
 }
