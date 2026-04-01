@@ -32,8 +32,8 @@ Progress: 1/10 epics complete
 ## E2 Tickets
 
 - [x] E2-T1: Define Microsoft Entra and Graph Connectivity Contract
-- [ ] E2-T2: Extend Persistence for Mailbox Connectivity and Sync State
-- [ ] E2-T3: Implement the Core Microsoft Graph Connector
+- [x] E2-T2: Extend Persistence for Mailbox Connectivity and Sync State
+- [x] E2-T3: Implement the Core Microsoft Graph Connector
 - [ ] E2-T4: Build Delegated Mailbox Onboarding
 - [ ] E2-T5: Implement Folder Discovery and Initial Folder Sync
 - [ ] E2-T6: Implement Message Metadata Sync with Delta Links
@@ -46,4 +46,4 @@ Progress: 1/10 epics complete
 - Update high-level epics with `node scripts/set-epic-status.mjs <E#> <pending|done>`.
 - Update detailed tickets with `node scripts/set-ticket-status.mjs <ticket-id> <pending|done>`.
 - Rebuild this file with `node scripts/sync-checklist.mjs`.
-- Last status update: 2026-03-31
+- Last status update: 2026-04-01

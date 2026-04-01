@@ -5,7 +5,13 @@ import {
   AuthProvider,
   FilingEligibility,
   FilingState,
+  FolderSyncStateRecord,
+  FolderSyncStatus,
+  GraphSubscriptionRecord,
+  GraphSubscriptionStatus,
   MailboxKind,
+  MailboxConnectionRecord,
+  MailboxConnectionStatus,
   MailboxRecord,
   MessageRecord,
   MessageActionability,
@@ -39,6 +45,43 @@ describe("shared workflow contracts", () => {
     expect(TenantUserRole.Admin).toBe("admin");
   });
 
+  it("defines mailbox connectivity and sync-state contracts", () => {
+    const connection: MailboxConnectionRecord = {
+      id: "connection_123",
+      mailboxId: "mailbox_123",
+      tenantId: "tenant_123",
+      userId: "user_123",
+      graphTenantId: "entra_tenant_123",
+      graphUserId: "graph_user_123",
+      status: MailboxConnectionStatus.Active,
+      grantedScopes: ["Mail.Read", "User.Read"],
+      connectedAt: "2026-04-01T10:00:00.000Z",
+      accessTokenExpiresAt: "2026-04-01T11:00:00.000Z"
+    };
+    const folderSync: FolderSyncStateRecord = {
+      id: "folder_sync_123",
+      mailboxId: "mailbox_123",
+      folderId: "folder_123",
+      status: FolderSyncStatus.Active,
+      deltaLink: "https://graph.microsoft.com/delta-token",
+      lastCursorUpdatedAt: "2026-04-01T10:10:00.000Z"
+    };
+    const subscription: GraphSubscriptionRecord = {
+      id: "subscription_123",
+      mailboxId: "mailbox_123",
+      graphSubscriptionId: "graph_subscription_123",
+      resource: "/me/messages",
+      changeTypes: ["created", "updated"],
+      status: GraphSubscriptionStatus.Active,
+      notificationUrl: "https://friendlymail.dev/webhooks/graph",
+      expiresAt: "2026-04-01T13:00:00.000Z"
+    };
+
+    expect(connection.status).toBe("active");
+    expect(folderSync.status).toBe("active");
+    expect(subscription.status).toBe("active");
+  });
+
   it("defines mailbox, message, task, and audit contracts shared across surfaces", () => {
     const mailbox: MailboxRecord = {
       id: "mailbox_123",
@@ -52,6 +95,8 @@ describe("shared workflow contracts", () => {
       id: "message_123",
       mailboxId: mailbox.id,
       graphMessageId: "graph_message_123",
+      graphParentFolderId: "graph_folder_inbox",
+      graphChangeKey: "change_key_123",
       subject: "Invoice due Friday",
       actionability: MessageActionability.Actionable,
       messageType: MessageType.Invoice,
@@ -59,6 +104,7 @@ describe("shared workflow contracts", () => {
       filingState: FilingState.ActiveActionable,
       fromAddress: "vendor@example.com",
       receivedAt: "2026-03-31T11:00:00.000Z",
+      lastGraphModifiedAt: "2026-03-31T11:01:00.000Z",
       isRead: false
     };
     const task: TaskRecord = {
@@ -88,6 +134,7 @@ describe("shared workflow contracts", () => {
     };
 
     expect(mailbox.kind).toBe("shared");
+    expect(message.graphParentFolderId).toBe("graph_folder_inbox");
     expect(message.messageType).toBe("invoice");
     expect(task.priority).toBe("high");
     expect(filing.blockedBy).toBe("open_task");

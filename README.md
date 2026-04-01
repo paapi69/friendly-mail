@@ -11,6 +11,7 @@ Friendly Mail is an AI workflow layer for Outlook. This repository contains the 
 - `packages/auth` - internal authentication and session utilities
 - `packages/config` - environment and configuration helpers
 - `packages/database` - Prisma client and audit write helpers
+- `packages/graph` - Microsoft Graph connector with retry, pagination, and immutable-ID defaults
 - `packages/observability` - structured logging and shared error handling
 - `packages/queue` - Redis and BullMQ worker foundation
 
@@ -65,3 +66,4 @@ This repo currently implements the Epic 1 foundation slice:
 - Redis and BullMQ queue baseline
 - structured logging, shared error handling, and audit write baseline
 - internal auth and session baseline with explicit separation from future Microsoft Graph mailbox auth
+- Microsoft Graph connector baseline for folders, messages, delta sync, and subscriptions

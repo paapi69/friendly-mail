@@ -1,7 +1,7 @@
 <sessionSummary>
   <metadata>
     <project>Friendly Mail</project>
-    <updatedAt>2026-03-31T17:48:37+05:30</updatedAt>
+    <updatedAt>2026-04-01T10:40:00+05:30</updatedAt>
     <workspacePath>C:\Users\Sahil\OneDrive\Desktop\Friendly Mail</workspacePath>
     <repoUrl>https://github.com/paapi69/friendly-mail</repoUrl>
   </metadata>
@@ -34,6 +34,8 @@
 
   <sessionWork>
     <completed>
+      <ticket id="E2-T3">Shared Microsoft Graph connector implemented with immutable-ID defaults, retry handling, pagination helpers, and normalized folder, message, and subscription DTOs.</ticket>
+      <ticket id="E2-T2">Persistence extended for mailbox connection state, Graph subscriptions, folder delta cursors, and stable message sync metadata.</ticket>
       <ticket id="E2-T1">Delegated-first Microsoft Entra and Graph connectivity contract documented, including mailbox auth boundaries, immutable-ID requirements, webhook expectations, and shared-mailbox fallback assumptions.</ticket>
       <ticket id="E1-T1">Repository architecture scaffolded with apps and packages workspace structure.</ticket>
       <ticket id="E1-T2">Environment and secrets baseline created with typed config parsing and .env.example.</ticket>
@@ -64,6 +66,9 @@
       <item>Epic ticket planning is now consolidated in friendly-mail-epic-tickets.md, and Epic 2 is broken into nested implementation tickets.</item>
       <item>Epic 2 now has a written Microsoft Entra and Graph connectivity contract that chooses a delegated-primary-mailbox-first path and keeps shared-mailbox eventing as a later readiness stream.</item>
       <item>The connectivity contract requires immutable IDs on supported message operations and treats webhook plus delta reconciliation as the mailbox-sync baseline.</item>
+      <item>The Prisma schema now includes MailboxConnection, FolderSyncState, and GraphSubscription models plus stable message sync fields such as graph parent folder and change key.</item>
+      <item>The database package now exposes typed upsert helpers for mailbox connections, folder sync cursors, and Graph subscriptions so later Epic 2 code can avoid raw ad hoc persistence writes.</item>
+      <item>The new @friendly-mail/graph package now centralizes Graph auth headers, immutable-ID defaults, retry handling for 429 and 503 responses, pagination helpers, and normalized mailbox DTOs.</item>
     </keyImplementationNotes>
 
     <filesAddedOrUpdated>
@@ -77,6 +82,7 @@
       <file>packages/database/src/index.ts</file>
       <file>packages/auth/src/index.ts</file>
       <file>packages/contracts/src/index.ts</file>
+      <file>packages/contracts/src/index.test.ts</file>
       <file>packages/queue/src/index.ts</file>
       <file>packages/queue/src/worker.ts</file>
       <file>packages/queue/src/healthcheck.ts</file>
@@ -87,6 +93,12 @@
       <file>docs/graph-connectivity-contract.md</file>
       <file>docs/package-boundaries.md</file>
       <file>docs/local-runbook.md</file>
+      <file>packages/database/prisma/schema.prisma</file>
+      <file>packages/database/prisma/migrations/20260401101500_mailbox_connectivity_state/migration.sql</file>
+      <file>packages/database/src/index.ts</file>
+      <file>packages/database/src/index.test.ts</file>
+      <file>packages/graph/src/index.ts</file>
+      <file>packages/graph/src/index.test.ts</file>
       <file>friendly-mail-epic-tickets.md</file>
       <file>checklist.md</file>
       <file>.planning/epic-status.json</file>
@@ -111,8 +123,10 @@
     </epic>
     <epic id="E2" state="pending">
       <done>E2-T1</done>
+      <done>E2-T2</done>
+      <done>E2-T3</done>
     </epic>
-    <nextRecommendedTicket>E2-T2</nextRecommendedTicket>
+    <nextRecommendedTicket>E2-T4</nextRecommendedTicket>
   </status>
 
   <verification>
@@ -129,6 +143,6 @@
   <continuationNotes>
     <item>When a new session starts, read this file first, then read checklist.md and .planning/STATE.md.</item>
     <item>The checklist generator may need a clean rerun with node scripts/sync-checklist.mjs after status updates if the Markdown view appears stale.</item>
-    <item>The best next move is to start E2-T2 and persist mailbox linkage, subscription state, and per-folder delta cursors in the schema.</item>
+    <item>The best next move is to start E2-T4 and build delegated mailbox onboarding on top of the new Graph connector and mailbox connection persistence baseline.</item>
   </continuationNotes>
 </sessionSummary>

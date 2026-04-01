@@ -12,6 +12,14 @@ enum MailboxKind {
   SHARED
 }
 
+enum MailboxConnectionStatus {
+  PENDING_CONSENT
+  ACTIVE
+  NEEDS_REAUTH
+  FAILED
+  DISCONNECTED
+}
+
 enum AuthProvider {
   LOCAL_PASSWORD
   MICROSOFT_ENTRA
@@ -49,27 +57,45 @@ enum TaskStatus {
   DISMISSED
 }
 
+enum FolderSyncStatus {
+  PENDING
+  ACTIVE
+  IDLE
+  FAILED
+}
+
+enum GraphSubscriptionStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  REMOVED
+  REAUTH_REQUIRED
+  FAILED
+}
+
 model Tenant {
-  id          String      @id @default(cuid())
-  name        String
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  memberships TenantMembership[]
-  mailboxes   Mailbox[]
-  sessions    Session[]
-  auditEvents AuditEvent[]
+  id                 String              @id @default(cuid())
+  name               String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  memberships        TenantMembership[]
+  mailboxes          Mailbox[]
+  mailboxConnections MailboxConnection[]
+  sessions           Session[]
+  auditEvents        AuditEvent[]
 }
 
 model User {
-  id           String             @id @default(cuid())
-  email        String             @unique
-  displayName  String
-  authProvider AuthProvider
-  passwordHash String?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  memberships  TenantMembership[]
-  sessions     Session[]
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  displayName        String
+  authProvider       AuthProvider
+  passwordHash       String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  memberships        TenantMembership[]
+  mailboxConnections MailboxConnection[]
+  sessions           Session[]
 }
 
 model TenantMembership {
@@ -110,34 +136,112 @@ model Session {
 }
 
 model Mailbox {
-  id             String      @id @default(cuid())
-  tenantId       String
-  displayName    String
-  emailAddress   String      @unique
-  graphMailboxId String?     @unique
-  kind           MailboxKind
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  tenant         Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  folders        Folder[]
-  messages       Message[]
-  tasks          Task[]
+  id                 String              @id @default(cuid())
+  tenantId           String
+  displayName        String
+  emailAddress       String              @unique
+  graphMailboxId     String?             @unique
+  kind               MailboxKind
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connection         MailboxConnection?
+  folders            Folder[]
+  folderSyncStates   FolderSyncState[]
+  graphSubscriptions GraphSubscription[]
+  messages           Message[]
+  tasks              Task[]
 
   @@index([tenantId])
 }
 
+model MailboxConnection {
+  id                     String                  @id @default(cuid())
+  mailboxId              String                  @unique
+  tenantId               String
+  userId                 String
+  graphTenantId          String
+  graphUserId            String
+  status                 MailboxConnectionStatus @default(PENDING_CONSENT)
+  grantedScopes          String[]                @default([])
+  accessTokenCiphertext  String?
+  refreshTokenCiphertext String?
+  accessTokenExpiresAt   DateTime?
+  refreshTokenExpiresAt  DateTime?
+  connectedAt            DateTime?
+  lastValidatedAt        DateTime?
+  lastReauthorizedAt     DateTime?
+  lastErrorCode          String?
+  lastErrorAt            DateTime?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  mailbox                Mailbox                 @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  tenant                 Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([status])
+}
+
 model Folder {
-  id                String    @id @default(cuid())
-  mailboxId         String
-  graphFolderId     String    @unique
-  displayName       String
+  id                  String           @id @default(cuid())
+  mailboxId           String
+  graphFolderId       String           @unique
+  displayName         String
   parentGraphFolderId String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  mailbox           Mailbox   @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
-  messages          Message[]
+  isSyncEnabled       Boolean          @default(true)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  mailbox             Mailbox          @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  syncState           FolderSyncState?
+  messages            Message[]
 
   @@index([mailboxId])
+}
+
+model FolderSyncState {
+  id                  String           @id @default(cuid())
+  mailboxId           String
+  folderId            String           @unique
+  deltaLink           String?
+  syncStatus          FolderSyncStatus @default(PENDING)
+  lastSyncedAt        DateTime?
+  lastCursorUpdatedAt DateTime?
+  lastErrorCode       String?
+  lastErrorAt         DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  mailbox             Mailbox          @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  folder              Folder           @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@index([mailboxId])
+  @@index([syncStatus])
+}
+
+model GraphSubscription {
+  id                       String                  @id @default(cuid())
+  mailboxId                String
+  graphSubscriptionId      String                  @unique
+  resource                 String
+  changeTypes              String[]                @default([])
+  notificationUrl          String
+  lifecycleNotificationUrl String?
+  clientStateHash          String?
+  status                   GraphSubscriptionStatus @default(PENDING)
+  expiresAt                DateTime
+  lastValidatedAt          DateTime?
+  lastNotificationAt       DateTime?
+  lastLifecycleEventAt     DateTime?
+  lastReauthorizedAt       DateTime?
+  lastErrorCode            String?
+  lastErrorAt              DateTime?
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+  mailbox                  Mailbox                 @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+
+  @@index([mailboxId])
+  @@index([status, expiresAt])
 }
 
 model Message {
@@ -145,11 +249,14 @@ model Message {
   mailboxId          String
   folderId           String?
   graphMessageId     String               @unique
+  graphParentFolderId String?
+  graphChangeKey     String?
   internetMessageId  String?              @unique
   conversationId     String?
   subject            String
   fromAddress        String?
   receivedAt         DateTime?
+  lastGraphModifiedAt DateTime?
   isRead             Boolean              @default(false)
   actionability      MessageActionability?
   filingState        FilingState          @default(PENDING_CLASSIFICATION)

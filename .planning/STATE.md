@@ -5,7 +5,7 @@
 See: `.planning/PROJECT.md`
 
 **Core value:** Never let important email-driven work disappear before it is safely handled.
-**Current focus:** Epic 2 connectivity contract complete - ready to extend persistence and sync state
+**Current focus:** Epic 2 Graph connector baseline complete - ready to build delegated mailbox onboarding
 
 ## Current Truth
 
@@ -19,6 +19,8 @@ See: `.planning/PROJECT.md`
 - The internal auth baseline now exists with separate `User`, `TenantMembership`, and `Session` models
 - Friendly Mail product auth is now explicitly separated from future Microsoft Graph mailbox auth
 - The Microsoft Entra and Graph connectivity contract now exists for delegated-first Epic 2 onboarding
+- The database schema now includes mailbox connection state, Graph subscription state, and per-folder delta sync state
+- A shared Microsoft Graph connector package now centralizes auth headers, immutable IDs, retries, pagination, and mailbox DTO mapping
 - The shared contract baseline now covers mailbox, message, filing, task, and audit vocabulary across surfaces
 - Workspace package direction rules are now documented and enforced with a package-boundary test
 - A local onboarding and runbook guide now exists for API, dashboard, Outlook add-in, worker, database, and queue setup
@@ -26,10 +28,10 @@ See: `.planning/PROJECT.md`
 
 ## Immediate Next Steps
 
-- Start `E2-T2` by extending persistence for mailbox connectivity, subscriptions, and per-folder delta state
-- Turn the Epic 2 connectivity contract into concrete mailbox, subscription, and folder-sync schema changes
+- Start `E2-T4` by building the delegated mailbox onboarding flow on top of the new Graph connector and persistence baseline
+- Turn the new mailbox connection and sync-state tables into concrete onboarding code paths
 - Define user flows for delayed filing, task completion, and informational-email read state
-- Define the data model and Graph integration details more concretely as Epic 2 implementation continues
+- Add API-level onboarding endpoints and validation around supported primary-mailbox connectivity
 
 ## Open Questions
 

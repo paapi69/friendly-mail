@@ -8,6 +8,14 @@ export enum MailboxKind {
   Shared = "shared"
 }
 
+export enum MailboxConnectionStatus {
+  PendingConsent = "pending_consent",
+  Active = "active",
+  NeedsReauth = "needs_reauth",
+  Failed = "failed",
+  Disconnected = "disconnected"
+}
+
 export enum AuthProvider {
   LocalPassword = "local_password",
   MicrosoftEntra = "microsoft_entra"
@@ -78,6 +86,22 @@ export enum WorkflowLifecycleStatus {
   Resolved = "resolved"
 }
 
+export enum FolderSyncStatus {
+  Pending = "pending",
+  Active = "active",
+  Idle = "idle",
+  Failed = "failed"
+}
+
+export enum GraphSubscriptionStatus {
+  Pending = "pending",
+  Active = "active",
+  Expired = "expired",
+  Removed = "removed",
+  ReauthRequired = "reauth_required",
+  Failed = "failed"
+}
+
 export enum AuditEventAction {
   MessageFiled = "message.filed",
   MessageCategorized = "message.categorized",
@@ -134,10 +158,57 @@ export type MailboxRecord = {
   graphMailboxId?: string;
 };
 
+export type MailboxConnectionRecord = {
+  id: string;
+  mailboxId: string;
+  tenantId: string;
+  userId: string;
+  graphTenantId: string;
+  graphUserId: string;
+  status: MailboxConnectionStatus;
+  grantedScopes: string[];
+  connectedAt?: string;
+  accessTokenExpiresAt?: string;
+  refreshTokenExpiresAt?: string;
+  lastValidatedAt?: string;
+  lastReauthorizedAt?: string;
+  lastErrorCode?: string;
+};
+
+export type FolderSyncStateRecord = {
+  id: string;
+  mailboxId: string;
+  folderId: string;
+  status: FolderSyncStatus;
+  deltaLink?: string;
+  lastSyncedAt?: string;
+  lastCursorUpdatedAt?: string;
+  lastErrorCode?: string;
+};
+
+export type GraphSubscriptionRecord = {
+  id: string;
+  mailboxId: string;
+  graphSubscriptionId: string;
+  resource: string;
+  changeTypes: string[];
+  status: GraphSubscriptionStatus;
+  notificationUrl: string;
+  lifecycleNotificationUrl?: string;
+  expiresAt: string;
+  lastValidatedAt?: string;
+  lastNotificationAt?: string;
+  lastLifecycleEventAt?: string;
+  lastReauthorizedAt?: string;
+  lastErrorCode?: string;
+};
+
 export type MessageRecord = {
   id: string;
   mailboxId: string;
   graphMessageId: string;
+  graphParentFolderId?: string;
+  graphChangeKey?: string;
   subject: string;
   actionability: MessageActionability;
   messageType: MessageType;
@@ -145,6 +216,7 @@ export type MessageRecord = {
   filingState: FilingState;
   fromAddress?: string;
   receivedAt?: string;
+  lastGraphModifiedAt?: string;
   isRead: boolean;
 };
 

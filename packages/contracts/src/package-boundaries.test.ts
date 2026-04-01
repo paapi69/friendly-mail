@@ -10,6 +10,9 @@ describe("workspace package boundaries", () => {
     expect(readWorkspaceDependencies("packages/config/package.json")).toEqual([]);
     expect(readWorkspaceDependencies("packages/auth/package.json")).toEqual([]);
     expect(readWorkspaceDependencies("packages/database/package.json")).toEqual([]);
+    expect(readWorkspaceDependencies("packages/graph/package.json")).toEqual([
+      "@friendly-mail/observability"
+    ]);
     expect(readWorkspaceDependencies("packages/observability/package.json")).toEqual([]);
     expect(readWorkspaceDependencies("packages/queue/package.json")).toEqual([
       "@friendly-mail/config",

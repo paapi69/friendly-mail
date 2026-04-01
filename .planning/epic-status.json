@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-03-31",
+  "lastUpdated": "2026-04-01",
   "epics": [
     {
       "id": "E1",
@@ -66,12 +66,12 @@
         {
           "id": "E2-T2",
           "title": "Extend Persistence for Mailbox Connectivity and Sync State",
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E2-T3",
           "title": "Implement the Core Microsoft Graph Connector",
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E2-T4",
