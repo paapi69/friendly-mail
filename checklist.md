@@ -35,7 +35,7 @@ Progress: 1/10 epics complete
 - [x] E2-T2: Extend Persistence for Mailbox Connectivity and Sync State
 - [x] E2-T3: Implement the Core Microsoft Graph Connector
 - [x] E2-T4: Build Delegated Mailbox Onboarding
-- [ ] E2-T5: Implement Folder Discovery and Initial Folder Sync
+- [x] E2-T5: Implement Folder Discovery and Initial Folder Sync
 - [ ] E2-T6: Implement Message Metadata Sync with Delta Links
 - [ ] E2-T7: Implement Graph Subscription and Webhook Lifecycle
 - [ ] E2-T8: Implement Reconciliation Between Webhooks and Delta Sync

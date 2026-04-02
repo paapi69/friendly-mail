@@ -74,6 +74,14 @@ export type UpsertFolderSyncStateInput = {
   lastErrorAt?: Date;
 };
 
+export type UpsertMailboxFolderInput = {
+  mailboxId: string;
+  graphFolderId: string;
+  displayName: string;
+  parentGraphFolderId?: string;
+  isSyncEnabled?: boolean;
+};
+
 export type UpsertGraphSubscriptionInput = {
   mailboxId: string;
   graphSubscriptionId: string;
@@ -207,6 +215,27 @@ type FolderSyncStateWriter = {
         lastCursorUpdatedAt: Date | null;
         lastErrorCode: string | null;
         lastErrorAt: Date | null;
+      };
+    }) => Promise<unknown>;
+  };
+};
+
+type FolderWriter = {
+  folder: {
+    upsert: (args: {
+      where: { graphFolderId: string };
+      update: {
+        mailboxId: string;
+        displayName: string;
+        parentGraphFolderId: string | null;
+        isSyncEnabled: boolean;
+      };
+      create: {
+        mailboxId: string;
+        graphFolderId: string;
+        displayName: string;
+        parentGraphFolderId: string | null;
+        isSyncEnabled: boolean;
       };
     }) => Promise<unknown>;
   };
@@ -391,6 +420,27 @@ export async function upsertFolderSyncState(
       lastCursorUpdatedAt: input.lastCursorUpdatedAt ?? null,
       lastErrorCode: input.lastErrorCode ?? null,
       lastErrorAt: input.lastErrorAt ?? null
+    }
+  });
+}
+
+export async function upsertMailboxFolder(writer: FolderWriter, input: UpsertMailboxFolderInput) {
+  return writer.folder.upsert({
+    where: {
+      graphFolderId: input.graphFolderId
+    },
+    update: {
+      mailboxId: input.mailboxId,
+      displayName: input.displayName,
+      parentGraphFolderId: input.parentGraphFolderId ?? null,
+      isSyncEnabled: input.isSyncEnabled ?? true
+    },
+    create: {
+      mailboxId: input.mailboxId,
+      graphFolderId: input.graphFolderId,
+      displayName: input.displayName,
+      parentGraphFolderId: input.parentGraphFolderId ?? null,
+      isSyncEnabled: input.isSyncEnabled ?? true
     }
   });
 }

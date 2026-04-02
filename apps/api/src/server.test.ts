@@ -10,6 +10,7 @@ import {
 import {
   createServer,
   type ApiAuthService,
+  type ApiMailboxFolderSyncService,
   type ApiMailboxOnboardingService
 } from "./server";
 
@@ -278,11 +279,52 @@ describe("api auth routes", () => {
       codeVerifier: "pkce-verifier"
     });
   });
+
+  it("syncs mailbox folders for an authenticated mailbox owner", async () => {
+    const folderSyncService: ApiMailboxFolderSyncService = {
+      syncMailboxFolders: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        discoveredFolders: 3,
+        rootFolders: 2,
+        syncedAt: "2026-04-01T11:00:00.000Z"
+      })
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      folderSyncService
+    );
+
+    const response = await request(server, {
+      method: "POST",
+      path: "/mailboxes/mailbox_123/folders/sync",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual({
+      mailboxId: "mailbox_123",
+      discoveredFolders: 3,
+      rootFolders: 2,
+      syncedAt: "2026-04-01T11:00:00.000Z"
+    });
+    expect(folderSyncService.syncMailboxFolders).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123"
+    });
+  });
 });
 
 function createTestServer(
   authService: ApiAuthService,
-  mailboxOnboardingService?: ApiMailboxOnboardingService
+  mailboxOnboardingService?: ApiMailboxOnboardingService,
+  mailboxFolderSyncService?: ApiMailboxFolderSyncService
 ) {
   const server = createServer({
     env: {
@@ -295,6 +337,9 @@ function createTestServer(
     mailboxOnboardingService: mailboxOnboardingService ?? {
       beginConnect: vi.fn(),
       completeConnect: vi.fn()
+    },
+    mailboxFolderSyncService: mailboxFolderSyncService ?? {
+      syncMailboxFolders: vi.fn()
     },
     logger: {
       child() {

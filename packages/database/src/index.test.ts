@@ -3,6 +3,7 @@ import {
   createLocalUser,
   databaseTables,
   recordAuditEvent,
+  upsertMailboxFolder,
   upsertFolderSyncState,
   upsertGraphSubscription,
   upsertMailboxConnection,
@@ -226,6 +227,45 @@ describe("database baseline", () => {
         lastCursorUpdatedAt: null,
         lastErrorCode: null,
         lastErrorAt: null
+      }
+    });
+  });
+
+  it("upserts mailbox folders with parent linkage", async () => {
+    const upsert = vi.fn().mockResolvedValue({
+      id: "folder_123"
+    });
+
+    await upsertMailboxFolder(
+      {
+        folder: {
+          upsert
+        }
+      },
+      {
+        mailboxId: "mailbox_123",
+        graphFolderId: "graph_folder_123",
+        displayName: "Contracts",
+        parentGraphFolderId: "graph_root_folder"
+      }
+    );
+
+    expect(upsert).toHaveBeenCalledWith({
+      where: {
+        graphFolderId: "graph_folder_123"
+      },
+      update: {
+        mailboxId: "mailbox_123",
+        displayName: "Contracts",
+        parentGraphFolderId: "graph_root_folder",
+        isSyncEnabled: true
+      },
+      create: {
+        mailboxId: "mailbox_123",
+        graphFolderId: "graph_folder_123",
+        displayName: "Contracts",
+        parentGraphFolderId: "graph_root_folder",
+        isSyncEnabled: true
       }
     });
   });

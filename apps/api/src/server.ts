@@ -16,6 +16,7 @@ import type { AuthService, LoginInput } from "./auth-service";
 import type {
   MailboxOnboardingService
 } from "./mailbox-onboarding-service";
+import type { MailboxFolderSyncService } from "./mailbox-folder-sync-service";
 
 type ApiEnv = {
   NODE_ENV: "development" | "test" | "production";
@@ -29,11 +30,16 @@ export type ApiMailboxOnboardingService = Pick<
   MailboxOnboardingService,
   "beginConnect" | "completeConnect"
 >;
+export type ApiMailboxFolderSyncService = Pick<
+  MailboxFolderSyncService,
+  "syncMailboxFolders"
+>;
 
 export type CreateServerInput = {
   env: ApiEnv;
   authService: ApiAuthService;
   mailboxOnboardingService: ApiMailboxOnboardingService;
+  mailboxFolderSyncService: ApiMailboxFolderSyncService;
   logger: Logger;
 };
 
@@ -224,6 +230,34 @@ export function createServer(input: CreateServerInput) {
           statusCode: 200,
           userId: session.principal.userId,
           tenantId: session.principal.tenantId
+        });
+        return;
+      }
+
+      const mailboxFolderSyncMatch =
+        request.method === "POST"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/folders\/sync$/)
+          : null;
+
+      if (mailboxFolderSyncMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxFolderSyncMatch[1]);
+        const result = await input.mailboxFolderSyncService.syncMailboxFolders({
+          session,
+          mailboxId
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Synced mailbox folders", {
+          statusCode: 200,
+          mailboxId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          discoveredFolders: result.discoveredFolders
         });
         return;
       }

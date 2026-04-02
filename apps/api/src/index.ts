@@ -5,6 +5,7 @@ import {
   type Logger
 } from "@friendly-mail/observability";
 import { createPrismaAuthService } from "./auth-service";
+import { createPrismaMailboxFolderSyncService } from "./mailbox-folder-sync-service";
 import { createPrismaMailboxOnboardingService } from "./mailbox-onboarding-service";
 import { createServer } from "./server";
 
@@ -24,10 +25,16 @@ const mailboxOnboardingService = createPrismaMailboxOnboardingService({
   env,
   logger: logger as Logger
 });
+const mailboxFolderSyncService = createPrismaMailboxFolderSyncService({
+  prisma,
+  env,
+  logger: logger as Logger
+});
 const server = createServer({
   env,
   authService,
   mailboxOnboardingService,
+  mailboxFolderSyncService,
   logger: logger as Logger
 });
 

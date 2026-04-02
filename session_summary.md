@@ -1,7 +1,7 @@
 <sessionSummary>
   <metadata>
     <project>Friendly Mail</project>
-    <updatedAt>2026-04-01T10:58:00+05:30</updatedAt>
+    <updatedAt>2026-04-01T16:43:00+05:30</updatedAt>
     <workspacePath>C:\Users\Sahil\OneDrive\Desktop\Friendly Mail</workspacePath>
     <repoUrl>https://github.com/paapi69/friendly-mail</repoUrl>
   </metadata>
@@ -34,6 +34,7 @@
 
   <sessionWork>
     <completed>
+      <ticket id="E2-T5">Mailbox folder discovery and initial sync implemented with persisted folder trees, parent-child linkage, and seeded per-folder sync state for connected mailboxes.</ticket>
       <ticket id="E2-T4">Delegated mailbox onboarding baseline implemented with Microsoft authorization start and callback flows, server-side token exchange, mailbox validation, and persisted mailbox connection records.</ticket>
       <ticket id="E2-T3">Shared Microsoft Graph connector implemented with immutable-ID defaults, retry handling, pagination helpers, and normalized folder, message, and subscription DTOs.</ticket>
       <ticket id="E2-T2">Persistence extended for mailbox connection state, Graph subscriptions, folder delta cursors, and stable message sync metadata.</ticket>
@@ -72,6 +73,7 @@
       <item>The new @friendly-mail/graph package now centralizes Graph auth headers, immutable-ID defaults, retry handling for 429 and 503 responses, pagination helpers, and normalized mailbox DTOs.</item>
       <item>The API now exposes delegated mailbox onboarding endpoints that prepare the Microsoft authorize URL, validate callback state and PKCE, redeem the authorization code server-side, validate mailbox access, and persist mailbox registration.</item>
       <item>Session reads now reflect whether an active mailbox connection exists for the user and tenant.</item>
+      <item>The API now exposes mailbox folder sync that walks the Graph folder tree, persists tracked folders with parent linkage, and seeds per-folder sync state for later delta processing.</item>
     </keyImplementationNotes>
 
     <filesAddedOrUpdated>
@@ -93,6 +95,9 @@
       <file>apps/api/src/auth-service.ts</file>
       <file>apps/api/src/mailbox-onboarding-service.ts</file>
       <file>apps/api/src/mailbox-onboarding-service.test.ts</file>
+      <file>apps/api/src/mailbox-folder-sync-service.ts</file>
+      <file>apps/api/src/mailbox-folder-sync-service.test.ts</file>
+      <file>apps/api/src/microsoft-token-crypto.ts</file>
       <file>apps/api/src/server.ts</file>
       <file>apps/api/src/server.test.ts</file>
       <file>docs/auth-baseline.md</file>
@@ -132,8 +137,9 @@
       <done>E2-T2</done>
       <done>E2-T3</done>
       <done>E2-T4</done>
+      <done>E2-T5</done>
     </epic>
-    <nextRecommendedTicket>E2-T5</nextRecommendedTicket>
+    <nextRecommendedTicket>E2-T6</nextRecommendedTicket>
   </status>
 
   <verification>
@@ -150,6 +156,6 @@
   <continuationNotes>
     <item>When a new session starts, read this file first, then read checklist.md and .planning/STATE.md.</item>
     <item>The checklist generator may need a clean rerun with node scripts/sync-checklist.mjs after status updates if the Markdown view appears stale.</item>
-    <item>The best next move is to start E2-T5 and use the new onboarding plus Graph connector baseline to discover and persist the folder tree for connected mailboxes.</item>
+    <item>The best next move is to start E2-T6 and use the new folder tree baseline to sync message metadata and persist per-folder delta links.</item>
   </continuationNotes>
 </sessionSummary>

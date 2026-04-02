@@ -68,3 +68,4 @@ This repo currently implements the Epic 1 foundation slice:
 - internal auth and session baseline with explicit separation from future Microsoft Graph mailbox auth
 - Microsoft Graph connector baseline for folders, messages, delta sync, and subscriptions
 - delegated mailbox onboarding baseline with Microsoft authorization redirect and callback handling
+- initial mailbox folder discovery and sync baseline with persisted folder trees and per-folder sync state seeding

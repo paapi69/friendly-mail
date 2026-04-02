@@ -13,6 +13,7 @@ import {
   upsertMailboxConnection
 } from "@friendly-mail/database";
 import { AppError, type Logger } from "@friendly-mail/observability";
+import { encryptMicrosoftToken } from "./microsoft-token-crypto";
 
 type MailboxOnboardingEnv = {
   APP_BASE_URL: string;
@@ -220,12 +221,15 @@ export function createPrismaMailboxOnboardingService(
           graphUserId: graphUser.id,
           status: "ACTIVE",
           grantedScopes: tokenResult.scopes,
-          accessTokenCiphertext: encryptSecret(
+          accessTokenCiphertext: encryptMicrosoftToken(
             tokenResult.accessToken,
             input.env.MICROSOFT_TOKEN_ENCRYPTION_KEY
           ),
           refreshTokenCiphertext: tokenResult.refreshToken
-            ? encryptSecret(tokenResult.refreshToken, input.env.MICROSOFT_TOKEN_ENCRYPTION_KEY)
+            ? encryptMicrosoftToken(
+                tokenResult.refreshToken,
+                input.env.MICROSOFT_TOKEN_ENCRYPTION_KEY
+              )
             : undefined,
           accessTokenExpiresAt: addSeconds(now(), tokenResult.expiresIn),
           connectedAt: now(),
@@ -433,16 +437,6 @@ function extractTenantId(claims: Record<string, unknown>, fallbackTenantId: stri
   return typeof claims.tid === "string" && claims.tid.length > 0
     ? claims.tid
     : fallbackTenantId;
-}
-
-function encryptSecret(value: string, secret: string) {
-  const key = crypto.createHash("sha256").update(secret).digest();
-  const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
-  const encrypted = Buffer.concat([cipher.update(value, "utf8"), cipher.final()]);
-  const tag = cipher.getAuthTag();
-
-  return [iv.toString("base64url"), tag.toString("base64url"), encrypted.toString("base64url")].join(".");
 }
 
 function addSeconds(nowValue: Date, seconds: number) {
