@@ -17,6 +17,8 @@ import type {
   MailboxOnboardingService
 } from "./mailbox-onboarding-service";
 import type { MailboxFolderSyncService } from "./mailbox-folder-sync-service";
+import type { MailboxMessageSyncService } from "./mailbox-message-sync-service";
+import type { MailboxSubscriptionService } from "./mailbox-subscription-service";
 
 type ApiEnv = {
   NODE_ENV: "development" | "test" | "production";
@@ -34,12 +36,22 @@ export type ApiMailboxFolderSyncService = Pick<
   MailboxFolderSyncService,
   "syncMailboxFolders"
 >;
+export type ApiMailboxMessageSyncService = Pick<
+  MailboxMessageSyncService,
+  "syncFolderMessages"
+>;
+export type ApiMailboxSubscriptionService = Pick<
+  MailboxSubscriptionService,
+  "ensureMailboxSubscription" | "handleWebhookNotifications"
+>;
 
 export type CreateServerInput = {
   env: ApiEnv;
   authService: ApiAuthService;
   mailboxOnboardingService: ApiMailboxOnboardingService;
   mailboxFolderSyncService: ApiMailboxFolderSyncService;
+  mailboxMessageSyncService: ApiMailboxMessageSyncService;
+  mailboxSubscriptionService: ApiMailboxSubscriptionService;
   logger: Logger;
 };
 
@@ -66,6 +78,40 @@ export function createServer(input: CreateServerInput) {
         });
         requestLogger.info("Request completed", {
           statusCode: 200
+        });
+        return;
+      }
+
+      const isGraphChangeWebhook =
+        request.method === "POST" &&
+        requestUrl.pathname === "/webhooks/microsoft/graph/notifications";
+      const isGraphLifecycleWebhook =
+        request.method === "POST" &&
+        requestUrl.pathname === "/webhooks/microsoft/graph/lifecycle";
+
+      if (isGraphChangeWebhook || isGraphLifecycleWebhook) {
+        const validationToken = requestUrl.searchParams.get("validationToken");
+
+        if (validationToken) {
+          writeText(response, 200, validationToken);
+          requestLogger.info("Validated Microsoft Graph webhook endpoint", {
+            statusCode: 200,
+            webhookKind: isGraphChangeWebhook ? "change" : "lifecycle"
+          });
+          return;
+        }
+
+        const body = await readJsonBody(request);
+        await input.mailboxSubscriptionService.handleWebhookNotifications({
+          kind: isGraphChangeWebhook ? "change" : "lifecycle",
+          payload: body
+        });
+
+        response.writeHead(202);
+        response.end();
+        requestLogger.info("Accepted Microsoft Graph webhook payload", {
+          statusCode: 202,
+          webhookKind: isGraphChangeWebhook ? "change" : "lifecycle"
         });
         return;
       }
@@ -262,6 +308,67 @@ export function createServer(input: CreateServerInput) {
         return;
       }
 
+      const mailboxMessageSyncMatch =
+        request.method === "POST"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/folders\/([^/]+)\/messages\/sync$/)
+          : null;
+
+      if (mailboxMessageSyncMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxMessageSyncMatch[1]);
+        const folderId = decodeURIComponent(mailboxMessageSyncMatch[2]);
+        const result = await input.mailboxMessageSyncService.syncFolderMessages({
+          session,
+          mailboxId,
+          folderId
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Synced mailbox message metadata", {
+          statusCode: 200,
+          mailboxId,
+          folderId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          syncedMessages: result.syncedMessages,
+          removedMessages: result.removedMessages
+        });
+        return;
+      }
+
+      const mailboxSubscriptionEnsureMatch =
+        request.method === "POST"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/subscriptions\/ensure$/)
+          : null;
+
+      if (mailboxSubscriptionEnsureMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxSubscriptionEnsureMatch[1]);
+        const result = await input.mailboxSubscriptionService.ensureMailboxSubscription({
+          session,
+          mailboxId
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Ensured mailbox subscription", {
+          statusCode: 200,
+          mailboxId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          operation: result.operation,
+          graphSubscriptionId: result.subscription.graphSubscriptionId
+        });
+        return;
+      }
+
       throw new AppError("ROUTE_NOT_FOUND", "Route not found", {
         statusCode: 404
       });
@@ -373,6 +480,13 @@ function writeJson(
     ...headers
   });
   response.end(JSON.stringify(body));
+}
+
+function writeText(response: http.ServerResponse, statusCode: number, body: string) {
+  response.writeHead(statusCode, {
+    "content-type": "text/plain"
+  });
+  response.end(body);
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {

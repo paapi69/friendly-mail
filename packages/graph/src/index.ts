@@ -60,6 +60,7 @@ export type GraphMessage = {
   changeKey?: string;
   conversationId?: string;
   internetMessageId?: string;
+  removedReason?: "changed" | "deleted";
   subject: string;
   fromAddress?: string;
   senderAddress?: string;
@@ -438,12 +439,15 @@ function mapFolder(value: Record<string, unknown>): GraphMailFolder {
 }
 
 function mapMessage(value: Record<string, unknown>): GraphMessage {
+  const removed = asRecord(value["@removed"]);
+
   return {
     id: asRequiredString(value.id, "message id"),
     parentFolderId: asOptionalString(value.parentFolderId),
     changeKey: asOptionalString(value.changeKey),
     conversationId: asOptionalString(value.conversationId),
     internetMessageId: asOptionalString(value.internetMessageId),
+    removedReason: asRemovedReason(removed.reason),
     subject: asOptionalString(value.subject) ?? "",
     fromAddress: readEmailAddress(value.from),
     senderAddress: readEmailAddress(value.sender),
@@ -576,6 +580,10 @@ function asNumber(value: unknown) {
 
 function asBoolean(value: unknown) {
   return typeof value === "boolean" ? value : false;
+}
+
+function asRemovedReason(value: unknown) {
+  return value === "changed" || value === "deleted" ? value : undefined;
 }
 
 function readEmailAddress(value: unknown) {

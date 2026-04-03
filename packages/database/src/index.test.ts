@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createLocalUser,
   databaseTables,
+  markMailboxMessageRemoved,
   recordAuditEvent,
+  upsertMailboxMessage,
   upsertMailboxFolder,
   upsertFolderSyncState,
   upsertGraphSubscription,
@@ -329,6 +331,107 @@ describe("database baseline", () => {
         lastReauthorizedAt: null,
         lastErrorCode: null,
         lastErrorAt: null
+      }
+    });
+  });
+
+  it("upserts mailbox messages with stable sync metadata", async () => {
+    const upsert = vi.fn().mockResolvedValue({
+      id: "message_123"
+    });
+    const receivedAt = new Date("2026-04-02T05:00:00.000Z");
+    const modifiedAt = new Date("2026-04-02T05:05:00.000Z");
+
+    await upsertMailboxMessage(
+      {
+        message: {
+          upsert
+        }
+      },
+      {
+        mailboxId: "mailbox_123",
+        folderId: "folder_123",
+        graphMessageId: "graph_message_123",
+        graphParentFolderId: "graph_folder_inbox",
+        graphChangeKey: "change_key_123",
+        internetMessageId: "<message-123@example.com>",
+        conversationId: "conversation_123",
+        subject: "Invoice due Friday",
+        fromAddress: "vendor@example.com",
+        receivedAt,
+        lastGraphModifiedAt: modifiedAt,
+        isRead: false
+      }
+    );
+
+    expect(upsert).toHaveBeenCalledWith({
+      where: {
+        graphMessageId: "graph_message_123"
+      },
+      update: {
+        mailboxId: "mailbox_123",
+        folderId: "folder_123",
+        graphParentFolderId: "graph_folder_inbox",
+        graphChangeKey: "change_key_123",
+        internetMessageId: "<message-123@example.com>",
+        conversationId: "conversation_123",
+        subject: "Invoice due Friday",
+        fromAddress: "vendor@example.com",
+        receivedAt,
+        lastGraphModifiedAt: modifiedAt,
+        isRead: false,
+        graphRemovedAt: null,
+        graphRemovalReason: null
+      },
+      create: {
+        mailboxId: "mailbox_123",
+        folderId: "folder_123",
+        graphMessageId: "graph_message_123",
+        graphParentFolderId: "graph_folder_inbox",
+        graphChangeKey: "change_key_123",
+        internetMessageId: "<message-123@example.com>",
+        conversationId: "conversation_123",
+        subject: "Invoice due Friday",
+        fromAddress: "vendor@example.com",
+        receivedAt,
+        lastGraphModifiedAt: modifiedAt,
+        isRead: false,
+        graphRemovedAt: null,
+        graphRemovalReason: null
+      }
+    });
+  });
+
+  it("marks mailbox messages removed without deleting internal workflow history", async () => {
+    const updateMany = vi.fn().mockResolvedValue({
+      count: 1
+    });
+    const removedAt = new Date("2026-04-02T05:10:00.000Z");
+
+    await markMailboxMessageRemoved(
+      {
+        message: {
+          updateMany
+        }
+      },
+      {
+        mailboxId: "mailbox_123",
+        graphMessageId: "graph_message_123",
+        graphRemovalReason: "deleted",
+        graphRemovedAt: removedAt
+      }
+    );
+
+    expect(updateMany).toHaveBeenCalledWith({
+      where: {
+        mailboxId: "mailbox_123",
+        graphMessageId: "graph_message_123"
+      },
+      data: {
+        folderId: null,
+        graphParentFolderId: null,
+        graphRemovedAt: removedAt,
+        graphRemovalReason: "deleted"
       }
     });
   });

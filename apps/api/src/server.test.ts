@@ -11,6 +11,8 @@ import {
   createServer,
   type ApiAuthService,
   type ApiMailboxFolderSyncService,
+  type ApiMailboxMessageSyncService,
+  type ApiMailboxSubscriptionService,
   type ApiMailboxOnboardingService
 } from "./server";
 
@@ -319,12 +321,233 @@ describe("api auth routes", () => {
       mailboxId: "mailbox_123"
     });
   });
+
+  it("syncs message metadata for a tracked folder", async () => {
+    const messageSyncService: ApiMailboxMessageSyncService = {
+      syncFolderMessages: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        folderId: "folder_123",
+        syncedMessages: 2,
+        removedMessages: 1,
+        deltaLink:
+          "https://graph.microsoft.com/v1.0/me/mailFolders/graph_folder_inbox/messages/delta?$deltatoken=abc",
+        syncedAt: "2026-04-02T05:15:00.000Z"
+      })
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      messageSyncService
+    );
+
+    const response = await request(server, {
+      method: "POST",
+      path: "/mailboxes/mailbox_123/folders/folder_123/messages/sync",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual({
+      mailboxId: "mailbox_123",
+      folderId: "folder_123",
+      syncedMessages: 2,
+      removedMessages: 1,
+      deltaLink:
+        "https://graph.microsoft.com/v1.0/me/mailFolders/graph_folder_inbox/messages/delta?$deltatoken=abc",
+      syncedAt: "2026-04-02T05:15:00.000Z"
+    });
+    expect(messageSyncService.syncFolderMessages).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123",
+      folderId: "folder_123"
+    });
+  });
+
+  it("ensures a mailbox subscription for an authenticated mailbox owner", async () => {
+    const mailboxSubscriptionService: ApiMailboxSubscriptionService = {
+      ensureMailboxSubscription: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        operation: "created",
+        subscription: {
+          mailboxId: "mailbox_123",
+          graphSubscriptionId: "subscription_123",
+          resource: "/users/graph_user_123/messages",
+          changeTypes: ["created", "deleted", "updated"],
+          status: "active",
+          notificationUrl: "https://friendlymail.dev/webhooks/microsoft/graph/notifications",
+          lifecycleNotificationUrl: "https://friendlymail.dev/webhooks/microsoft/graph/lifecycle",
+          expiresAt: "2026-04-10T11:30:00.000Z"
+        }
+      }),
+      handleWebhookNotifications: vi.fn()
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      mailboxSubscriptionService
+    );
+
+    const response = await request(server, {
+      method: "POST",
+      path: "/mailboxes/mailbox_123/subscriptions/ensure",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual({
+      mailboxId: "mailbox_123",
+      operation: "created",
+      subscription: expect.objectContaining({
+        graphSubscriptionId: "subscription_123",
+        status: "active"
+      })
+    });
+    expect(mailboxSubscriptionService.ensureMailboxSubscription).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123"
+    });
+  });
+
+  it("returns the decoded validation token for Graph webhook validation", async () => {
+    const server = createTestServer({
+      login: vi.fn(),
+      getSession: vi.fn(),
+      logout: vi.fn()
+    });
+
+    const response = await request(server, {
+      method: "POST",
+      path: "/webhooks/microsoft/graph/notifications?validationToken=hello%20world"
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers["content-type"]).toBe("text/plain");
+    expect(response.body).toBe("hello world");
+  });
+
+  it("accepts Graph change notifications and hands them to the webhook service", async () => {
+    const mailboxSubscriptionService: ApiMailboxSubscriptionService = {
+      ensureMailboxSubscription: vi.fn(),
+      handleWebhookNotifications: vi.fn().mockResolvedValue({
+        acceptedNotifications: 1,
+        ignoredNotifications: 0,
+        queuedNotifications: 1
+      })
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn(),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      mailboxSubscriptionService
+    );
+
+    const response = await request(server, {
+      method: "POST",
+      path: "/webhooks/microsoft/graph/notifications",
+      body: {
+        value: [
+          {
+            subscriptionId: "subscription_123",
+            clientState: "secret_client_state",
+            changeType: "updated"
+          }
+        ]
+      }
+    });
+
+    expect(response.statusCode).toBe(202);
+    expect(response.body).toBe("");
+    expect(mailboxSubscriptionService.handleWebhookNotifications).toHaveBeenCalledWith({
+      kind: "change",
+      payload: {
+        value: [
+          {
+            subscriptionId: "subscription_123",
+            clientState: "secret_client_state",
+            changeType: "updated"
+          }
+        ]
+      }
+    });
+  });
+
+  it("accepts Graph lifecycle notifications and hands them to the webhook service", async () => {
+    const mailboxSubscriptionService: ApiMailboxSubscriptionService = {
+      ensureMailboxSubscription: vi.fn(),
+      handleWebhookNotifications: vi.fn().mockResolvedValue({
+        acceptedNotifications: 1,
+        ignoredNotifications: 0,
+        queuedNotifications: 1
+      })
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn(),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      mailboxSubscriptionService
+    );
+
+    const response = await request(server, {
+      method: "POST",
+      path: "/webhooks/microsoft/graph/lifecycle",
+      body: {
+        value: [
+          {
+            subscriptionId: "subscription_123",
+            clientState: "secret_client_state",
+            lifecycleEvent: "reauthorizationRequired"
+          }
+        ]
+      }
+    });
+
+    expect(response.statusCode).toBe(202);
+    expect(mailboxSubscriptionService.handleWebhookNotifications).toHaveBeenCalledWith({
+      kind: "lifecycle",
+      payload: {
+        value: [
+          {
+            subscriptionId: "subscription_123",
+            clientState: "secret_client_state",
+            lifecycleEvent: "reauthorizationRequired"
+          }
+        ]
+      }
+    });
+  });
 });
 
 function createTestServer(
   authService: ApiAuthService,
   mailboxOnboardingService?: ApiMailboxOnboardingService,
-  mailboxFolderSyncService?: ApiMailboxFolderSyncService
+  mailboxFolderSyncService?: ApiMailboxFolderSyncService,
+  mailboxMessageSyncService?: ApiMailboxMessageSyncService,
+  mailboxSubscriptionService?: ApiMailboxSubscriptionService
 ) {
   const server = createServer({
     env: {
@@ -340,6 +563,13 @@ function createTestServer(
     },
     mailboxFolderSyncService: mailboxFolderSyncService ?? {
       syncMailboxFolders: vi.fn()
+    },
+    mailboxMessageSyncService: mailboxMessageSyncService ?? {
+      syncFolderMessages: vi.fn()
+    },
+    mailboxSubscriptionService: mailboxSubscriptionService ?? {
+      ensureMailboxSubscription: vi.fn(),
+      handleWebhookNotifications: vi.fn()
     },
     logger: {
       child() {

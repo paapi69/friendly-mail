@@ -206,9 +206,12 @@ export type GraphSubscriptionRecord = {
 export type MessageRecord = {
   id: string;
   mailboxId: string;
+  folderId?: string;
   graphMessageId: string;
   graphParentFolderId?: string;
   graphChangeKey?: string;
+  internetMessageId?: string;
+  conversationId?: string;
   subject: string;
   actionability: MessageActionability;
   messageType: MessageType;
@@ -217,6 +220,8 @@ export type MessageRecord = {
   fromAddress?: string;
   receivedAt?: string;
   lastGraphModifiedAt?: string;
+  graphRemovedAt?: string;
+  graphRemovalReason?: "changed" | "deleted";
   isRead: boolean;
 };
 

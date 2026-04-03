@@ -97,6 +97,53 @@ describe("graph connector", () => {
     });
   });
 
+  it("maps message delta responses including removed items and delta links", async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      jsonResponse({
+        value: [
+          {
+            id: "graph_message_123",
+            parentFolderId: "graph_folder_inbox",
+            changeKey: "change_key_123",
+            subject: "Invoice due Friday",
+            isRead: false,
+            hasAttachments: false,
+            categories: []
+          },
+          {
+            id: "graph_message_removed_123",
+            "@removed": {
+              reason: "deleted"
+            }
+          }
+        ],
+        "@odata.deltaLink":
+          "https://graph.microsoft.com/v1.0/me/mailFolders/graph_folder_inbox/messages/delta?$deltatoken=abc"
+      })
+    );
+
+    const connector = createGraphConnector({
+      tokenProvider: async () => "token_123",
+      fetch
+    });
+
+    const page = await connector.deltaFolderMessages({
+      folderId: "graph_folder_inbox",
+      top: 25
+    });
+
+    const headers = getHeaders(fetch.mock.calls[0][1]);
+    expect(headers.get("Prefer")).toBe('IdType="ImmutableId"');
+    expect(String(fetch.mock.calls[0][0])).toContain("/mailFolders/graph_folder_inbox/messages/delta?");
+    expect(page.deltaLink).toBe(
+      "https://graph.microsoft.com/v1.0/me/mailFolders/graph_folder_inbox/messages/delta?$deltatoken=abc"
+    );
+    expect(page.items[1]).toMatchObject({
+      id: "graph_message_removed_123",
+      removedReason: "deleted"
+    });
+  });
+
   it("retries throttled requests using Retry-After before succeeding", async () => {
     const sleep = vi.fn().mockResolvedValue(undefined);
     const fetch = vi

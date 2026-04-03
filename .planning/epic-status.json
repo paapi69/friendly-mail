@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-01",
+  "lastUpdated": "2026-04-03",
   "epics": [
     {
       "id": "E1",
@@ -86,12 +86,12 @@
         {
           "id": "E2-T6",
           "title": "Implement Message Metadata Sync with Delta Links",
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E2-T7",
           "title": "Implement Graph Subscription and Webhook Lifecycle",
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E2-T8",

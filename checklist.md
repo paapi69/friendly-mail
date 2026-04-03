@@ -36,8 +36,8 @@ Progress: 1/10 epics complete
 - [x] E2-T3: Implement the Core Microsoft Graph Connector
 - [x] E2-T4: Build Delegated Mailbox Onboarding
 - [x] E2-T5: Implement Folder Discovery and Initial Folder Sync
-- [ ] E2-T6: Implement Message Metadata Sync with Delta Links
-- [ ] E2-T7: Implement Graph Subscription and Webhook Lifecycle
+- [x] E2-T6: Implement Message Metadata Sync with Delta Links
+- [x] E2-T7: Implement Graph Subscription and Webhook Lifecycle
 - [ ] E2-T8: Implement Reconciliation Between Webhooks and Delta Sync
 - [ ] E2-T9: Add Shared-Mailbox Readiness and Operational Verification
 
@@ -46,4 +46,4 @@ Progress: 1/10 epics complete
 - Update high-level epics with `node scripts/set-epic-status.mjs <E#> <pending|done>`.
 - Update detailed tickets with `node scripts/set-ticket-status.mjs <ticket-id> <pending|done>`.
 - Rebuild this file with `node scripts/sync-checklist.mjs`.
-- Last status update: 2026-04-01
+- Last status update: 2026-04-03

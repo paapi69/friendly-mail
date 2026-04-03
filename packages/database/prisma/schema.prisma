@@ -257,6 +257,8 @@ model Message {
   fromAddress        String?
   receivedAt         DateTime?
   lastGraphModifiedAt DateTime?
+  graphRemovedAt     DateTime?
+  graphRemovalReason String?
   isRead             Boolean              @default(false)
   actionability      MessageActionability?
   filingState        FilingState          @default(PENDING_CLASSIFICATION)

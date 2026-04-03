@@ -5,7 +5,7 @@
 See: `.planning/PROJECT.md`
 
 **Core value:** Never let important email-driven work disappear before it is safely handled.
-**Current focus:** Epic 2 folder discovery and initial mailbox sync baseline complete - ready to build message metadata delta sync
+**Current focus:** Epic 2 Graph subscriptions and webhook lifecycle are in place - ready to connect webhook events to delta reconciliation
 
 ## Current Truth
 
@@ -23,6 +23,10 @@ See: `.planning/PROJECT.md`
 - A shared Microsoft Graph connector package now centralizes auth headers, immutable IDs, retries, pagination, and mailbox DTO mapping
 - The API now supports delegated mailbox onboarding start and callback flows with server-side code exchange and mailbox registration
 - The API now supports initial mailbox folder discovery and sync with persisted folder trees and seeded per-folder sync state
+- The API now supports per-folder message metadata delta sync with persisted delta links and Graph removal tracking
+- The API now supports top-level Graph message subscription creation and renewal for active delegated mailboxes
+- The API now exposes secure Graph webhook notification and lifecycle ingress routes with validation-token handling and queue-first acceptance
+- Accepted Graph webhook events now update subscription health state and enter the internal queue as typed mailbox notification jobs
 - The shared contract baseline now covers mailbox, message, filing, task, and audit vocabulary across surfaces
 - Workspace package direction rules are now documented and enforced with a package-boundary test
 - A local onboarding and runbook guide now exists for API, dashboard, Outlook add-in, worker, database, and queue setup
@@ -30,10 +34,10 @@ See: `.planning/PROJECT.md`
 
 ## Immediate Next Steps
 
-- Start `E2-T6` by syncing message metadata with per-folder delta links
-- Reuse the persisted folder tree and folder sync state baseline from `E2-T5`
+- Start `E2-T8` by reconciling queued webhook events through folder-level delta sync
+- Reuse the new subscription and queue baseline from `E2-T7` instead of trusting transient webhook payloads directly
 - Define user flows for delayed filing, task completion, and informational-email read state
-- Prepare per-folder delta advancement logic that can feed later webhook reconciliation work
+- Define idempotency and repair rules for repeated, missed, and out-of-order mailbox event processing
 
 ## Open Questions
 

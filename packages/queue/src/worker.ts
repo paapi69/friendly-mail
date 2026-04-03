@@ -15,8 +15,27 @@ const worker = createWorker(queueNames.health, async (payload) => {
   return { ok: true };
 });
 
+const mailboxNotificationLogger = createLogger({
+  service: "friendly-mail-queue-worker",
+  context: {
+    queueName: queueNames.mailboxNotifications
+  }
+});
+
+const mailboxNotificationWorker = createWorker(
+  queueNames.mailboxNotifications,
+  async (payload) => {
+    mailboxNotificationLogger.info("Worker accepted mailbox notification job", payload);
+    return { ok: true };
+  }
+);
+
 worker.on("ready", () => {
   logger.info("Friendly Mail queue worker is ready.");
+});
+
+mailboxNotificationWorker.on("ready", () => {
+  mailboxNotificationLogger.info("Mailbox notification worker is ready.");
 });
 
 worker.on("failed", (job, error) => {
@@ -27,11 +46,20 @@ worker.on("failed", (job, error) => {
   });
 });
 
+mailboxNotificationWorker.on("failed", (job, error) => {
+  mailboxNotificationLogger.error("Worker failed job", {
+    jobId: job?.id ?? "unknown",
+    queueName: job?.queueName ?? queueNames.mailboxNotifications,
+    error
+  });
+});
+
 process.on("SIGINT", async () => {
   logger.info("Queue worker shutting down", {
     signal: "SIGINT"
   });
   await worker.close();
+  await mailboxNotificationWorker.close();
   process.exit(0);
 });
 
@@ -40,5 +68,6 @@ process.on("SIGTERM", async () => {
     signal: "SIGTERM"
   });
   await worker.close();
+  await mailboxNotificationWorker.close();
   process.exit(0);
 });

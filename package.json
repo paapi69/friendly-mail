@@ -17,10 +17,11 @@
     "dev:addin": "npm run dev --workspace @friendly-mail/outlook-addin",
     "dev:worker": "npm run dev --workspace @friendly-mail/queue",
     "lint": "eslint .",
+    "postinstall": "npm run db:generate",
     "queue:health": "npm run queue:health --workspace @friendly-mail/queue",
     "test": "vitest run",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "verify": "npm run lint && npm run typecheck && npm run test"
+    "verify": "npm run db:generate && npm run lint && npm run typecheck && npm run test"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

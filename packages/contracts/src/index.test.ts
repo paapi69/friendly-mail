@@ -94,9 +94,12 @@ describe("shared workflow contracts", () => {
     const message: MessageRecord = {
       id: "message_123",
       mailboxId: mailbox.id,
+      folderId: "folder_123",
       graphMessageId: "graph_message_123",
       graphParentFolderId: "graph_folder_inbox",
       graphChangeKey: "change_key_123",
+      internetMessageId: "<message-123@example.com>",
+      conversationId: "conversation_123",
       subject: "Invoice due Friday",
       actionability: MessageActionability.Actionable,
       messageType: MessageType.Invoice,
@@ -134,6 +137,7 @@ describe("shared workflow contracts", () => {
     };
 
     expect(mailbox.kind).toBe("shared");
+    expect(message.folderId).toBe("folder_123");
     expect(message.graphParentFolderId).toBe("graph_folder_inbox");
     expect(message.messageType).toBe("invoice");
     expect(task.priority).toBe("high");

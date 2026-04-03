@@ -3,7 +3,8 @@ import IORedis from "ioredis";
 import { getQueueEnv } from "@friendly-mail/config";
 
 export const queueNames = {
-  health: "friendly-mail-health"
+  health: "friendly-mail-health",
+  mailboxNotifications: "friendly-mail-mailbox-notifications"
 } as const;
 
 export type QueueName = (typeof queueNames)[keyof typeof queueNames];
@@ -11,6 +12,30 @@ export type QueueName = (typeof queueNames)[keyof typeof queueNames];
 export type QueueJobMap = {
   [queueNames.health]: {
     input: { requestedBy: string };
+    output: { ok: true };
+  };
+  [queueNames.mailboxNotifications]: {
+    input:
+      | {
+          kind: "graph_change_notification";
+          mailboxId: string;
+          graphSubscriptionId: string;
+          receivedAt: string;
+          tenantId?: string;
+          changeType: string;
+          resource?: string;
+          resourceDataId?: string;
+          subscriptionExpirationDateTime?: string;
+        }
+      | {
+          kind: "graph_lifecycle_notification";
+          mailboxId: string;
+          graphSubscriptionId: string;
+          receivedAt: string;
+          tenantId?: string;
+          lifecycleEvent: string;
+          subscriptionExpirationDateTime?: string;
+        };
     output: { ok: true };
   };
 };

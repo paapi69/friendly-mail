@@ -82,6 +82,30 @@ export type UpsertMailboxFolderInput = {
   isSyncEnabled?: boolean;
 };
 
+export type UpsertMailboxMessageInput = {
+  mailboxId: string;
+  folderId?: string;
+  graphMessageId: string;
+  graphParentFolderId?: string;
+  graphChangeKey?: string;
+  internetMessageId?: string;
+  conversationId?: string;
+  subject: string;
+  fromAddress?: string;
+  receivedAt?: Date;
+  lastGraphModifiedAt?: Date;
+  isRead: boolean;
+  graphRemovedAt?: Date;
+  graphRemovalReason?: "changed" | "deleted";
+};
+
+export type MarkMailboxMessageRemovedInput = {
+  mailboxId: string;
+  graphMessageId: string;
+  graphRemovedAt: Date;
+  graphRemovalReason: "changed" | "deleted";
+};
+
 export type UpsertGraphSubscriptionInput = {
   mailboxId: string;
   graphSubscriptionId: string;
@@ -277,6 +301,62 @@ type GraphSubscriptionWriter = {
         lastReauthorizedAt: Date | null;
         lastErrorCode: string | null;
         lastErrorAt: Date | null;
+      };
+    }) => Promise<unknown>;
+  };
+};
+
+type UpsertMessageWriter = {
+  message: {
+    upsert: (args: {
+      where: { graphMessageId: string };
+      update: {
+        mailboxId: string;
+        folderId: string | null;
+        graphParentFolderId: string | null;
+        graphChangeKey: string | null;
+        internetMessageId: string | null;
+        conversationId: string | null;
+        subject: string;
+        fromAddress: string | null;
+        receivedAt: Date | null;
+        lastGraphModifiedAt: Date | null;
+        isRead: boolean;
+        graphRemovedAt: Date | null;
+        graphRemovalReason: string | null;
+      };
+      create: {
+        mailboxId: string;
+        folderId: string | null;
+        graphMessageId: string;
+        graphParentFolderId: string | null;
+        graphChangeKey: string | null;
+        internetMessageId: string | null;
+        conversationId: string | null;
+        subject: string;
+        fromAddress: string | null;
+        receivedAt: Date | null;
+        lastGraphModifiedAt: Date | null;
+        isRead: boolean;
+        graphRemovedAt: Date | null;
+        graphRemovalReason: string | null;
+      };
+    }) => Promise<unknown>;
+  };
+};
+
+type MessageRemovalWriter = {
+  message: {
+    updateMany: (args: {
+      where: {
+        mailboxId: string;
+        graphMessageId: string;
+      };
+      data: {
+        folderId: null;
+        graphParentFolderId: null;
+        graphRemovedAt: Date;
+        graphRemovalReason: string;
       };
     }) => Promise<unknown>;
   };
@@ -487,6 +567,66 @@ export async function upsertGraphSubscription(
       lastReauthorizedAt: input.lastReauthorizedAt ?? null,
       lastErrorCode: input.lastErrorCode ?? null,
       lastErrorAt: input.lastErrorAt ?? null
+    }
+  });
+}
+
+export async function upsertMailboxMessage(
+  writer: UpsertMessageWriter,
+  input: UpsertMailboxMessageInput
+) {
+  return writer.message.upsert({
+    where: {
+      graphMessageId: input.graphMessageId
+    },
+    update: {
+      mailboxId: input.mailboxId,
+      folderId: input.folderId ?? null,
+      graphParentFolderId: input.graphParentFolderId ?? null,
+      graphChangeKey: input.graphChangeKey ?? null,
+      internetMessageId: input.internetMessageId ?? null,
+      conversationId: input.conversationId ?? null,
+      subject: input.subject,
+      fromAddress: input.fromAddress ?? null,
+      receivedAt: input.receivedAt ?? null,
+      lastGraphModifiedAt: input.lastGraphModifiedAt ?? null,
+      isRead: input.isRead,
+      graphRemovedAt: input.graphRemovedAt ?? null,
+      graphRemovalReason: input.graphRemovalReason ?? null
+    },
+    create: {
+      mailboxId: input.mailboxId,
+      folderId: input.folderId ?? null,
+      graphMessageId: input.graphMessageId,
+      graphParentFolderId: input.graphParentFolderId ?? null,
+      graphChangeKey: input.graphChangeKey ?? null,
+      internetMessageId: input.internetMessageId ?? null,
+      conversationId: input.conversationId ?? null,
+      subject: input.subject,
+      fromAddress: input.fromAddress ?? null,
+      receivedAt: input.receivedAt ?? null,
+      lastGraphModifiedAt: input.lastGraphModifiedAt ?? null,
+      isRead: input.isRead,
+      graphRemovedAt: input.graphRemovedAt ?? null,
+      graphRemovalReason: input.graphRemovalReason ?? null
+    }
+  });
+}
+
+export async function markMailboxMessageRemoved(
+  writer: MessageRemovalWriter,
+  input: MarkMailboxMessageRemovedInput
+) {
+  return writer.message.updateMany({
+    where: {
+      mailboxId: input.mailboxId,
+      graphMessageId: input.graphMessageId
+    },
+    data: {
+      folderId: null,
+      graphParentFolderId: null,
+      graphRemovedAt: input.graphRemovedAt,
+      graphRemovalReason: input.graphRemovalReason
     }
   });
 }
