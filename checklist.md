@@ -45,7 +45,7 @@ Progress: 2/10 epics complete
 
 - [x] E3-T1: Define Message Ingestion and Extraction Contract
 - [x] E3-T2: Extend Persistence for Message Bodies, Attachments, and Extraction State
-- [ ] E3-T3: Implement the Message Ingestion Service
+- [x] E3-T3: Implement the Message Ingestion Service
 - [ ] E3-T4: Implement Attachment Metadata Retrieval and Durable Linking
 - [ ] E3-T5: Implement PDF-First Attachment Text Extraction
 - [ ] E3-T6: Add OCR Fallback and Extraction Confidence Handling

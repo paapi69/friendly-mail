@@ -19,6 +19,7 @@ import type {
 import type { MailboxReadinessService } from "./mailbox-readiness-service";
 import type { MailboxFolderSyncService } from "./mailbox-folder-sync-service";
 import type { MailboxMessageSyncService } from "./mailbox-message-sync-service";
+import type { MailboxIngestionService } from "./mailbox-ingestion-service";
 import type { MailboxSubscriptionService } from "./mailbox-subscription-service";
 
 type ApiEnv = {
@@ -45,6 +46,10 @@ export type ApiMailboxMessageSyncService = Pick<
   MailboxMessageSyncService,
   "syncFolderMessages"
 >;
+export type ApiMailboxIngestionService = Pick<
+  MailboxIngestionService,
+  "ingestMessage"
+>;
 export type ApiMailboxSubscriptionService = Pick<
   MailboxSubscriptionService,
   "ensureMailboxSubscription" | "handleWebhookNotifications"
@@ -57,6 +62,7 @@ export type CreateServerInput = {
   mailboxReadinessService: ApiMailboxReadinessService;
   mailboxFolderSyncService: ApiMailboxFolderSyncService;
   mailboxMessageSyncService: ApiMailboxMessageSyncService;
+  mailboxIngestionService: ApiMailboxIngestionService;
   mailboxSubscriptionService: ApiMailboxSubscriptionService;
   logger: Logger;
 };
@@ -374,6 +380,38 @@ export function createServer(input: CreateServerInput) {
           tenantId: session.principal.tenantId,
           syncedMessages: result.syncedMessages,
           removedMessages: result.removedMessages
+        });
+        return;
+      }
+
+      const mailboxMessageIngestionMatch =
+        request.method === "POST"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/messages\/([^/]+)\/ingest$/)
+          : null;
+
+      if (mailboxMessageIngestionMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxMessageIngestionMatch[1]);
+        const messageId = decodeURIComponent(mailboxMessageIngestionMatch[2]);
+        const result = await input.mailboxIngestionService.ingestMessage({
+          session,
+          mailboxId,
+          messageId
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Ingested mailbox message", {
+          statusCode: 200,
+          mailboxId,
+          messageId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          graphMessageId: result.graphMessageId,
+          ingestionVersionKey: result.ingestionVersionKey
         });
         return;
       }

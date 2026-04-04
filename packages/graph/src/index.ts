@@ -22,6 +22,33 @@ const DEFAULT_MESSAGE_SELECT = [
   "categories",
   "webLink"
 ] as const;
+const DEFAULT_MESSAGE_DETAIL_SELECT = [
+  "id",
+  "parentFolderId",
+  "changeKey",
+  "conversationId",
+  "internetMessageId",
+  "subject",
+  "from",
+  "sender",
+  "replyTo",
+  "toRecipients",
+  "ccRecipients",
+  "bccRecipients",
+  "receivedDateTime",
+  "sentDateTime",
+  "lastModifiedDateTime",
+  "isRead",
+  "isDraft",
+  "categories",
+  "importance",
+  "inferenceClassification",
+  "bodyPreview",
+  "body",
+  "uniqueBody",
+  "hasAttachments",
+  "webLink"
+] as const;
 const DEFAULT_FOLDER_SELECT = [
   "id",
   "displayName",
@@ -73,6 +100,44 @@ export type GraphMessage = {
   webLink?: string;
 };
 
+export type GraphEmailAddress = {
+  name?: string;
+  address: string;
+};
+
+export type GraphItemBody = {
+  contentType: "text" | "html";
+  content?: string;
+};
+
+export type GraphMessageDetail = {
+  id: string;
+  parentFolderId?: string;
+  changeKey?: string;
+  conversationId?: string;
+  internetMessageId?: string;
+  subject: string;
+  from?: GraphEmailAddress;
+  sender?: GraphEmailAddress;
+  replyTo: GraphEmailAddress[];
+  toRecipients: GraphEmailAddress[];
+  ccRecipients: GraphEmailAddress[];
+  bccRecipients: GraphEmailAddress[];
+  receivedDateTime?: string;
+  sentDateTime?: string;
+  lastModifiedDateTime?: string;
+  isRead: boolean;
+  isDraft: boolean;
+  categories: string[];
+  importance?: string;
+  inferenceClassification?: string;
+  bodyPreview?: string;
+  body?: GraphItemBody;
+  uniqueBody?: GraphItemBody;
+  hasAttachments: boolean;
+  webLink?: string;
+};
+
 export type GraphSubscription = {
   id: string;
   resource: string;
@@ -106,6 +171,7 @@ type RequestOptions = {
   query?: Record<string, string | number | boolean | undefined>;
   body?: unknown;
   immutableId?: boolean;
+  bodyContentType?: "text" | "html";
 };
 
 export function createGraphConnector(options: CreateGraphConnectorOptions) {
@@ -284,6 +350,23 @@ export function createGraphConnector(options: CreateGraphConnectorOptions) {
       return mapMessage(payload);
     },
 
+    async getMessageDetail(input: {
+      messageId: string;
+      userId?: string;
+      select?: string[];
+    }) {
+      const payload = await requestJson<Record<string, unknown>>({
+        path: `${getUserRoot(input.userId)}/messages/${encodeURIComponent(input.messageId)}`,
+        query: {
+          $select: normalizeFieldSelection(input.select, DEFAULT_MESSAGE_DETAIL_SELECT)
+        },
+        immutableId: true,
+        bodyContentType: "text"
+      });
+
+      return mapMessageDetail(payload);
+    },
+
     async getCurrentUser() {
       const payload = await requestJson<Record<string, unknown>>({
         path: "/me",
@@ -355,8 +438,18 @@ function buildHeaders(accessToken: string, request: RequestOptions) {
     headers.set("Content-Type", "application/json");
   }
 
+  const preferHeaders: string[] = [];
+
   if (request.immutableId) {
-    headers.set("Prefer", IMMUTABLE_ID_HEADER);
+    preferHeaders.push(IMMUTABLE_ID_HEADER);
+  }
+
+  if (request.bodyContentType) {
+    preferHeaders.push(`outlook.body-content-type="${request.bodyContentType}"`);
+  }
+
+  if (preferHeaders.length > 0) {
+    headers.set("Prefer", preferHeaders.join(", "));
   }
 
   return headers;
@@ -459,6 +552,38 @@ function mapMessage(value: Record<string, unknown>): GraphMessage {
     categories: Array.isArray(value.categories)
       ? value.categories.map((category) => String(category))
       : [],
+    webLink: asOptionalString(value.webLink)
+  };
+}
+
+function mapMessageDetail(value: Record<string, unknown>): GraphMessageDetail {
+  return {
+    id: asRequiredString(value.id, "message id"),
+    parentFolderId: asOptionalString(value.parentFolderId),
+    changeKey: asOptionalString(value.changeKey),
+    conversationId: asOptionalString(value.conversationId),
+    internetMessageId: asOptionalString(value.internetMessageId),
+    subject: asOptionalString(value.subject) ?? "",
+    from: readRecipient(value.from),
+    sender: readRecipient(value.sender),
+    replyTo: readRecipients(value.replyTo),
+    toRecipients: readRecipients(value.toRecipients),
+    ccRecipients: readRecipients(value.ccRecipients),
+    bccRecipients: readRecipients(value.bccRecipients),
+    receivedDateTime: asOptionalString(value.receivedDateTime),
+    sentDateTime: asOptionalString(value.sentDateTime),
+    lastModifiedDateTime: asOptionalString(value.lastModifiedDateTime),
+    isRead: asBoolean(value.isRead),
+    isDraft: asBoolean(value.isDraft),
+    categories: Array.isArray(value.categories)
+      ? value.categories.map((category) => String(category))
+      : [],
+    importance: asOptionalString(value.importance),
+    inferenceClassification: asOptionalString(value.inferenceClassification),
+    bodyPreview: asOptionalString(value.bodyPreview),
+    body: readItemBody(value.body),
+    uniqueBody: readItemBody(value.uniqueBody),
+    hasAttachments: asBoolean(value.hasAttachments),
     webLink: asOptionalString(value.webLink)
   };
 }
@@ -589,6 +714,44 @@ function asRemovedReason(value: unknown) {
 function readEmailAddress(value: unknown) {
   const emailAddress = asRecord(asRecord(value).emailAddress);
   return asOptionalString(emailAddress.address);
+}
+
+function readRecipient(value: unknown): GraphEmailAddress | undefined {
+  const emailAddress = asRecord(asRecord(value).emailAddress);
+  const address = asOptionalString(emailAddress.address);
+
+  if (!address) {
+    return undefined;
+  }
+
+  return {
+    name: asOptionalString(emailAddress.name),
+    address
+  };
+}
+
+function readRecipients(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => readRecipient(entry))
+    .filter((entry): entry is GraphEmailAddress => Boolean(entry));
+}
+
+function readItemBody(value: unknown): GraphItemBody | undefined {
+  const body = asRecord(value);
+  const contentType = asOptionalString(body.contentType)?.toLowerCase();
+
+  if (contentType !== "text" && contentType !== "html") {
+    return undefined;
+  }
+
+  return {
+    contentType,
+    content: asOptionalString(body.content)
+  };
 }
 
 function trimTrailingSlash(value: string) {

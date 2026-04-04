@@ -13,4 +13,5 @@ export type BoardCard = {
   points: number;
   size: "S" | "M" | "L" | "XL";
   labels: string[];
+  trackedInPlanning?: boolean;
 };

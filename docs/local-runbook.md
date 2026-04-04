@@ -181,6 +181,8 @@ Current API support:
   - Result: explicit `limited` or `unsupported` readiness plus fallback mode and capability checks
 - `GET /mailboxes/:mailboxId/operational-verification`
   - Result: subscription health, folder delta staleness, immutable-ID enforcement, and an overall status summary
+- `POST /mailboxes/:mailboxId/messages/:messageId/ingest`
+  - Result: normalized message-envelope ingestion using a full Graph message read with text-body preference, plus the persisted `ingestionVersionKey`
 
 Shared-mailbox rollout rule:
 

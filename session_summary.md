@@ -1,7 +1,7 @@
 <sessionSummary>
   <metadata>
     <project>Friendly Mail</project>
-    <updatedAt>2026-04-04T20:15:00+05:30</updatedAt>
+    <updatedAt>2026-04-04T23:58:00+05:30</updatedAt>
     <workspacePath>C:\Users\Sahil\OneDrive\Desktop\Friendly Mail</workspacePath>
     <repoUrl>https://github.com/paapi69/friendly-mail</repoUrl>
   </metadata>
@@ -63,6 +63,7 @@
       <item>The dashboard cards were refined for stakeholder readability with persistent one-line summaries, a neon epic pill at the top, lighter metadata chips, and no status chip duplication.</item>
       <item>Completed tickets in the dashboard now keep their normal text styling, use a green completion check, and present done-state styling without strike-through treatment.</item>
       <item>The dashboard frontend was reorganized into app-level bootstrap files plus a feature-scoped dashboard module with separated components, data shaping, types, utilities, tests, and styles.</item>
+      <ticket id="E3-T3">The API now ingests a tracked mailbox message by reading full Graph message detail with text-body preference, normalizing a durable message envelope, and persisting repeat-safe body content keyed by immutable message identity and change key.</ticket>
     </completed>
 
     <keyImplementationNotes>
@@ -106,6 +107,8 @@
       <item>Stakeholder one-line summaries remain visible on every ticket card, while status chips were removed to reduce duplication with the kanban columns.</item>
       <item>The dashboard visual pass promoted the epic pill to the top with neon emphasis, removed done-card strike-through, added green completion checks, and tightened card spacing and metadata hierarchy.</item>
       <item>The dashboard implementation is now split across `src/app` and `src/features/dashboard`, with focused React components, feature-local data/types/utils, and consolidated dashboard styling.</item>
+      <item>The Graph connector now supports a richer message-detail read with `Prefer: outlook.body-content-type="text"` plus normalized recipients, body, and `uniqueBody` fields for Epic 3 ingestion.</item>
+      <item>The API now exposes `POST /mailboxes/:mailboxId/messages/:messageId/ingest`, which uses the new mailbox ingestion service to fetch full message detail, normalize a `MessageEnvelope`, refresh message metadata, and persist body ingestion fields.</item>
     </keyImplementationNotes>
 
     <filesAddedOrUpdated>
@@ -183,6 +186,8 @@
       <file>apps/dashboard/src/features/dashboard/components/TaskCard.tsx</file>
       <file>apps/dashboard/src/features/dashboard/components/TopBar.tsx</file>
       <file>apps/dashboard/src/features/dashboard/styles/dashboard.css</file>
+      <file>apps/api/src/mailbox-ingestion-service.ts</file>
+      <file>apps/api/src/mailbox-ingestion-service.test.ts</file>
     </filesAddedOrUpdated>
   </sessionWork>
 
@@ -231,5 +236,6 @@
     <item>The root `npm run dev:worker` command now starts the API mailbox notification worker rather than the generic queue package worker.</item>
     <item>The dashboard is now componentized under `apps/dashboard/src/app` and `apps/dashboard/src/features/dashboard`, so future board changes should usually land in the feature module instead of a single root App file.</item>
     <item>If tighter visual parity is still needed, the next frontend pass should use the connected Figma file after the Figma token is re-authenticated.</item>
+    <item>`E3-T3` is now complete; the best next move is `E3-T4`, which should fetch attachment metadata for ingested messages and persist durable attachment linkage against the normalized envelope.</item>
   </continuationNotes>
 </sessionSummary>

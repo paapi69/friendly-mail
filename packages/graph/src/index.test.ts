@@ -183,6 +183,116 @@ describe("graph connector", () => {
     expect(message.subject).toBe("Recovered request");
   });
 
+  it("fetches message detail with text-body preference and normalized recipients", async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      jsonResponse({
+        id: "graph_message_123",
+        parentFolderId: "graph_folder_inbox",
+        changeKey: "change_key_456",
+        conversationId: "conversation_123",
+        internetMessageId: "<message-123@example.com>",
+        subject: "Quarterly notice",
+        from: {
+          emailAddress: {
+            name: "Legal Team",
+            address: "legal@example.com"
+          }
+        },
+        sender: {
+          emailAddress: {
+            name: "Assistant",
+            address: "assistant@example.com"
+          }
+        },
+        replyTo: [
+          {
+            emailAddress: {
+              name: "Reply Desk",
+              address: "reply@example.com"
+            }
+          }
+        ],
+        toRecipients: [
+          {
+            emailAddress: {
+              name: "Owner",
+              address: "owner@example.com"
+            }
+          }
+        ],
+        ccRecipients: [],
+        bccRecipients: [],
+        receivedDateTime: "2026-04-04T10:00:00Z",
+        sentDateTime: "2026-04-04T09:55:00Z",
+        lastModifiedDateTime: "2026-04-04T10:05:00Z",
+        isRead: false,
+        isDraft: false,
+        categories: ["FriendlyMail/Critical"],
+        importance: "high",
+        inferenceClassification: "focused",
+        bodyPreview: "Please review the attached packet.",
+        body: {
+          contentType: "text",
+          content: "Please review the attached packet.\r\n\r\nRegards,\r\nLegal Team"
+        },
+        uniqueBody: {
+          contentType: "text",
+          content: "Please review the attached packet."
+        },
+        hasAttachments: true,
+        webLink: "https://outlook.office.com/mail/message"
+      })
+    );
+
+    const connector = createGraphConnector({
+      tokenProvider: async () => "token_123",
+      fetch
+    });
+
+    const message = await connector.getMessageDetail({
+      messageId: "graph_message_123"
+    });
+
+    expect(String(fetch.mock.calls[0][0])).toContain("/me/messages/graph_message_123?");
+    const headers = getHeaders(fetch.mock.calls[0][1]);
+    expect(headers.get("Prefer")).toBe(
+      'IdType="ImmutableId", outlook.body-content-type="text"'
+    );
+    expect(message).toMatchObject({
+      id: "graph_message_123",
+      changeKey: "change_key_456",
+      from: {
+        name: "Legal Team",
+        address: "legal@example.com"
+      },
+      sender: {
+        name: "Assistant",
+        address: "assistant@example.com"
+      },
+      replyTo: [
+        {
+          name: "Reply Desk",
+          address: "reply@example.com"
+        }
+      ],
+      toRecipients: [
+        {
+          name: "Owner",
+          address: "owner@example.com"
+        }
+      ],
+      body: {
+        contentType: "text",
+        content: "Please review the attached packet.\r\n\r\nRegards,\r\nLegal Team"
+      },
+      uniqueBody: {
+        contentType: "text",
+        content: "Please review the attached packet."
+      },
+      hasAttachments: true
+    });
+  });
+
   it("creates message subscriptions with immutable-id support", async () => {
     const fetch = vi.fn().mockResolvedValue(
       jsonResponse({

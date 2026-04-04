@@ -284,7 +284,7 @@ const boardCardMetadata: BoardCardMetadata[] = [
       "Gives Friendly Mail a dependable inventory of attachments so important supporting documents are not overlooked.",
     owner: "Harry",
     lane: "Backend",
-    plannedColumn: "Backlog",
+    plannedColumn: "Ready",
     points: 5,
     size: "M",
     labels: ["backend", "epic:E3", "surface:api", "type:integration", "priority:P0"],
@@ -357,6 +357,13 @@ const boardCardMetadata: BoardCardMetadata[] = [
 ];
 
 const planningTicketMap = createPlanningTicketMap(planningStatus as PlanningStatusDocument);
+const columnSortOrder: Record<BoardColumn, number> = {
+  Backlog: 0,
+  Ready: 1,
+  "In Progress": 2,
+  Blocked: 3,
+  Done: 4
+};
 
 export const cards = buildBoardCards(boardCardMetadata, planningTicketMap);
 
@@ -364,29 +371,97 @@ export function buildBoardCards(
   metadata: BoardCardMetadata[],
   planningTickets: Map<string, PlanningTicketRecord>
 ) {
-  return metadata.map((meta) => {
-    const planningTicket = planningTickets.get(meta.id);
+  return metadata
+    .map((meta, index) => {
+      const planningTicket = planningTickets.get(meta.id);
 
-    if (meta.syncWithPlanning && !planningTicket) {
-      throw new Error(
-        `Dashboard board metadata is missing planning status for tracked ticket "${meta.id}".`
-      );
+      if (meta.syncWithPlanning && !planningTicket) {
+        throw new Error(
+          `Dashboard board metadata is missing planning status for tracked ticket "${meta.id}".`
+        );
+      }
+
+      const column = resolveBoardColumn(meta, planningTicket);
+
+      return {
+        id: meta.id,
+        title: planningTicket?.title ?? meta.title,
+        stakeholderSummary: meta.stakeholderSummary,
+        owner: meta.owner,
+        lane: meta.lane,
+        column,
+        points: meta.points,
+        size: meta.size,
+        labels: [...meta.labels],
+        trackedInPlanning: Boolean(meta.syncWithPlanning),
+        orderIndex: index
+      };
+    })
+    .sort((left, right) => compareBoardCards(left, right))
+    .map((entry) => {
+      const { orderIndex, ...card } = entry;
+      void orderIndex;
+      return card satisfies BoardCard;
+    });
+}
+
+function compareBoardCards(
+  left: BoardCard & { orderIndex: number },
+  right: BoardCard & { orderIndex: number }
+) {
+  if (left.column !== right.column) {
+    return columnSortOrder[left.column] - columnSortOrder[right.column];
+  }
+
+  if (left.column === "Ready" || left.column === "Backlog") {
+    if (left.trackedInPlanning !== right.trackedInPlanning) {
+      return left.trackedInPlanning ? -1 : 1;
     }
 
-    const column = resolveBoardColumn(meta, planningTicket);
+    const idComparison = compareTicketIds(left.id, right.id);
+    if (idComparison !== 0) {
+      return idComparison;
+    }
+  }
 
-    return {
-      id: meta.id,
-      title: planningTicket?.title ?? meta.title,
-      stakeholderSummary: meta.stakeholderSummary,
-      owner: meta.owner,
-      lane: meta.lane,
-      column,
-      points: meta.points,
-      size: meta.size,
-      labels: [...meta.labels]
-    } satisfies BoardCard;
-  });
+  if (left.column === "Done") {
+    const idComparison = compareTicketIds(left.id, right.id);
+    if (idComparison !== 0) {
+      return -idComparison;
+    }
+  }
+
+  return left.orderIndex - right.orderIndex;
+}
+
+function compareTicketIds(leftId: string, rightId: string) {
+  const leftParts = parseTicketId(leftId);
+  const rightParts = parseTicketId(rightId);
+
+  if (leftParts && rightParts) {
+    if (leftParts.epic !== rightParts.epic) {
+      return leftParts.epic - rightParts.epic;
+    }
+
+    if (leftParts.ticket !== rightParts.ticket) {
+      return leftParts.ticket - rightParts.ticket;
+    }
+  }
+
+  return leftId.localeCompare(rightId);
+}
+
+function parseTicketId(id: string) {
+  const match = /^E(?<epic>\d+)-T(?<ticket>\d+)$/.exec(id);
+
+  if (!match?.groups) {
+    return null;
+  }
+
+  return {
+    epic: Number(match.groups.epic),
+    ticket: Number(match.groups.ticket)
+  };
 }
 
 function createPlanningTicketMap(document: PlanningStatusDocument) {

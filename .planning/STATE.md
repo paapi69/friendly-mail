@@ -5,7 +5,7 @@
 See: `.planning/PROJECT.md`
 
 **Core value:** Never let important email-driven work disappear before it is safely handled.
-**Current focus:** Epic 3 now has persistence for normalized message bodies, attachment inventories, and extraction artifacts - the next implementation move is `E3-T3`
+**Current focus:** Epic 3 now has normalized message-body ingestion wired through the API - the next implementation move is `E3-T4`
 
 ## Current Truth
 
@@ -35,6 +35,7 @@ See: `.planning/PROJECT.md`
 - Epic 3 now has a defined ticket breakdown covering ingestion contracts, extraction persistence, message ingestion, attachment retrieval, PDF extraction, OCR fallback, idempotent orchestration, and operational verification
 - The Epic 3 message-ingestion and extraction contract now locks the normalized message envelope, PDF-first extraction scope, OCR fallback assumptions, and the boundary between extraction artifacts and later classification work
 - The persistence layer now stores normalized message-body fields, attachment inventory records, extraction state, and attachment artifact references for later Epic 3 services
+- The API now supports message ingestion that reads full Graph message detail with text-body preference, normalizes the message envelope, and persists repeat-safe body content through the Epic 3 ingestion fields
 - The shared contract baseline now covers mailbox, message, filing, task, and audit vocabulary across surfaces
 - Workspace package direction rules are now documented and enforced with a package-boundary test
 - A local onboarding and runbook guide now exists for API, dashboard, Outlook add-in, worker, database, and queue setup
@@ -42,8 +43,8 @@ See: `.planning/PROJECT.md`
 
 ## Immediate Next Steps
 
-- Start `E3-T3` by implementing message fetch and normalization into the new persistence structures added in `E3-T2`
-- Reuse the completed `E3-T2` schema and database helpers as the durable source of truth for body, attachment, and artifact persistence
+- Start `E3-T4` by retrieving attachment metadata for ingested messages and persisting durable attachment linkage against the normalized message envelope produced in `E3-T3`
+- Reuse the completed `E3-T2` schema and database helpers plus the new `E3-T3` ingestion service as the durable source of truth for body, attachment, and artifact persistence
 - Keep Epic 3 focused on normalized content and extraction artifacts, not classification or filing decisions yet
 - Define user flows for delayed filing, task completion, and informational-email read state
 - Keep shared-mailbox support in explicit readiness mode until a later application-permission path exists

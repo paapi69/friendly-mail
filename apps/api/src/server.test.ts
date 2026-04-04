@@ -11,6 +11,7 @@ import {
   createServer,
   type ApiAuthService,
   type ApiMailboxFolderSyncService,
+  type ApiMailboxIngestionService,
   type ApiMailboxMessageSyncService,
   type ApiMailboxReadinessService,
   type ApiMailboxSubscriptionService,
@@ -428,6 +429,64 @@ describe("api auth routes", () => {
     });
   });
 
+  it("ingests a tracked mailbox message into normalized content", async () => {
+    const mailboxIngestionService: ApiMailboxIngestionService = {
+      ingestMessage: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        graphMessageId: "graph_message_123",
+        hasAttachments: true,
+        ingestionVersionKey: "mailbox_123:graph_message_123:change_key_456",
+        ingestedAt: "2026-04-04T11:00:00.000Z",
+        envelope: {
+          mailboxId: "mailbox_123",
+          messageId: "message_123",
+          graphMessageId: "graph_message_123",
+          graphChangeKey: "change_key_456",
+          subject: "Quarterly notice",
+          bodyContentType: "text",
+          bodyText: "Please review the attached packet.",
+          hasAttachments: true
+        }
+      })
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mailboxIngestionService
+    );
+
+    const response = await request(server, {
+      method: "POST",
+      path: "/mailboxes/mailbox_123/messages/message_123/ingest",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual(
+      expect.objectContaining({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        graphMessageId: "graph_message_123"
+      })
+    );
+    expect(mailboxIngestionService.ingestMessage).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123",
+      messageId: "message_123"
+    });
+  });
+
   it("returns mailbox operational verification for an authenticated mailbox owner", async () => {
     const mailboxReadinessService: ApiMailboxReadinessService = {
       checkSharedMailboxReadiness: vi.fn(),
@@ -673,7 +732,8 @@ function createTestServer(
   mailboxReadinessService?: ApiMailboxReadinessService,
   mailboxFolderSyncService?: ApiMailboxFolderSyncService,
   mailboxMessageSyncService?: ApiMailboxMessageSyncService,
-  mailboxSubscriptionService?: ApiMailboxSubscriptionService
+  mailboxSubscriptionService?: ApiMailboxSubscriptionService,
+  mailboxIngestionService?: ApiMailboxIngestionService
 ) {
   const server = createServer({
     env: {
@@ -700,6 +760,9 @@ function createTestServer(
     mailboxSubscriptionService: mailboxSubscriptionService ?? {
       ensureMailboxSubscription: vi.fn(),
       handleWebhookNotifications: vi.fn()
+    },
+    mailboxIngestionService: mailboxIngestionService ?? {
+      ingestMessage: vi.fn()
     },
     logger: {
       child() {

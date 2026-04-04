@@ -72,12 +72,12 @@ So:
 | `E2-T9` | Add Shared-Mailbox Readiness and Operational Verification | Shows whether mailbox connectivity is healthy and makes shared-mailbox limitations explicit before rollout. | `Harry` | `E2` | `5` | `M` | `backend`, `epic:E2`, `surface:graph`, `type:verification`, `priority:P1`, `size:M`, `status:done`, `milestone:prototype-v1`, `integration:microsoft-graph`, `risk:operational-readiness` |
 | `E3-T1` | Define Message Ingestion and Extraction Contract | Defined what email and attachment content Friendly Mail will capture before it starts classifying or automating work. | `Harry` | `E3` | `3` | `S` | `backend`, `epic:E3`, `surface:workflow`, `type:spec`, `priority:P0`, `size:S`, `status:done`, `milestone:prototype-v1` |
 | `E3-T2` | Extend Persistence for Message Bodies, Attachments, and Extraction State | Stores email body and attachment information so later features can understand what work the message contains. | `Harry` | `E3` | `5` | `M` | `backend`, `epic:E3`, `surface:api`, `type:feature`, `priority:P0`, `size:M`, `status:done`, `milestone:prototype-v1` |
+| `E3-T3` | Implement the message ingestion service | Turns synced mailbox records into normalized email content that the rest of Friendly Mail can reason about. | `Harry` | `E3` | `5` | `M` | `backend`, `epic:E3`, `surface:workflow`, `type:feature`, `priority:P0`, `size:M`, `status:done`, `milestone:prototype-v1` |
 
 ### Backlog
 
 | Ticket | Title | Stakeholder Summary | Owner | Epic | Points | Size | Depends On | Labels |
 |---|---|---|---|---|---:|---|---|---|
-| `E3-T4` | Implement attachment metadata retrieval and durable linking | Gives Friendly Mail a dependable inventory of attachments so important supporting documents are not overlooked. | `Harry` | `E3` | `5` | `M` | `E3-T2`, `E3-T3` | `backend`, `epic:E3`, `surface:api`, `type:integration`, `priority:P0`, `size:M`, `status:backlog`, `milestone:prototype-v1` |
 | `E3-T5` | Implement PDF-first attachment text extraction | Lets Friendly Mail read the contents of PDF attachments, where many notices, invoices, and contracts actually live. | `Harry` | `E3` | `8` | `L` | `E3-T3`, `E3-T4` | `backend`, `epic:E3`, `surface:workflow`, `type:feature`, `priority:P0`, `size:L`, `status:backlog`, `milestone:prototype-v1` |
 | `E3-T6` | Add OCR fallback and extraction confidence handling | Improves coverage for scanned documents while still showing when Friendly Mail is less certain about what it read. | `Harry` | `E3` | `5` | `M` | `E3-T5` | `backend`, `epic:E3`, `surface:workflow`, `type:feature`, `priority:P1`, `size:M`, `status:backlog`, `milestone:prototype-v1` |
 | `E3-T7` | Orchestrate idempotent ingestion and attachment processing | Prevents duplicate processing so repeated mailbox updates do not create noisy or inconsistent downstream results. | `Harry` | `E3` | `8` | `L` | `E3-T3`, `E3-T4`, `E3-T5` | `backend`, `epic:E3`, `surface:workflow`, `type:integration`, `priority:P0`, `size:L`, `status:backlog`, `milestone:prototype-v1` |
@@ -88,7 +88,7 @@ So:
 
 | Ticket | Title | Stakeholder Summary | Owner | Epic | Points | Size | Depends On | Labels |
 |---|---|---|---|---|---:|---|---|---|
-| `E3-T3` | Implement the message ingestion service | Turns synced mailbox records into normalized email content that the rest of Friendly Mail can reason about. | `Harry` | `E3` | `5` | `M` | `E3-T1`, `E3-T2` | `backend`, `epic:E3`, `surface:workflow`, `type:feature`, `priority:P0`, `size:M`, `status:ready`, `milestone:prototype-v1` |
+| `E3-T4` | Implement attachment metadata retrieval and durable linking | Gives Friendly Mail a dependable inventory of attachments so important supporting documents are not overlooked. | `Harry` | `E3` | `5` | `M` | `E3-T2`, `E3-T3` | `backend`, `epic:E3`, `surface:api`, `type:integration`, `priority:P0`, `size:M`, `status:ready`, `milestone:prototype-v1` |
 
 ### Blocked
 
