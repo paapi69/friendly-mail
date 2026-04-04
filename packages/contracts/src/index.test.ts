@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  AttachmentKind,
   AuditEventAction,
   AuditEventRecord,
   AuthProvider,
+  ExtractionArtifactKind,
+  ExtractionArtifactRecord,
+  ExtractionStatus,
   FilingEligibility,
   FilingState,
   FolderSyncStateRecord,
@@ -10,17 +14,24 @@ import {
   GraphSubscriptionRecord,
   GraphSubscriptionStatus,
   MailboxKind,
+  MailboxOperationalVerificationReport,
   MailboxConnectionRecord,
   MailboxConnectionStatus,
   MailboxRecord,
+  MessageAttachmentRecord,
   MessageRecord,
   MessageActionability,
+  MessageBodyContentType,
   MessagePriority,
   MessageType,
+  OperationalHealthStatus,
+  SharedMailboxReadinessReport,
+  SharedMailboxReadinessStatus,
   TaskRecord,
   TaskStatusReason,
   TaskStatus,
-  TenantUserRole
+  TenantUserRole,
+  VerificationCheckStatus
 } from "./index";
 
 describe("shared workflow contracts", () => {
@@ -108,7 +119,39 @@ describe("shared workflow contracts", () => {
       fromAddress: "vendor@example.com",
       receivedAt: "2026-03-31T11:00:00.000Z",
       lastGraphModifiedAt: "2026-03-31T11:01:00.000Z",
-      isRead: false
+      isRead: false,
+      bodyPreview: "Invoice due Friday",
+      bodyContentType: MessageBodyContentType.Text,
+      bodyText: "Please pay the attached invoice by Friday.",
+      hasAttachments: true,
+      ingestionVersionKey: "mailbox_123:graph_message_123:change_key_123"
+    };
+    const attachment: MessageAttachmentRecord = {
+      id: "attachment_123",
+      mailboxId: mailbox.id,
+      messageId: message.id,
+      graphMessageId: message.graphMessageId,
+      graphAttachmentId: "graph_attachment_123",
+      name: "invoice.pdf",
+      contentType: "application/pdf",
+      sizeInBytes: 120400,
+      isInline: false,
+      attachmentKind: AttachmentKind.File,
+      isExtractionCandidate: true,
+      extractionDecisionReason: "pdf_supported",
+      extractionStatus: ExtractionStatus.Pending,
+      extractionAttempts: 0
+    };
+    const artifact: ExtractionArtifactRecord = {
+      id: "artifact_123",
+      mailboxId: mailbox.id,
+      messageId: message.id,
+      attachmentId: attachment.id,
+      artifactKind: ExtractionArtifactKind.AttachmentText,
+      storageKey: "artifacts/mailbox_123/attachment_123/text.txt",
+      textLength: 4210,
+      sourceVersionKey: "mailbox_123:graph_message_123:change_key_123",
+      createdAt: "2026-03-31T11:06:00.000Z"
     };
     const task: TaskRecord = {
       id: "task_123",
@@ -139,9 +182,84 @@ describe("shared workflow contracts", () => {
     expect(mailbox.kind).toBe("shared");
     expect(message.folderId).toBe("folder_123");
     expect(message.graphParentFolderId).toBe("graph_folder_inbox");
+    expect(message.bodyContentType).toBe("text");
     expect(message.messageType).toBe("invoice");
+    expect(attachment.attachmentKind).toBe("file");
+    expect(artifact.artifactKind).toBe("attachment_text");
     expect(task.priority).toBe("high");
     expect(filing.blockedBy).toBe("open_task");
     expect(audit.action).toBe("message.filed");
+  });
+
+  it("defines shared-mailbox readiness and operational verification contracts", () => {
+    const sharedMailboxReadiness: SharedMailboxReadinessReport = {
+      sourceMailboxId: "mailbox_123",
+      sharedMailboxAddress: "legal@friendlymail.dev",
+      checkedAt: "2026-04-03T12:00:00.000Z",
+      status: SharedMailboxReadinessStatus.Limited,
+      fallbackMode: "recommendation_only",
+      grantedScopes: ["Mail.Read.Shared", "User.Read"],
+      requiredScopes: ["Mail.Read.Shared", "Mail.ReadWrite.Shared"],
+      capabilities: {
+        delegatedSharedFolderRead: true,
+        webhookBackedSync: false,
+        backgroundDeltaRepair: false,
+        sendWorkflowActions: false
+      },
+      checks: [
+        {
+          code: "shared_scope_present",
+          status: VerificationCheckStatus.Pass,
+          detail: "Delegated shared-mail scopes are available."
+        }
+      ]
+    };
+    const operationalVerification: MailboxOperationalVerificationReport = {
+      mailboxId: "mailbox_123",
+      checkedAt: "2026-04-03T12:00:00.000Z",
+      overallStatus: OperationalHealthStatus.Warning,
+      subscription: {
+        graphSubscriptionId: "graph_subscription_123",
+        status: GraphSubscriptionStatus.Active,
+        health: OperationalHealthStatus.Warning,
+        expiresAt: "2026-04-04T00:00:00.000Z",
+        minutesUntilExpiry: 720
+      },
+      deltaSync: {
+        trackedFolders: 1,
+        healthyFolders: 0,
+        staleFolders: 1,
+        failedFolders: 0,
+        missingCursorFolders: 0,
+        maxCursorLagMinutes: 95,
+        folders: [
+          {
+            folderId: "folder_123",
+            displayName: "Inbox",
+            status: FolderSyncStatus.Idle,
+            lastCursorUpdatedAt: "2026-04-03T10:25:00.000Z",
+            cursorLagMinutes: 95
+          }
+        ]
+      },
+      immutableIds: {
+        status: "enforced",
+        messageReads: true,
+        messageLists: true,
+        deltaQueries: true,
+        subscriptionCreation: true
+      },
+      checks: [
+        {
+          code: "immutable_ids_enforced",
+          status: VerificationCheckStatus.Pass,
+          detail: "Connector keeps immutable IDs enabled on supported message paths."
+        }
+      ]
+    };
+
+    expect(sharedMailboxReadiness.status).toBe("limited");
+    expect(operationalVerification.overallStatus).toBe("warning");
+    expect(operationalVerification.immutableIds.subscriptionCreation).toBe(true);
   });
 });

@@ -16,6 +16,7 @@ import type { AuthService, LoginInput } from "./auth-service";
 import type {
   MailboxOnboardingService
 } from "./mailbox-onboarding-service";
+import type { MailboxReadinessService } from "./mailbox-readiness-service";
 import type { MailboxFolderSyncService } from "./mailbox-folder-sync-service";
 import type { MailboxMessageSyncService } from "./mailbox-message-sync-service";
 import type { MailboxSubscriptionService } from "./mailbox-subscription-service";
@@ -31,6 +32,10 @@ export type ApiAuthService = Pick<AuthService, "login" | "getSession" | "logout"
 export type ApiMailboxOnboardingService = Pick<
   MailboxOnboardingService,
   "beginConnect" | "completeConnect"
+>;
+export type ApiMailboxReadinessService = Pick<
+  MailboxReadinessService,
+  "checkSharedMailboxReadiness" | "getMailboxOperationalVerification"
 >;
 export type ApiMailboxFolderSyncService = Pick<
   MailboxFolderSyncService,
@@ -49,6 +54,7 @@ export type CreateServerInput = {
   env: ApiEnv;
   authService: ApiAuthService;
   mailboxOnboardingService: ApiMailboxOnboardingService;
+  mailboxReadinessService: ApiMailboxReadinessService;
   mailboxFolderSyncService: ApiMailboxFolderSyncService;
   mailboxMessageSyncService: ApiMailboxMessageSyncService;
   mailboxSubscriptionService: ApiMailboxSubscriptionService;
@@ -280,6 +286,38 @@ export function createServer(input: CreateServerInput) {
         return;
       }
 
+      const sharedMailboxReadinessMatch =
+        request.method === "POST"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/shared-mailbox-readiness$/)
+          : null;
+
+      if (sharedMailboxReadinessMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(sharedMailboxReadinessMatch[1]);
+        const body = await readJsonBody(request);
+        const sharedMailboxAddress = parseSharedMailboxAddress(body);
+        const result = await input.mailboxReadinessService.checkSharedMailboxReadiness({
+          session,
+          mailboxId,
+          sharedMailboxAddress
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Checked shared mailbox readiness", {
+          statusCode: 200,
+          mailboxId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          sharedMailboxAddress: result.sharedMailboxAddress,
+          readinessStatus: result.status
+        });
+        return;
+      }
+
       const mailboxFolderSyncMatch =
         request.method === "POST"
           ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/folders\/sync$/)
@@ -336,6 +374,34 @@ export function createServer(input: CreateServerInput) {
           tenantId: session.principal.tenantId,
           syncedMessages: result.syncedMessages,
           removedMessages: result.removedMessages
+        });
+        return;
+      }
+
+      const mailboxOperationalVerificationMatch =
+        request.method === "GET"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/operational-verification$/)
+          : null;
+
+      if (mailboxOperationalVerificationMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxOperationalVerificationMatch[1]);
+        const result = await input.mailboxReadinessService.getMailboxOperationalVerification({
+          session,
+          mailboxId
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Fetched mailbox operational verification", {
+          statusCode: 200,
+          mailboxId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          overallStatus: result.overallStatus
         });
         return;
       }
@@ -507,6 +573,20 @@ function parseSurface(body: unknown, fallbackSurface: MailSurface) {
     : body.surface === MailSurface.Dashboard
       ? MailSurface.Dashboard
       : fallbackSurface;
+}
+
+function parseSharedMailboxAddress(body: unknown) {
+  if (!isObject(body) || !isNonEmptyString(body.sharedMailboxAddress)) {
+    throw new AppError(
+      "INVALID_SHARED_MAILBOX_REQUEST",
+      "Shared mailbox address must be provided.",
+      {
+        statusCode: 400
+      }
+    );
+  }
+
+  return body.sharedMailboxAddress.trim().toLowerCase();
 }
 
 function getGraphStateCookieName(sessionCookieName: string) {

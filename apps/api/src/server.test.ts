@@ -12,6 +12,7 @@ import {
   type ApiAuthService,
   type ApiMailboxFolderSyncService,
   type ApiMailboxMessageSyncService,
+  type ApiMailboxReadinessService,
   type ApiMailboxSubscriptionService,
   type ApiMailboxOnboardingService
 } from "./server";
@@ -298,6 +299,7 @@ describe("api auth routes", () => {
         logout: vi.fn()
       },
       undefined,
+      undefined,
       folderSyncService
     );
 
@@ -322,6 +324,61 @@ describe("api auth routes", () => {
     });
   });
 
+  it("checks shared-mailbox readiness for an authenticated mailbox owner", async () => {
+    const mailboxReadinessService: ApiMailboxReadinessService = {
+      checkSharedMailboxReadiness: vi.fn().mockResolvedValue({
+        sourceMailboxId: "mailbox_123",
+        sharedMailboxAddress: "legal@friendlymail.dev",
+        checkedAt: "2026-04-03T11:30:00.000Z",
+        status: "limited",
+        fallbackMode: "recommendation_only",
+        grantedScopes: ["Mail.Read.Shared", "User.Read"],
+        requiredScopes: ["Mail.Read.Shared", "Mail.ReadWrite.Shared"],
+        capabilities: {
+          delegatedSharedFolderRead: true,
+          webhookBackedSync: false,
+          backgroundDeltaRepair: false,
+          sendWorkflowActions: false
+        },
+        checks: []
+      }),
+      getMailboxOperationalVerification: vi.fn()
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      mailboxReadinessService
+    );
+
+    const response = await request(server, {
+      method: "POST",
+      path: "/mailboxes/mailbox_123/shared-mailbox-readiness",
+      body: {
+        sharedMailboxAddress: "legal@friendlymail.dev"
+      },
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual(
+      expect.objectContaining({
+        status: "limited",
+        fallbackMode: "recommendation_only"
+      })
+    );
+    expect(mailboxReadinessService.checkSharedMailboxReadiness).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123",
+      sharedMailboxAddress: "legal@friendlymail.dev"
+    });
+  });
+
   it("syncs message metadata for a tracked folder", async () => {
     const messageSyncService: ApiMailboxMessageSyncService = {
       syncFolderMessages: vi.fn().mockResolvedValue({
@@ -340,6 +397,7 @@ describe("api auth routes", () => {
         getSession: vi.fn().mockResolvedValue(exampleSession.session),
         logout: vi.fn()
       },
+      undefined,
       undefined,
       undefined,
       messageSyncService
@@ -370,6 +428,70 @@ describe("api auth routes", () => {
     });
   });
 
+  it("returns mailbox operational verification for an authenticated mailbox owner", async () => {
+    const mailboxReadinessService: ApiMailboxReadinessService = {
+      checkSharedMailboxReadiness: vi.fn(),
+      getMailboxOperationalVerification: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        checkedAt: "2026-04-03T11:30:00.000Z",
+        overallStatus: "warning",
+        subscription: {
+          graphSubscriptionId: "subscription_123",
+          status: "active",
+          health: "warning",
+          expiresAt: "2026-04-04T00:00:00.000Z",
+          minutesUntilExpiry: 750
+        },
+        deltaSync: {
+          trackedFolders: 1,
+          healthyFolders: 1,
+          staleFolders: 0,
+          failedFolders: 0,
+          missingCursorFolders: 0,
+          maxCursorLagMinutes: 12,
+          folders: []
+        },
+        immutableIds: {
+          status: "enforced",
+          messageReads: true,
+          messageLists: true,
+          deltaQueries: true,
+          subscriptionCreation: true
+        },
+        checks: []
+      })
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      mailboxReadinessService
+    );
+
+    const response = await request(server, {
+      method: "GET",
+      path: "/mailboxes/mailbox_123/operational-verification",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual(
+      expect.objectContaining({
+        mailboxId: "mailbox_123",
+        overallStatus: "warning"
+      })
+    );
+    expect(mailboxReadinessService.getMailboxOperationalVerification).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123"
+    });
+  });
+
   it("ensures a mailbox subscription for an authenticated mailbox owner", async () => {
     const mailboxSubscriptionService: ApiMailboxSubscriptionService = {
       ensureMailboxSubscription: vi.fn().mockResolvedValue({
@@ -394,6 +516,7 @@ describe("api auth routes", () => {
         getSession: vi.fn().mockResolvedValue(exampleSession.session),
         logout: vi.fn()
       },
+      undefined,
       undefined,
       undefined,
       undefined,
@@ -458,6 +581,7 @@ describe("api auth routes", () => {
       undefined,
       undefined,
       undefined,
+      undefined,
       mailboxSubscriptionService
     );
 
@@ -509,6 +633,7 @@ describe("api auth routes", () => {
       undefined,
       undefined,
       undefined,
+      undefined,
       mailboxSubscriptionService
     );
 
@@ -545,6 +670,7 @@ describe("api auth routes", () => {
 function createTestServer(
   authService: ApiAuthService,
   mailboxOnboardingService?: ApiMailboxOnboardingService,
+  mailboxReadinessService?: ApiMailboxReadinessService,
   mailboxFolderSyncService?: ApiMailboxFolderSyncService,
   mailboxMessageSyncService?: ApiMailboxMessageSyncService,
   mailboxSubscriptionService?: ApiMailboxSubscriptionService
@@ -560,6 +686,10 @@ function createTestServer(
     mailboxOnboardingService: mailboxOnboardingService ?? {
       beginConnect: vi.fn(),
       completeConnect: vi.fn()
+    },
+    mailboxReadinessService: mailboxReadinessService ?? {
+      checkSharedMailboxReadiness: vi.fn(),
+      getMailboxOperationalVerification: vi.fn()
     },
     mailboxFolderSyncService: mailboxFolderSyncService ?? {
       syncMailboxFolders: vi.fn()

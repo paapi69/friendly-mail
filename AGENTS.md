@@ -64,6 +64,10 @@ When relevant, use the installed ECC skills in `~/.codex/skills`, especially:
   - update the dashboard board in `apps/dashboard/src/App.tsx`
   - update the planning board in `docs/prototype-kanban-board.md`
   - reflect completed tickets on the board in the same session as the implementation when practical
+- Before moving into a new epic, define the epic-level subtask breakdown first:
+  - add the new `E#-T#` tickets to `friendly-mail-epic-tickets.md`
+  - sync `.planning/epic-status.json` and `checklist.md`
+  - add the new tickets to the board views in `apps/dashboard/src/App.tsx` and `docs/prototype-kanban-board.md`
 
 ## Quality Bar
 

@@ -13,7 +13,7 @@ Friendly Mail is an AI workflow layer for Outlook. This repository contains the 
 - `packages/database` - Prisma client and audit write helpers
 - `packages/graph` - Microsoft Graph connector with retry, pagination, and immutable-ID defaults
 - `packages/observability` - structured logging and shared error handling
-- `packages/queue` - Redis and BullMQ worker foundation
+- `packages/queue` - Redis and BullMQ queue foundation
 
 ## Quick Start
 
@@ -27,7 +27,7 @@ Friendly Mail is an AI workflow layer for Outlook. This repository contains the 
    - `npm run dev:api`
    - `npm run dev:dashboard`
    - `npm run dev:addin`
-   - `npm run dev:worker`
+   - `npm run dev:worker` (mailbox notification reconciliation worker)
 8. Run `npm run verify` before pushing changes.
 
 Useful dev commands:

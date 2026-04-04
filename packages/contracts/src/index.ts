@@ -102,6 +102,48 @@ export enum GraphSubscriptionStatus {
   Failed = "failed"
 }
 
+export enum MessageBodyContentType {
+  Text = "text"
+}
+
+export enum AttachmentKind {
+  File = "file",
+  Item = "item",
+  Reference = "reference"
+}
+
+export enum ExtractionStatus {
+  NotAttempted = "not_attempted",
+  Pending = "pending",
+  Completed = "completed",
+  CompletedWithOcr = "completed_with_ocr",
+  Unsupported = "unsupported",
+  Failed = "failed"
+}
+
+export enum ExtractionArtifactKind {
+  AttachmentText = "attachment_text",
+  AttachmentOcr = "attachment_ocr"
+}
+
+export enum VerificationCheckStatus {
+  Pass = "pass",
+  Warn = "warn",
+  Fail = "fail"
+}
+
+export enum OperationalHealthStatus {
+  Healthy = "healthy",
+  Warning = "warning",
+  Critical = "critical"
+}
+
+export enum SharedMailboxReadinessStatus {
+  Ready = "ready",
+  Limited = "limited",
+  Unsupported = "unsupported"
+}
+
 export enum AuditEventAction {
   MessageFiled = "message.filed",
   MessageCategorized = "message.categorized",
@@ -203,6 +245,72 @@ export type GraphSubscriptionRecord = {
   lastErrorCode?: string;
 };
 
+export type VerificationCheck = {
+  code: string;
+  status: VerificationCheckStatus;
+  detail: string;
+};
+
+export type SharedMailboxReadinessReport = {
+  sourceMailboxId: string;
+  sharedMailboxAddress: string;
+  checkedAt: string;
+  status: SharedMailboxReadinessStatus;
+  fallbackMode: "recommendation_only" | "unsupported";
+  grantedScopes: string[];
+  requiredScopes: string[];
+  capabilities: {
+    delegatedSharedFolderRead: boolean;
+    webhookBackedSync: boolean;
+    backgroundDeltaRepair: boolean;
+    sendWorkflowActions: boolean;
+  };
+  checks: VerificationCheck[];
+};
+
+export type MailboxOperationalFolderReport = {
+  folderId: string;
+  displayName: string;
+  status: FolderSyncStatus | "missing";
+  lastSyncedAt?: string;
+  lastCursorUpdatedAt?: string;
+  cursorLagMinutes?: number;
+  lastErrorCode?: string;
+};
+
+export type MailboxOperationalVerificationReport = {
+  mailboxId: string;
+  checkedAt: string;
+  overallStatus: OperationalHealthStatus;
+  subscription: {
+    graphSubscriptionId?: string;
+    status: GraphSubscriptionStatus | "missing";
+    health: OperationalHealthStatus;
+    expiresAt?: string;
+    minutesUntilExpiry?: number;
+    lastNotificationAt?: string;
+    lastLifecycleEventAt?: string;
+    lastErrorCode?: string;
+  };
+  deltaSync: {
+    trackedFolders: number;
+    healthyFolders: number;
+    staleFolders: number;
+    failedFolders: number;
+    missingCursorFolders: number;
+    maxCursorLagMinutes: number;
+    folders: MailboxOperationalFolderReport[];
+  };
+  immutableIds: {
+    status: "enforced";
+    messageReads: boolean;
+    messageLists: boolean;
+    deltaQueries: boolean;
+    subscriptionCreation: boolean;
+  };
+  checks: VerificationCheck[];
+};
+
 export type MessageRecord = {
   id: string;
   mailboxId: string;
@@ -223,6 +331,49 @@ export type MessageRecord = {
   graphRemovedAt?: string;
   graphRemovalReason?: "changed" | "deleted";
   isRead: boolean;
+  bodyPreview?: string;
+  bodyContentType?: MessageBodyContentType;
+  bodyText?: string;
+  uniqueBodyText?: string;
+  webLink?: string;
+  hasAttachments?: boolean;
+  ingestionVersionKey?: string;
+  ingestedAt?: string;
+  lastIngestedAt?: string;
+};
+
+export type MessageAttachmentRecord = {
+  id: string;
+  mailboxId: string;
+  messageId: string;
+  graphMessageId: string;
+  graphAttachmentId: string;
+  name: string;
+  contentType?: string;
+  sizeInBytes: number;
+  isInline: boolean;
+  attachmentKind: AttachmentKind;
+  lastGraphModifiedAt?: string;
+  isExtractionCandidate: boolean;
+  extractionDecisionReason?: string;
+  extractionStatus: ExtractionStatus;
+  extractionAttempts: number;
+  lastExtractionAt?: string;
+  lastExtractionErrorCode?: string;
+};
+
+export type ExtractionArtifactRecord = {
+  id: string;
+  mailboxId: string;
+  messageId: string;
+  attachmentId: string;
+  artifactKind: ExtractionArtifactKind;
+  storageKey: string;
+  textLength?: number;
+  contentHash?: string;
+  confidenceScore?: number;
+  sourceVersionKey: string;
+  createdAt: string;
 };
 
 export type TaskRecord = {

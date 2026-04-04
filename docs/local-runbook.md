@@ -93,7 +93,7 @@ Those values are not required for the current local shells, but they should stil
 - `packages/config`: env parsing
 - `packages/database`: Prisma schema, client, and helpers
 - `packages/observability`: logging and error primitives
-- `packages/queue`: BullMQ worker and queue healthcheck
+- `packages/queue`: BullMQ queue primitives and queue healthcheck
 
 ## Local Services and Ports
 
@@ -151,7 +151,7 @@ npm run dev:worker
 
 Expected result:
 
-- The queue worker starts and connects to Redis
+- The mailbox notification worker starts and connects to Redis
 
 ## Verification Commands
 
@@ -163,6 +163,29 @@ Expected result:
 - `npm run db:validate`: Prisma schema validation
 - `npm run db:migrate:status`: current migration state against the configured database
 - `npm run queue:health`: Redis/BullMQ baseline connectivity check
+
+## Epic 2 Operational Verification
+
+Before treating a mailbox-connectivity environment as ready for Epic 3 work, verify these checks:
+
+1. Ensure the delegated primary mailbox is connected and folder sync has been run at least once.
+2. Ensure the mailbox subscription exists and webhook lifecycle flow is healthy.
+3. Confirm tracked folders have current delta cursors and no failed sync state.
+4. Confirm immutable IDs remain enforced on message reads, delta queries, and subscription creation.
+5. If evaluating a team mailbox, run the shared-mailbox readiness probe and treat delegated shared access as limited support only.
+
+Current API support:
+
+- `POST /mailboxes/:mailboxId/shared-mailbox-readiness`
+  - Request body: `{ "sharedMailboxAddress": "team@contoso.com" }`
+  - Result: explicit `limited` or `unsupported` readiness plus fallback mode and capability checks
+- `GET /mailboxes/:mailboxId/operational-verification`
+  - Result: subscription health, folder delta staleness, immutable-ID enforcement, and an overall status summary
+
+Shared-mailbox rollout rule:
+
+- A delegated shared mailbox can be treated as probeable for manual or recommendation-only workflows when Graph shared-mail scopes and folder access are present.
+- It must not be treated as fully supported webhook-backed sync until a later application-permission path exists.
 
 ## Current Product-Surface Reality
 

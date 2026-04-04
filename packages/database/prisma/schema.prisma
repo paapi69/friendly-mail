@@ -73,6 +73,30 @@ enum GraphSubscriptionStatus {
   FAILED
 }
 
+enum MessageBodyContentType {
+  TEXT
+}
+
+enum AttachmentKind {
+  FILE
+  ITEM
+  REFERENCE
+}
+
+enum ExtractionStatus {
+  NOT_ATTEMPTED
+  PENDING
+  COMPLETED
+  COMPLETED_WITH_OCR
+  UNSUPPORTED
+  FAILED
+}
+
+enum ExtractionArtifactKind {
+  ATTACHMENT_TEXT
+  ATTACHMENT_OCR
+}
+
 model Tenant {
   id                 String              @id @default(cuid())
   name               String
@@ -150,6 +174,8 @@ model Mailbox {
   folderSyncStates   FolderSyncState[]
   graphSubscriptions GraphSubscription[]
   messages           Message[]
+  attachments        MessageAttachment[]
+  extractionArtifacts ExtractionArtifact[]
   tasks              Task[]
 
   @@index([tenantId])
@@ -260,18 +286,81 @@ model Message {
   graphRemovedAt     DateTime?
   graphRemovalReason String?
   isRead             Boolean              @default(false)
+  bodyPreview        String?
+  bodyContentType    MessageBodyContentType?
+  bodyText           String?
+  uniqueBodyText     String?
+  webLink            String?
+  hasAttachments     Boolean              @default(false)
+  ingestionVersionKey String?
+  ingestedAt         DateTime?
+  lastIngestedAt     DateTime?
   actionability      MessageActionability?
   filingState        FilingState          @default(PENDING_CLASSIFICATION)
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
   mailbox            Mailbox              @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
   folder             Folder?              @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  attachments        MessageAttachment[]
+  extractionArtifacts ExtractionArtifact[]
   tasks              Task[]
   auditEvents        AuditEvent[]
 
   @@index([mailboxId])
   @@index([folderId])
   @@index([conversationId])
+}
+
+model MessageAttachment {
+  id                      String           @id @default(cuid())
+  mailboxId               String
+  messageId               String
+  graphMessageId          String
+  graphAttachmentId       String
+  name                    String
+  contentType             String?
+  sizeInBytes             Int
+  isInline                Boolean          @default(false)
+  attachmentKind          AttachmentKind
+  lastGraphModifiedAt     DateTime?
+  isExtractionCandidate   Boolean          @default(false)
+  extractionDecisionReason String?
+  extractionStatus        ExtractionStatus @default(NOT_ATTEMPTED)
+  extractionAttempts      Int              @default(0)
+  lastExtractionAt        DateTime?
+  lastExtractionErrorCode String?
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+  mailbox                 Mailbox          @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  message                 Message          @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  extractionArtifacts     ExtractionArtifact[]
+
+  @@unique([mailboxId, graphAttachmentId])
+  @@index([messageId])
+  @@index([graphMessageId])
+  @@index([extractionStatus])
+}
+
+model ExtractionArtifact {
+  id              String                 @id @default(cuid())
+  mailboxId       String
+  messageId       String
+  attachmentId    String
+  artifactKind    ExtractionArtifactKind
+  storageKey      String
+  textLength      Int?
+  contentHash     String?
+  confidenceScore Float?
+  sourceVersionKey String
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  mailbox         Mailbox                @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  message         Message                @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  attachment      MessageAttachment      @relation(fields: [attachmentId], references: [id], onDelete: Cascade)
+
+  @@unique([attachmentId, artifactKind])
+  @@index([mailboxId])
+  @@index([messageId])
 }
 
 model Task {

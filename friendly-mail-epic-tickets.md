@@ -566,3 +566,272 @@ Epic 2 can be marked complete when:
 - webhook and delta flows work together reliably
 - immutable message identity is enforced consistently through the connector
 - shared-mailbox readiness has an explicit capability and fallback path
+
+## Epic 3: Message Ingestion and Attachment Extraction
+
+**Goal**
+
+Transform synced mailbox records into normalized message content and attachment artifacts that later epics can classify, reason over, and turn into workflow state safely.
+
+**Includes**
+
+- message ingestion contract and processing boundaries
+- normalized body extraction and storage
+- attachment metadata retrieval and durable linkage
+- PDF-first text extraction
+- OCR fallback where enabled
+- ingestion idempotency and repeated-update handling
+- observability and retry paths for failed extraction work
+
+**Dependencies**
+
+- Epic 2
+
+**Definition of Done**
+
+- representative emails and PDF attachments can be processed end to end
+- extracted body and attachment artifacts are stored in a form later epics can use
+- repeated sync or webhook events do not create duplicate extraction artifacts
+- extraction failures are observable, retryable, and recoverable
+
+### Proposed Ticket List
+
+#### E3-T1: Define Message Ingestion and Extraction Contract
+
+**Goal**
+Lock the ingestion, attachment, and extraction boundaries so Epic 3 can be implemented without pulling classification or workflow policy forward.
+
+**Scope**
+
+- define the normalized message envelope used after Epic 2 sync
+- define supported body and attachment ingestion boundaries for MVP
+- define the handoff contract from Epic 2 sync into Epic 3 ingestion
+- define the first supported attachment formats and OCR assumptions
+- define the boundary between extraction artifacts and later classification output
+
+**Expected Output**
+
+- Epic 3 ingestion contract
+- supported attachment and OCR assumptions
+- explicit boundary between extraction and classification work
+
+**Definition of Done**
+
+- implementers have one documented ingestion contract
+- supported file formats and OCR assumptions are explicit
+- later epics can depend on extraction outputs without redefining payload shape
+- Epic 3 scope stays separate from classification and filing policy
+
+#### E3-T2: Extend Persistence for Message Bodies, Attachments, and Extraction State
+
+**Goal**
+Add the persistence needed to track normalized message content, attachment records, extraction artifacts, and processing status.
+
+**Scope**
+
+- extend the schema for stored normalized message body content
+- add attachment records and mailbox linkage fields
+- add extraction-status and retry-tracking fields
+- add storage references for extracted attachment text and OCR artifacts
+- keep the persistence scope focused on ingestion and extraction, not Epic 4 decisions
+
+**Expected Output**
+
+- schema and typed persistence contract for extraction state
+- stored attachment metadata and artifact linkage
+- durable extraction progress tracking
+
+**Definition of Done**
+
+- message body and attachment extraction state can be persisted
+- attachment artifacts can be linked back to source messages
+- failure and retry state can be tracked durably
+- the persistence layer is ready for ingestion and attachment services
+
+#### E3-T3: Implement the Message Ingestion Service
+
+**Goal**
+Create the service that turns synced Graph message metadata into a normalized internal message envelope with stable body content handling.
+
+**Scope**
+
+- retrieve full message payloads needed for body ingestion
+- normalize HTML and text body representations into an internal envelope
+- preserve mailbox, message, and attachment linkage needed for later work
+- keep immutable-ID-safe message retrieval centralized through the connector
+- avoid introducing task extraction or classification logic
+
+**Expected Output**
+
+- message ingestion service
+- normalized body envelope
+- stable handoff point for attachment extraction
+
+**Definition of Done**
+
+- synced messages can be ingested into a normalized internal body representation
+- body normalization is repeatable and safe for later processing
+- message fetch and normalization logic stays separate from workflow decisions
+- later Epic 3 tickets can depend on the normalized envelope
+
+#### E3-T4: Implement Attachment Metadata Retrieval and Durable Linking
+
+**Goal**
+Retrieve attachment metadata and file-access information for ingested messages without yet solving full text extraction for every format.
+
+**Scope**
+
+- fetch attachment metadata for ingested messages
+- persist attachment records and source-message linkage
+- capture attachment type, size, and Graph identifiers
+- define the attachment-selection rules for MVP extraction
+- keep unsupported attachment formats explicit
+
+**Expected Output**
+
+- attachment metadata service
+- persisted attachment records
+- MVP attachment-selection baseline
+
+**Definition of Done**
+
+- ingested messages can enumerate and persist supported attachment metadata
+- source-message and attachment linkage is durable
+- unsupported formats fail clearly instead of silently disappearing
+- later extraction tickets can depend on stable attachment records
+
+#### E3-T5: Implement PDF-First Attachment Text Extraction
+
+**Goal**
+Extract usable text from PDF attachments as the first supported end-to-end attachment pipeline.
+
+**Scope**
+
+- retrieve supported PDF file content
+- extract text from machine-readable PDFs
+- store extracted text in a durable artifact path
+- preserve attachment-to-artifact linkage and extraction timestamps
+- surface extraction failure state clearly
+
+**Expected Output**
+
+- PDF extraction pipeline
+- stored extracted attachment text
+- baseline extraction success and failure path
+
+**Definition of Done**
+
+- representative machine-readable PDFs can be processed end to end
+- extracted text is persisted for later classification work
+- attachment extraction failures are recorded and diagnosable
+- the system has one supported attachment path beyond message body content
+
+#### E3-T6: Add OCR Fallback and Extraction Confidence Handling
+
+**Goal**
+Handle scanned or low-quality PDFs with an explicit OCR path and confidence-aware outputs.
+
+**Scope**
+
+- define when OCR fallback is attempted
+- run OCR where enabled for scanned PDF cases
+- store OCR-derived text separately or with provenance markers
+- attach confidence and low-quality indicators to extraction output
+- keep OCR optional and operationally visible
+
+**Expected Output**
+
+- OCR fallback path
+- confidence-aware extraction output
+- low-quality extraction signal for later review logic
+
+**Definition of Done**
+
+- scanned PDF cases can follow an explicit OCR path where enabled
+- extraction output indicates provenance and confidence
+- low-confidence cases are observable for later UX and workflow handling
+- OCR assumptions remain configurable rather than implicit
+
+#### E3-T7: Orchestrate Idempotent Ingestion and Attachment Processing
+
+**Goal**
+Make Epic 3 durable under repeated sync updates, webhook repairs, and message change-key churn by orchestrating extraction work idempotently.
+
+**Scope**
+
+- define idempotency keys for message ingestion and attachment extraction
+- queue and orchestrate the ingestion-to-extraction workflow
+- skip or merge duplicate work safely on repeated events
+- allow reprocessing when message state changes materially
+- keep partial-processing state explicit
+
+**Expected Output**
+
+- idempotent ingestion orchestration
+- extraction queue workflow
+- repeat-safe processing baseline
+
+**Definition of Done**
+
+- repeated mailbox events do not create duplicate extraction artifacts
+- the system can distinguish skipped duplicate work from true reprocessing
+- attachment and body extraction can be retried safely
+- Epic 3 processing is durable enough for later classification integration
+
+#### E3-T8: Add Operational Verification for Ingestion and Extraction
+
+**Goal**
+Finish Epic 3 with the observability, retry visibility, and rollout checks needed before classification work begins.
+
+**Scope**
+
+- report ingestion and extraction status across messages and attachments
+- add verification coverage for extraction success, retry backlog, and attachment failure rates
+- document the operational checks required before moving into Epic 4
+- define explicit unsupported or degraded behavior for non-PDF attachment cases
+
+**Expected Output**
+
+- ingestion and extraction operational verification path
+- extraction failure and retry visibility
+- Epic 3 rollout checklist
+
+**Definition of Done**
+
+- Epic 3 observability covers ingestion health, extraction failures, and retry state
+- unsupported attachment cases fail clearly
+- the team can enter Epic 4 without ambiguity about ingestion readiness
+- operational checks for representative email and PDF samples are documented
+
+### Suggested Execution Order
+
+1. E3-T1 Ingestion contract
+2. E3-T2 Persistence and extraction state
+3. E3-T3 Message ingestion service
+4. E3-T4 Attachment metadata retrieval
+5. E3-T5 PDF-first extraction
+6. E3-T6 OCR fallback and confidence handling
+7. E3-T7 Idempotent ingestion orchestration
+8. E3-T8 Operational verification
+
+### Suggested First Implementation Slice
+
+The first practical build slice for Epic 3 should combine:
+
+- E3-T1 Ingestion contract
+- E3-T2 Persistence and extraction state
+- E3-T3 Message ingestion service
+- E3-T4 Attachment metadata retrieval
+
+That slice proves the normalized-content path before PDF extraction, OCR, and end-to-end operational verification deepen the ingestion layer.
+
+### Epic 3 Exit Check
+
+Epic 3 can be marked complete when:
+
+- synced messages can be ingested into a normalized body representation
+- attachment metadata and source-message linkage are persisted
+- representative PDF attachments can be extracted successfully
+- OCR fallback behavior is explicit where enabled
+- repeated mailbox events do not create duplicate extraction artifacts
+- ingestion and extraction failures are observable and recoverable

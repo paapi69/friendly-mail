@@ -15,6 +15,8 @@ export const databaseTables = [
   "FolderSyncState",
   "GraphSubscription",
   "Message",
+  "MessageAttachment",
+  "ExtractionArtifact",
   "Task",
   "AuditEvent"
 ] as const;
@@ -104,6 +106,57 @@ export type MarkMailboxMessageRemovedInput = {
   graphMessageId: string;
   graphRemovedAt: Date;
   graphRemovalReason: "changed" | "deleted";
+};
+
+export type UpsertMailboxMessageContentInput = {
+  mailboxId: string;
+  graphMessageId: string;
+  bodyPreview?: string;
+  bodyContentType: "TEXT";
+  bodyText?: string;
+  uniqueBodyText?: string;
+  webLink?: string;
+  hasAttachments: boolean;
+  ingestionVersionKey: string;
+  ingestedAt: Date;
+};
+
+export type UpsertMessageAttachmentInput = {
+  mailboxId: string;
+  messageId: string;
+  graphMessageId: string;
+  graphAttachmentId: string;
+  name: string;
+  contentType?: string;
+  sizeInBytes: number;
+  isInline: boolean;
+  attachmentKind: "FILE" | "ITEM" | "REFERENCE";
+  lastGraphModifiedAt?: Date;
+  isExtractionCandidate: boolean;
+  extractionDecisionReason?: string;
+  extractionStatus:
+    | "NOT_ATTEMPTED"
+    | "PENDING"
+    | "COMPLETED"
+    | "COMPLETED_WITH_OCR"
+    | "UNSUPPORTED"
+    | "FAILED";
+  extractionAttempts?: number;
+  lastExtractionAt?: Date;
+  lastExtractionErrorCode?: string;
+};
+
+export type UpsertAttachmentExtractionArtifactInput = {
+  mailboxId: string;
+  messageId: string;
+  attachmentId: string;
+  artifactKind: "ATTACHMENT_TEXT" | "ATTACHMENT_OCR";
+  storageKey: string;
+  textLength?: number;
+  contentHash?: string;
+  confidenceScore?: number;
+  sourceVersionKey: string;
+  createdAt?: Date;
 };
 
 export type UpsertGraphSubscriptionInput = {
@@ -357,6 +410,110 @@ type MessageRemovalWriter = {
         graphParentFolderId: null;
         graphRemovedAt: Date;
         graphRemovalReason: string;
+      };
+    }) => Promise<unknown>;
+  };
+};
+
+type MessageContentWriter = {
+  message: {
+    updateMany: (args: {
+      where: {
+        mailboxId: string;
+        graphMessageId: string;
+      };
+      data: {
+        bodyPreview: string | null;
+        bodyContentType: UpsertMailboxMessageContentInput["bodyContentType"];
+        bodyText: string | null;
+        uniqueBodyText: string | null;
+        webLink: string | null;
+        hasAttachments: boolean;
+        ingestionVersionKey: string;
+        ingestedAt: Date;
+        lastIngestedAt: Date;
+      };
+    }) => Promise<unknown>;
+  };
+};
+
+type MessageAttachmentWriter = {
+  messageAttachment: {
+    upsert: (args: {
+      where: {
+        mailboxId_graphAttachmentId: {
+          mailboxId: string;
+          graphAttachmentId: string;
+        };
+      };
+      update: {
+        messageId: string;
+        graphMessageId: string;
+        name: string;
+        contentType: string | null;
+        sizeInBytes: number;
+        isInline: boolean;
+        attachmentKind: UpsertMessageAttachmentInput["attachmentKind"];
+        lastGraphModifiedAt: Date | null;
+        isExtractionCandidate: boolean;
+        extractionDecisionReason: string | null;
+        extractionStatus: UpsertMessageAttachmentInput["extractionStatus"];
+        extractionAttempts: number;
+        lastExtractionAt: Date | null;
+        lastExtractionErrorCode: string | null;
+      };
+      create: {
+        mailboxId: string;
+        messageId: string;
+        graphMessageId: string;
+        graphAttachmentId: string;
+        name: string;
+        contentType: string | null;
+        sizeInBytes: number;
+        isInline: boolean;
+        attachmentKind: UpsertMessageAttachmentInput["attachmentKind"];
+        lastGraphModifiedAt: Date | null;
+        isExtractionCandidate: boolean;
+        extractionDecisionReason: string | null;
+        extractionStatus: UpsertMessageAttachmentInput["extractionStatus"];
+        extractionAttempts: number;
+        lastExtractionAt: Date | null;
+        lastExtractionErrorCode: string | null;
+      };
+    }) => Promise<unknown>;
+  };
+};
+
+type ExtractionArtifactWriter = {
+  extractionArtifact: {
+    upsert: (args: {
+      where: {
+        attachmentId_artifactKind: {
+          attachmentId: string;
+          artifactKind: UpsertAttachmentExtractionArtifactInput["artifactKind"];
+        };
+      };
+      update: {
+        mailboxId: string;
+        messageId: string;
+        storageKey: string;
+        textLength: number | null;
+        contentHash: string | null;
+        confidenceScore: number | null;
+        sourceVersionKey: string;
+        createdAt: Date;
+      };
+      create: {
+        mailboxId: string;
+        messageId: string;
+        attachmentId: string;
+        artifactKind: UpsertAttachmentExtractionArtifactInput["artifactKind"];
+        storageKey: string;
+        textLength: number | null;
+        contentHash: string | null;
+        confidenceScore: number | null;
+        sourceVersionKey: string;
+        createdAt: Date;
       };
     }) => Promise<unknown>;
   };
@@ -627,6 +784,115 @@ export async function markMailboxMessageRemoved(
       graphParentFolderId: null,
       graphRemovedAt: input.graphRemovedAt,
       graphRemovalReason: input.graphRemovalReason
+    }
+  });
+}
+
+export async function upsertMailboxMessageContent(
+  writer: MessageContentWriter,
+  input: UpsertMailboxMessageContentInput
+) {
+  return writer.message.updateMany({
+    where: {
+      mailboxId: input.mailboxId,
+      graphMessageId: input.graphMessageId
+    },
+    data: {
+      bodyPreview: input.bodyPreview ?? null,
+      bodyContentType: input.bodyContentType,
+      bodyText: input.bodyText ?? null,
+      uniqueBodyText: input.uniqueBodyText ?? null,
+      webLink: input.webLink ?? null,
+      hasAttachments: input.hasAttachments,
+      ingestionVersionKey: input.ingestionVersionKey,
+      ingestedAt: input.ingestedAt,
+      lastIngestedAt: input.ingestedAt
+    }
+  });
+}
+
+export async function upsertMessageAttachment(
+  writer: MessageAttachmentWriter,
+  input: UpsertMessageAttachmentInput
+) {
+  return writer.messageAttachment.upsert({
+    where: {
+      mailboxId_graphAttachmentId: {
+        mailboxId: input.mailboxId,
+        graphAttachmentId: input.graphAttachmentId
+      }
+    },
+    update: {
+      messageId: input.messageId,
+      graphMessageId: input.graphMessageId,
+      name: input.name,
+      contentType: input.contentType ?? null,
+      sizeInBytes: input.sizeInBytes,
+      isInline: input.isInline,
+      attachmentKind: input.attachmentKind,
+      lastGraphModifiedAt: input.lastGraphModifiedAt ?? null,
+      isExtractionCandidate: input.isExtractionCandidate,
+      extractionDecisionReason: input.extractionDecisionReason ?? null,
+      extractionStatus: input.extractionStatus,
+      extractionAttempts: input.extractionAttempts ?? 0,
+      lastExtractionAt: input.lastExtractionAt ?? null,
+      lastExtractionErrorCode: input.lastExtractionErrorCode ?? null
+    },
+    create: {
+      mailboxId: input.mailboxId,
+      messageId: input.messageId,
+      graphMessageId: input.graphMessageId,
+      graphAttachmentId: input.graphAttachmentId,
+      name: input.name,
+      contentType: input.contentType ?? null,
+      sizeInBytes: input.sizeInBytes,
+      isInline: input.isInline,
+      attachmentKind: input.attachmentKind,
+      lastGraphModifiedAt: input.lastGraphModifiedAt ?? null,
+      isExtractionCandidate: input.isExtractionCandidate,
+      extractionDecisionReason: input.extractionDecisionReason ?? null,
+      extractionStatus: input.extractionStatus,
+      extractionAttempts: input.extractionAttempts ?? 0,
+      lastExtractionAt: input.lastExtractionAt ?? null,
+      lastExtractionErrorCode: input.lastExtractionErrorCode ?? null
+    }
+  });
+}
+
+export async function upsertAttachmentExtractionArtifact(
+  writer: ExtractionArtifactWriter,
+  input: UpsertAttachmentExtractionArtifactInput
+) {
+  const createdAt = input.createdAt ?? new Date();
+
+  return writer.extractionArtifact.upsert({
+    where: {
+      attachmentId_artifactKind: {
+        attachmentId: input.attachmentId,
+        artifactKind: input.artifactKind
+      }
+    },
+    update: {
+      mailboxId: input.mailboxId,
+      messageId: input.messageId,
+      storageKey: input.storageKey,
+      textLength: input.textLength ?? null,
+      contentHash: input.contentHash ?? null,
+      confidenceScore: input.confidenceScore ?? null,
+      sourceVersionKey: input.sourceVersionKey,
+      createdAt
+    },
+    create: {
+      mailboxId: input.mailboxId,
+      messageId: input.messageId,
+      attachmentId: input.attachmentId,
+      artifactKind: input.artifactKind,
+      storageKey: input.storageKey,
+      textLength: input.textLength ?? null,
+      contentHash: input.contentHash ?? null,
+      confidenceScore: input.confidenceScore ?? null,
+      sourceVersionKey: input.sourceVersionKey,
+      createdAt
     }
   });
 }

@@ -9,6 +9,7 @@ import { createPrismaAuthService } from "./auth-service";
 import { createPrismaMailboxFolderSyncService } from "./mailbox-folder-sync-service";
 import { createPrismaMailboxMessageSyncService } from "./mailbox-message-sync-service";
 import { createPrismaMailboxOnboardingService } from "./mailbox-onboarding-service";
+import { createPrismaMailboxReadinessService } from "./mailbox-readiness-service";
 import { createPrismaMailboxSubscriptionService } from "./mailbox-subscription-service";
 import { createServer } from "./server";
 
@@ -25,6 +26,11 @@ const authService = createPrismaAuthService({
   logger: logger as Logger
 });
 const mailboxOnboardingService = createPrismaMailboxOnboardingService({
+  prisma,
+  env,
+  logger: logger as Logger
+});
+const mailboxReadinessService = createPrismaMailboxReadinessService({
   prisma,
   env,
   logger: logger as Logger
@@ -49,6 +55,7 @@ const server = createServer({
   env,
   authService,
   mailboxOnboardingService,
+  mailboxReadinessService,
   mailboxFolderSyncService,
   mailboxMessageSyncService,
   mailboxSubscriptionService,

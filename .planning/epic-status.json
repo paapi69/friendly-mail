@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-03",
+  "lastUpdated": "2026-04-04",
   "epics": [
     {
       "id": "E1",
@@ -56,7 +56,7 @@
     {
       "id": "E2",
       "title": "Microsoft Graph and Mailbox Connectivity",
-      "status": "pending",
+      "status": "done",
       "tickets": [
         {
           "id": "E2-T1",
@@ -96,19 +96,61 @@
         {
           "id": "E2-T8",
           "title": "Implement Reconciliation Between Webhooks and Delta Sync",
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E2-T9",
           "title": "Add Shared-Mailbox Readiness and Operational Verification",
-          "status": "pending"
+          "status": "done"
         }
       ]
     },
     {
       "id": "E3",
       "title": "Message Ingestion and Attachment Extraction",
-      "status": "pending"
+      "status": "pending",
+      "tickets": [
+        {
+          "id": "E3-T1",
+          "title": "Define Message Ingestion and Extraction Contract",
+          "status": "done"
+        },
+        {
+          "id": "E3-T2",
+          "title": "Extend Persistence for Message Bodies, Attachments, and Extraction State",
+          "status": "done"
+        },
+        {
+          "id": "E3-T3",
+          "title": "Implement the Message Ingestion Service",
+          "status": "pending"
+        },
+        {
+          "id": "E3-T4",
+          "title": "Implement Attachment Metadata Retrieval and Durable Linking",
+          "status": "pending"
+        },
+        {
+          "id": "E3-T5",
+          "title": "Implement PDF-First Attachment Text Extraction",
+          "status": "pending"
+        },
+        {
+          "id": "E3-T6",
+          "title": "Add OCR Fallback and Extraction Confidence Handling",
+          "status": "pending"
+        },
+        {
+          "id": "E3-T7",
+          "title": "Orchestrate Idempotent Ingestion and Attachment Processing",
+          "status": "pending"
+        },
+        {
+          "id": "E3-T8",
+          "title": "Add Operational Verification for Ingestion and Extraction",
+          "status": "pending"
+        }
+      ]
     },
     {
       "id": "E4",

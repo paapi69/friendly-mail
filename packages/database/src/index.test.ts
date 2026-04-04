@@ -1,9 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  AttachmentKind,
+  ExtractionArtifactKind,
+  ExtractionStatus,
   createLocalUser,
   databaseTables,
   markMailboxMessageRemoved,
   recordAuditEvent,
+  upsertAttachmentExtractionArtifact,
+  upsertMailboxMessageContent,
+  upsertMessageAttachment,
   upsertMailboxMessage,
   upsertMailboxFolder,
   upsertFolderSyncState,
@@ -25,6 +31,8 @@ describe("database baseline", () => {
       "FolderSyncState",
       "GraphSubscription",
       "Message",
+      "MessageAttachment",
+      "ExtractionArtifact",
       "Task",
       "AuditEvent"
     ]);
@@ -432,6 +440,182 @@ describe("database baseline", () => {
         graphParentFolderId: null,
         graphRemovedAt: removedAt,
         graphRemovalReason: "deleted"
+      }
+    });
+  });
+
+  it("upserts normalized message-body content for Epic 3 ingestion", async () => {
+    const updateMany = vi.fn().mockResolvedValue({
+      count: 1
+    });
+    const ingestedAt = new Date("2026-04-04T07:15:00.000Z");
+
+    await upsertMailboxMessageContent(
+      {
+        message: {
+          updateMany
+        }
+      },
+      {
+        mailboxId: "mailbox_123",
+        graphMessageId: "graph_message_123",
+        bodyPreview: "Please review the attached notice.",
+        bodyContentType: "TEXT",
+        bodyText: "Please review the attached notice.\n\nRegards,\nLegal Team",
+        uniqueBodyText: "Please review the attached notice.",
+        webLink: "https://outlook.office.com/mail/message",
+        hasAttachments: true,
+        ingestionVersionKey: "mailbox_123:graph_message_123:change_key_123",
+        ingestedAt
+      }
+    );
+
+    expect(updateMany).toHaveBeenCalledWith({
+      where: {
+        mailboxId: "mailbox_123",
+        graphMessageId: "graph_message_123"
+      },
+      data: {
+        bodyPreview: "Please review the attached notice.",
+        bodyContentType: "TEXT",
+        bodyText: "Please review the attached notice.\n\nRegards,\nLegal Team",
+        uniqueBodyText: "Please review the attached notice.",
+        webLink: "https://outlook.office.com/mail/message",
+        hasAttachments: true,
+        ingestionVersionKey: "mailbox_123:graph_message_123:change_key_123",
+        ingestedAt,
+        lastIngestedAt: ingestedAt
+      }
+    });
+  });
+
+  it("upserts attachment inventory records with extraction state", async () => {
+    const upsert = vi.fn().mockResolvedValue({
+      id: "attachment_123"
+    });
+    const modifiedAt = new Date("2026-04-04T07:20:00.000Z");
+
+    await upsertMessageAttachment(
+      {
+        messageAttachment: {
+          upsert: upsert as never
+        }
+      },
+      {
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        graphMessageId: "graph_message_123",
+        graphAttachmentId: "graph_attachment_123",
+        name: "notice.pdf",
+        contentType: "application/pdf",
+        sizeInBytes: 204800,
+        isInline: false,
+        attachmentKind: AttachmentKind.FILE,
+        lastGraphModifiedAt: modifiedAt,
+        isExtractionCandidate: true,
+        extractionDecisionReason: "pdf_supported",
+        extractionStatus: ExtractionStatus.PENDING
+      }
+    );
+
+    expect(upsert).toHaveBeenCalledWith({
+      where: {
+        mailboxId_graphAttachmentId: {
+          mailboxId: "mailbox_123",
+          graphAttachmentId: "graph_attachment_123"
+        }
+      },
+      update: {
+        messageId: "message_123",
+        graphMessageId: "graph_message_123",
+        name: "notice.pdf",
+        contentType: "application/pdf",
+        sizeInBytes: 204800,
+        isInline: false,
+        attachmentKind: AttachmentKind.FILE,
+        lastGraphModifiedAt: modifiedAt,
+        isExtractionCandidate: true,
+        extractionDecisionReason: "pdf_supported",
+        extractionStatus: ExtractionStatus.PENDING,
+        extractionAttempts: 0,
+        lastExtractionAt: null,
+        lastExtractionErrorCode: null
+      },
+      create: {
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        graphMessageId: "graph_message_123",
+        graphAttachmentId: "graph_attachment_123",
+        name: "notice.pdf",
+        contentType: "application/pdf",
+        sizeInBytes: 204800,
+        isInline: false,
+        attachmentKind: AttachmentKind.FILE,
+        lastGraphModifiedAt: modifiedAt,
+        isExtractionCandidate: true,
+        extractionDecisionReason: "pdf_supported",
+        extractionStatus: ExtractionStatus.PENDING,
+        extractionAttempts: 0,
+        lastExtractionAt: null,
+        lastExtractionErrorCode: null
+      }
+    });
+  });
+
+  it("upserts extraction artifacts with storage references and provenance", async () => {
+    const upsert = vi.fn().mockResolvedValue({
+      id: "artifact_123"
+    });
+    const createdAt = new Date("2026-04-04T07:30:00.000Z");
+
+    await upsertAttachmentExtractionArtifact(
+      {
+        extractionArtifact: {
+          upsert: upsert as never
+        }
+      },
+      {
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        attachmentId: "attachment_123",
+        artifactKind: ExtractionArtifactKind.ATTACHMENT_TEXT,
+        storageKey: "artifacts/mailbox_123/attachment_123/text.txt",
+        textLength: 4210,
+        contentHash: "sha256:abc123",
+        confidenceScore: 0.98,
+        sourceVersionKey: "mailbox_123:graph_message_123:change_key_123",
+        createdAt
+      }
+    );
+
+    expect(upsert).toHaveBeenCalledWith({
+      where: {
+        attachmentId_artifactKind: {
+          attachmentId: "attachment_123",
+        artifactKind: ExtractionArtifactKind.ATTACHMENT_TEXT
+        }
+      },
+      update: {
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        storageKey: "artifacts/mailbox_123/attachment_123/text.txt",
+        textLength: 4210,
+        contentHash: "sha256:abc123",
+        confidenceScore: 0.98,
+        sourceVersionKey: "mailbox_123:graph_message_123:change_key_123",
+        createdAt
+      },
+      create: {
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        attachmentId: "attachment_123",
+        artifactKind: ExtractionArtifactKind.ATTACHMENT_TEXT,
+        storageKey: "artifacts/mailbox_123/attachment_123/text.txt",
+        textLength: 4210,
+        contentHash: "sha256:abc123",
+        confidenceScore: 0.98,
+        sourceVersionKey: "mailbox_123:graph_message_123:change_key_123",
+        createdAt
       }
     });
   });

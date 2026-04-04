@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsx watch src/index.ts",
+    "dev:worker": "tsx watch src/mailbox-notification-worker.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
@@ -14,6 +15,7 @@
     "@friendly-mail/contracts": "0.1.0",
     "@friendly-mail/database": "0.1.0",
     "@friendly-mail/graph": "0.1.0",
-    "@friendly-mail/observability": "0.1.0"
+    "@friendly-mail/observability": "0.1.0",
+    "@friendly-mail/queue": "0.1.0"
   }
 }

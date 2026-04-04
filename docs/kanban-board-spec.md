@@ -31,6 +31,7 @@ Important:
 - Story points and t-shirt sizes are planning metadata.
 - They are not historical facts for earlier completed work.
 - Current ticket completion status must continue to come from `.planning/epic-status.json`.
+- The dashboard preview should derive tracked engineering ticket status from `.planning/epic-status.json` instead of manually duplicating it.
 
 ## Board Model
 
@@ -59,13 +60,11 @@ Friendly Mail should use a **Kanban board with swimlanes**.
 
 ## Team Roles
 
-These are board personas for planning and assignment.
+These are the current dashboard personas for planning and assignment.
 
-- `Jerry`: backend engineer
-- `Tom`: frontend engineer
-- `Dora`: product designer
-- `Velma`: QA and release readiness
-- `Road Runner`: platform and devex
+- `Tom`: product design
+- `Dick`: frontend engineering
+- `Harry`: backend engineering
 
 ## Estimation Scale
 
@@ -85,12 +84,55 @@ These are board personas for planning and assignment.
 - `L`: 8 points
 - `XL`: 13 points
 
+### Sizing Heuristic
+
+Sizing is based on complexity, uncertainty, integration risk, and verification burden.
+
+- It is not a direct measure of hours.
+- It should reflect implementation and validation effort together.
+- If a ticket feels larger than `8`, prefer splitting it unless the work is truly inseparable.
+
+Use this rough rubric:
+
+- `XS / 2`
+  - very small and isolated
+  - clear implementation path
+  - minimal testing or coordination
+  - usually a focused fix, narrow contract tweak, or tiny UI adjustment
+- `S / 3`
+  - small scoped task with low ambiguity
+  - one clear slice of work
+  - limited integration risk
+  - usually one service, one endpoint, or one UI flow adjustment
+- `M / 5`
+  - moderate task with a few moving parts
+  - some design decisions or dependency coordination
+  - touches multiple files or one subsystem end to end
+  - requires meaningful tests or verification
+- `L / 8`
+  - large task spanning multiple concerns
+  - higher operational or integration risk
+  - often touches schema, services, contracts, and tests together
+  - likely needs careful sequencing and stronger verification
+- `XL / 13`
+  - very broad, ambiguous, or cross-cutting
+  - high rework risk if not split
+  - should usually be broken into smaller tickets unless it is truly inseparable
+
+### Friendly Mail Examples
+
+- spec or contract definition work is usually `S` or `M`
+- schema plus service plus API work is usually `M` or `L`
+- workflow orchestration with retries, idempotency, or recovery paths is usually `L`
+- broad cross-system efforts that mix ingestion, classification, workflow, and UI are usually `XL` and should be split
+
 ## Ticket Template
 
 Each ticket should include:
 
 - Ticket ID
 - Title
+- Stakeholder summary
 - Owner
 - Discipline
 - Epic mapping
@@ -104,11 +146,11 @@ Each ticket should include:
 
 Every ticket should have labels from the following groups.
 
-### Discipline Labels
+### Team Labels
 
-- `discipline:design`
-- `discipline:frontend`
-- `discipline:backend`
+- `design`
+- `frontend`
+- `backend`
 
 ### Epic Labels
 
@@ -182,7 +224,7 @@ Every ticket should have labels from the following groups.
 
 Minimum recommended label set:
 
-- one `discipline:*`
+- one team label: `design`, `frontend`, or `backend`
 - one `epic:*`
 - one `surface:*`
 - one `type:*`
@@ -239,6 +281,14 @@ A ticket is `Done` when:
 - the work is implemented or delivered
 - relevant verification is complete
 - any linked planning status is updated
+
+## Dashboard Preview Rules
+
+- The dashboard preview may mix tracked engineering tickets and preview-only planning tickets.
+- Tracked engineering tickets should get completion status from `.planning/epic-status.json`.
+- Preview-only tickets may keep a local planned column until they are tracked in planning state.
+- Every dashboard card should include a one-line stakeholder summary written in plain English.
+- The preview shell should offer sidebar filters for `Master Board`, `Tom`, `Dick`, and `Harry`.
 
 ## Recommended Cadence
 

@@ -2,12 +2,12 @@
 
 Generated from `.planning/epic-status.json`.
 
-Progress: 1/10 epics complete
+Progress: 2/10 epics complete
 
 ## Epics
 
 - [x] E1: Platform Foundation
-- [ ] E2: Microsoft Graph and Mailbox Connectivity
+- [x] E2: Microsoft Graph and Mailbox Connectivity
 - [ ] E3: Message Ingestion and Attachment Extraction
 - [ ] E4: Classification and Workflow Intelligence
 - [ ] E5: Task and Workflow State Engine
@@ -38,12 +38,23 @@ Progress: 1/10 epics complete
 - [x] E2-T5: Implement Folder Discovery and Initial Folder Sync
 - [x] E2-T6: Implement Message Metadata Sync with Delta Links
 - [x] E2-T7: Implement Graph Subscription and Webhook Lifecycle
-- [ ] E2-T8: Implement Reconciliation Between Webhooks and Delta Sync
-- [ ] E2-T9: Add Shared-Mailbox Readiness and Operational Verification
+- [x] E2-T8: Implement Reconciliation Between Webhooks and Delta Sync
+- [x] E2-T9: Add Shared-Mailbox Readiness and Operational Verification
+
+## E3 Tickets
+
+- [x] E3-T1: Define Message Ingestion and Extraction Contract
+- [x] E3-T2: Extend Persistence for Message Bodies, Attachments, and Extraction State
+- [ ] E3-T3: Implement the Message Ingestion Service
+- [ ] E3-T4: Implement Attachment Metadata Retrieval and Durable Linking
+- [ ] E3-T5: Implement PDF-First Attachment Text Extraction
+- [ ] E3-T6: Add OCR Fallback and Extraction Confidence Handling
+- [ ] E3-T7: Orchestrate Idempotent Ingestion and Attachment Processing
+- [ ] E3-T8: Add Operational Verification for Ingestion and Extraction
 
 ## Notes
 
 - Update high-level epics with `node scripts/set-epic-status.mjs <E#> <pending|done>`.
 - Update detailed tickets with `node scripts/set-ticket-status.mjs <ticket-id> <pending|done>`.
 - Rebuild this file with `node scripts/sync-checklist.mjs`.
-- Last status update: 2026-04-03
+- Last status update: 2026-04-04

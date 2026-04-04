@@ -1,7 +1,7 @@
 <sessionSummary>
   <metadata>
     <project>Friendly Mail</project>
-    <updatedAt>2026-04-03T12:00:00+05:30</updatedAt>
+    <updatedAt>2026-04-04T20:15:00+05:30</updatedAt>
     <workspacePath>C:\Users\Sahil\OneDrive\Desktop\Friendly Mail</workspacePath>
     <repoUrl>https://github.com/paapi69/friendly-mail</repoUrl>
   </metadata>
@@ -37,6 +37,12 @@
       <item>Prototype testing prerequisites were documented, including Microsoft 365 mailbox, Entra app registration, redirect URI, Graph consent, and later webhook tunnel requirements.</item>
       <item>A PM-style kanban system was defined with roles for Dora, Tom, and Jerry, including label taxonomy, prototype board structure, and planning estimates marked as estimates rather than historical facts.</item>
       <item>The companion dashboard now includes a master kanban board preview that shows Design, Frontend, and Backend work together by status column, while keeping filtered pills for team-specific views.</item>
+      <item>Epic 3 is now broken into `E3-T1` through `E3-T8`, and the planning state plus board views now require new epics to be ticketized before implementation starts.</item>
+      <ticket id="E3-T1">The Epic 3 message-ingestion contract now defines the normalized message envelope, PDF-first extraction scope, OCR fallback rules, immutable-ID retrieval assumptions, and the boundary between extracted artifacts and later classification or filing work.</ticket>
+      <ticket id="E3-T2">The persistence layer now stores normalized message-body fields on messages, attachment inventory records, extraction status, and attachment artifact references through typed database helpers and schema support.</ticket>
+      <ticket id="E2-T9">Shared-mailbox readiness and operational verification now report explicit limited or unsupported delegated-team-mailbox capability, plus mailbox subscription health, delta lag, and immutable-ID enforcement.</ticket>
+      <ticket id="E2-T8">Webhook-triggered mailbox changes now reconcile through mailbox-wide tracked-folder delta sync, with missed lifecycle events repairing state through the same durable delta path.</ticket>
+      <ticket id="E2-T7">Graph subscription lifecycle support now creates and renews message subscriptions, validates webhook and lifecycle callbacks, and queues accepted mailbox events for downstream reconciliation.</ticket>
       <ticket id="E2-T6">Per-folder message metadata delta sync implemented with persisted delta links, stable Graph message upserts, and Graph removal tracking that preserves internal workflow history.</ticket>
       <ticket id="E2-T5">Mailbox folder discovery and initial sync implemented with persisted folder trees, parent-child linkage, and seeded per-folder sync state for connected mailboxes.</ticket>
       <ticket id="E2-T4">Delegated mailbox onboarding baseline implemented with Microsoft authorization start and callback flows, server-side token exchange, mailbox validation, and persisted mailbox connection records.</ticket>
@@ -52,6 +58,11 @@
       <ticket id="E1-T7">Internal authentication and session baseline implemented with explicit separation from future Microsoft Graph mailbox auth.</ticket>
       <ticket id="E1-T8">CI, lint, typecheck, test, and build defaults configured.</ticket>
       <ticket id="E1-T9">Developer onboarding and a local runbook were added for setup, service startup, verification, and troubleshooting.</ticket>
+      <item>The companion dashboard was redesigned into a dark app-shell layout that mirrors the approved kanban design direction while keeping the board as the primary workspace.</item>
+      <item>The dashboard board view now switches by person in the sidebar using Master, Tom, Dick, and Harry instead of the older team-pill layout.</item>
+      <item>The dashboard cards were refined for stakeholder readability with persistent one-line summaries, a neon epic pill at the top, lighter metadata chips, and no status chip duplication.</item>
+      <item>Completed tickets in the dashboard now keep their normal text styling, use a green completion check, and present done-state styling without strike-through treatment.</item>
+      <item>The dashboard frontend was reorganized into app-level bootstrap files plus a feature-scoped dashboard module with separated components, data shaping, types, utilities, tests, and styles.</item>
     </completed>
 
     <keyImplementationNotes>
@@ -79,9 +90,22 @@
       <item>Session reads now reflect whether an active mailbox connection exists for the user and tenant.</item>
       <item>The API now exposes mailbox folder sync that walks the Graph folder tree, persists tracked folders with parent linkage, and seeds per-folder sync state for later delta processing.</item>
       <item>The API now exposes per-folder message metadata delta sync that persists Graph message metadata, advances folder delta links, and marks Graph-removed messages without deleting internal records.</item>
+      <item>The API now exposes mailbox-level webhook reconciliation that runs tracked-folder delta sync after queued Graph change notifications and missed lifecycle events.</item>
+      <item>The API now exposes `POST /mailboxes/:mailboxId/shared-mailbox-readiness` for delegated team-mailbox capability checks and `GET /mailboxes/:mailboxId/operational-verification` for Epic 2 rollout health reporting.</item>
+      <item>The API workspace now owns the mailbox notification worker entry so queue-driven reconciliation can use application services without violating package boundaries.</item>
+      <item>Root verification now regenerates Prisma client types before lint, typecheck, and tests, and CI does the same explicitly before verify.</item>
       <item>docs/prototype-test-checklist.md now explains what a real Microsoft 365 business mailbox prototype needs and where to find Entra tenant, client, secret, redirect, consent, and webhook setup values.</item>
       <item>docs/engineering-kanban-board.md, docs/kanban-board-spec.md, and docs/prototype-kanban-board.md now define a reusable PM and engineering board structure with swimlanes, labels, story points, t-shirt sizes, and prototype milestone framing.</item>
       <item>apps/dashboard/src/App.tsx now renders a master kanban view by default and supports filtered Design, Frontend, and Backend dashboard pills from the same in-component ticket dataset.</item>
+      <item>AGENTS.md now explicitly requires defining `E#-T#` subtasks, syncing planning docs, and adding board tickets before starting work in a new epic.</item>
+      <item>docs/message-ingestion-extraction-contract.md now defines the Epic 3 source-of-truth contract for normalized message bodies, attachment inventory, PDF-first extraction, optional OCR fallback, and repeat-safe ingestion boundaries.</item>
+      <item>The Prisma schema and database package now include `MessageAttachment`, `ExtractionArtifact`, message-ingestion fields, and typed helpers for body persistence, attachment upserts, and artifact storage references.</item>
+      <item>@friendly-mail/contracts now exposes shared attachment and extraction enums plus records so later surfaces and services can share the new Epic 3 vocabulary.</item>
+      <item>The dashboard now resolves tracked engineering ticket state from `.planning/epic-status.json` through feature-scoped board data rather than a single stale in-component list.</item>
+      <item>The dashboard shell now follows the dark reference structure with a left sidebar, top app bar, board-first canvas, right analytics rail, and person-based switching for Master, Tom, Dick, and Harry.</item>
+      <item>Stakeholder one-line summaries remain visible on every ticket card, while status chips were removed to reduce duplication with the kanban columns.</item>
+      <item>The dashboard visual pass promoted the epic pill to the top with neon emphasis, removed done-card strike-through, added green completion checks, and tightened card spacing and metadata hierarchy.</item>
+      <item>The dashboard implementation is now split across `src/app` and `src/features/dashboard`, with focused React components, feature-local data/types/utils, and consolidated dashboard styling.</item>
     </keyImplementationNotes>
 
     <filesAddedOrUpdated>
@@ -103,10 +127,17 @@
       <file>apps/api/src/auth-service.ts</file>
       <file>apps/api/src/mailbox-onboarding-service.ts</file>
       <file>apps/api/src/mailbox-onboarding-service.test.ts</file>
+      <file>apps/api/src/mailbox-readiness-service.ts</file>
+      <file>apps/api/src/mailbox-readiness-service.test.ts</file>
       <file>apps/api/src/mailbox-folder-sync-service.ts</file>
       <file>apps/api/src/mailbox-folder-sync-service.test.ts</file>
       <file>apps/api/src/mailbox-message-sync-service.ts</file>
       <file>apps/api/src/mailbox-message-sync-service.test.ts</file>
+      <file>apps/api/src/mailbox-subscription-service.ts</file>
+      <file>apps/api/src/mailbox-subscription-service.test.ts</file>
+      <file>apps/api/src/mailbox-reconciliation-service.ts</file>
+      <file>apps/api/src/mailbox-reconciliation-service.test.ts</file>
+      <file>apps/api/src/mailbox-notification-worker.ts</file>
       <file>apps/dashboard/src/App.tsx</file>
       <file>apps/api/src/microsoft-token-crypto.ts</file>
       <file>apps/api/src/server.ts</file>
@@ -117,7 +148,9 @@
       <file>docs/engineering-kanban-board.md</file>
       <file>docs/kanban-board-spec.md</file>
       <file>docs/prototype-kanban-board.md</file>
+      <file>docs/message-ingestion-extraction-contract.md</file>
       <file>docs/package-boundaries.md</file>
+      <file>packages/database/prisma/migrations/20260404124500_message_ingestion_extraction_state/migration.sql</file>
       <file>docs/local-runbook.md</file>
       <file>packages/database/prisma/schema.prisma</file>
       <file>packages/database/prisma/migrations/20260401101500_mailbox_connectivity_state/migration.sql</file>
@@ -127,12 +160,29 @@
       <file>packages/graph/src/index.ts</file>
       <file>packages/graph/src/index.test.ts</file>
       <file>friendly-mail-epic-tickets.md</file>
+      <file>AGENTS.md</file>
       <file>checklist.md</file>
       <file>.planning/epic-status.json</file>
       <file>.planning/STATE.md</file>
       <file>scripts/sync-checklist.mjs</file>
       <file>scripts/set-epic-status.mjs</file>
       <file>scripts/set-ticket-status.mjs</file>
+      <file>apps/dashboard/src/main.tsx</file>
+      <file>apps/dashboard/src/app/App.tsx</file>
+      <file>apps/dashboard/src/app/App.css</file>
+      <file>apps/dashboard/src/features/dashboard/DashboardPage.tsx</file>
+      <file>apps/dashboard/src/features/dashboard/dashboard.data.ts</file>
+      <file>apps/dashboard/src/features/dashboard/dashboard.data.test.ts</file>
+      <file>apps/dashboard/src/features/dashboard/dashboard.types.ts</file>
+      <file>apps/dashboard/src/features/dashboard/dashboard.utils.ts</file>
+      <file>apps/dashboard/src/features/dashboard/components/AnalyticsSidebar.tsx</file>
+      <file>apps/dashboard/src/features/dashboard/components/DonutChart.tsx</file>
+      <file>apps/dashboard/src/features/dashboard/components/KanbanBoard.tsx</file>
+      <file>apps/dashboard/src/features/dashboard/components/KanbanColumn.tsx</file>
+      <file>apps/dashboard/src/features/dashboard/components/SideNav.tsx</file>
+      <file>apps/dashboard/src/features/dashboard/components/TaskCard.tsx</file>
+      <file>apps/dashboard/src/features/dashboard/components/TopBar.tsx</file>
+      <file>apps/dashboard/src/features/dashboard/styles/dashboard.css</file>
     </filesAddedOrUpdated>
   </sessionWork>
 
@@ -148,15 +198,18 @@
       <done>E1-T8</done>
       <done>E1-T9</done>
     </epic>
-    <epic id="E2" state="pending">
+    <epic id="E2" state="done">
       <done>E2-T1</done>
       <done>E2-T2</done>
       <done>E2-T3</done>
       <done>E2-T4</done>
       <done>E2-T5</done>
       <done>E2-T6</done>
+      <done>E2-T7</done>
+      <done>E2-T8</done>
+      <done>E2-T9</done>
     </epic>
-    <nextRecommendedTicket>E2-T7</nextRecommendedTicket>
+    <nextRecommendedTicket>E3-T3</nextRecommendedTicket>
   </status>
 
   <verification>
@@ -173,8 +226,10 @@
   <continuationNotes>
     <item>When a new session starts, read this file first, then read checklist.md and .planning/STATE.md.</item>
     <item>The checklist generator may need a clean rerun with node scripts/sync-checklist.mjs after status updates if the Markdown view appears stale.</item>
-    <item>The best next move is to start E2-T7 and use the new per-folder delta-link baseline to add Graph subscriptions, webhook validation, and queued event ingestion.</item>
+    <item>The best next move is to start `E3-T3` and implement message fetch plus normalization into the new message-body persistence fields introduced in `E3-T2`.</item>
     <item>The dashboard dev preview for the kanban board was running locally on http://localhost:5173 during this session; if it is no longer live, restart it with npm run dev --workspace @friendly-mail/dashboard.</item>
-    <item>The current worktree includes uncommitted E2-T6 backend changes plus new documentation and dashboard kanban preview work.</item>
+    <item>The root `npm run dev:worker` command now starts the API mailbox notification worker rather than the generic queue package worker.</item>
+    <item>The dashboard is now componentized under `apps/dashboard/src/app` and `apps/dashboard/src/features/dashboard`, so future board changes should usually land in the feature module instead of a single root App file.</item>
+    <item>If tighter visual parity is still needed, the next frontend pass should use the connected Figma file after the Figma token is re-authenticated.</item>
   </continuationNotes>
 </sessionSummary>

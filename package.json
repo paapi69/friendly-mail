@@ -15,7 +15,7 @@
     "dev:api": "npm run dev --workspace @friendly-mail/api",
     "dev:dashboard": "npm run dev --workspace @friendly-mail/dashboard",
     "dev:addin": "npm run dev --workspace @friendly-mail/outlook-addin",
-    "dev:worker": "npm run dev --workspace @friendly-mail/queue",
+    "dev:worker": "npm run dev:worker --workspace @friendly-mail/api",
     "lint": "eslint .",
     "postinstall": "npm run db:generate",
     "queue:health": "npm run queue:health --workspace @friendly-mail/queue",
