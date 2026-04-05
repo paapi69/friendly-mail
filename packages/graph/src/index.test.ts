@@ -293,6 +293,111 @@ describe("graph connector", () => {
     });
   });
 
+  it("lists message attachments with immutable-id support and typed attachment families", async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      jsonResponse({
+        value: [
+          {
+            "@odata.type": "#microsoft.graph.fileAttachment",
+            id: "graph_attachment_pdf",
+            name: "notice.pdf",
+            contentType: "application/pdf",
+            size: 204800,
+            isInline: false,
+            lastModifiedDateTime: "2026-04-04T10:10:00Z"
+          },
+          {
+            "@odata.type": "#microsoft.graph.itemAttachment",
+            id: "graph_attachment_item",
+            name: "thread.eml",
+            contentType: "message/rfc822",
+            size: 5120,
+            lastModifiedDateTime: "2026-04-04T10:11:00Z"
+          },
+          {
+            "@odata.type": "#microsoft.graph.referenceAttachment",
+            id: "graph_attachment_reference",
+            name: "Invoice Template.docx",
+            contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            size: 4096,
+            lastModifiedDateTime: "2026-04-04T10:12:00Z"
+          }
+        ]
+      })
+    );
+
+    const connector = createGraphConnector({
+      tokenProvider: async () => "token_123",
+      fetch
+    });
+
+    const page = await connector.listMessageAttachments({
+      messageId: "graph_message_123"
+    });
+
+    expect(String(fetch.mock.calls[0][0])).toContain("/me/messages/graph_message_123/attachments?");
+    const headers = getHeaders(fetch.mock.calls[0][1]);
+    expect(headers.get("Prefer")).toBe('IdType="ImmutableId"');
+    expect(page.items).toEqual([
+      {
+        id: "graph_attachment_pdf",
+        name: "notice.pdf",
+        contentType: "application/pdf",
+        size: 204800,
+        isInline: false,
+        lastModifiedDateTime: "2026-04-04T10:10:00Z",
+        attachmentKind: "file"
+      },
+      {
+        id: "graph_attachment_item",
+        name: "thread.eml",
+        contentType: "message/rfc822",
+        size: 5120,
+        isInline: false,
+        lastModifiedDateTime: "2026-04-04T10:11:00Z",
+        attachmentKind: "item"
+      },
+      {
+        id: "graph_attachment_reference",
+        name: "Invoice Template.docx",
+        contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        size: 4096,
+        isInline: false,
+        lastModifiedDateTime: "2026-04-04T10:12:00Z",
+        attachmentKind: "reference"
+      }
+    ]);
+  });
+
+  it("downloads raw attachment content with immutable-id support", async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      new Response(new Uint8Array([37, 80, 68, 70, 45, 49, 46, 55]), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf"
+        }
+      })
+    );
+
+    const connector = createGraphConnector({
+      tokenProvider: async () => "token_123",
+      fetch
+    });
+
+    const bytes = await connector.downloadMessageAttachmentContent({
+      messageId: "graph_message_123",
+      attachmentId: "graph_attachment_pdf"
+    });
+
+    expect(String(fetch.mock.calls[0][0])).toContain(
+      "/me/messages/graph_message_123/attachments/graph_attachment_pdf/$value"
+    );
+    const headers = getHeaders(fetch.mock.calls[0][1]);
+    expect(headers.get("Prefer")).toBe('IdType="ImmutableId"');
+    expect(headers.get("Accept")).toBe("application/octet-stream");
+    expect(bytes).toEqual(new Uint8Array([37, 80, 68, 70, 45, 49, 46, 55]));
+  });
+
   it("creates message subscriptions with immutable-id support", async () => {
     const fetch = vi.fn().mockResolvedValue(
       jsonResponse({

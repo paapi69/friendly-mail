@@ -23,6 +23,9 @@ const serverOnlyEnvSchema = z.object({
   MICROSOFT_GRAPH_SCOPES: z.string().min(1).transform(parseScopes),
   MICROSOFT_TOKEN_ENCRYPTION_KEY: z.string().min(32),
   MICROSOFT_WEBHOOK_BASE_URL: z.string().url(),
+  OCR_PROVIDER: z.enum(["disabled", "tesseract"]).default("disabled"),
+  OCR_LANGUAGE: z.string().min(1).default("eng"),
+  OCR_CONFIDENCE_THRESHOLD: z.coerce.number().min(0).max(1).default(0.75),
   VITE_API_BASE_URL: z.string().url()
 });
 

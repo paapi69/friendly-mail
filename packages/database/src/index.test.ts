@@ -6,7 +6,11 @@ import {
   createLocalUser,
   databaseTables,
   markMailboxMessageRemoved,
+  MessageActionability,
+  MessagePriority,
+  MessageType,
   recordAuditEvent,
+  upsertMessageClassification,
   upsertAttachmentExtractionArtifact,
   upsertMailboxMessageContent,
   upsertMessageAttachment,
@@ -15,7 +19,8 @@ import {
   upsertFolderSyncState,
   upsertGraphSubscription,
   upsertMailboxConnection,
-  UserRole
+  UserRole,
+  WorkflowCriticalityLevel
 } from "./index";
 
 describe("database baseline", () => {
@@ -33,6 +38,7 @@ describe("database baseline", () => {
       "Message",
       "MessageAttachment",
       "ExtractionArtifact",
+      "MessageClassification",
       "Task",
       "AuditEvent"
     ]);
@@ -618,5 +624,401 @@ describe("database baseline", () => {
         createdAt
       }
     });
+  });
+
+  it("upserts versioned message classifications with durable workflow-signal storage", async () => {
+    const upsert = vi.fn().mockResolvedValue({
+      id: "classification_123"
+    });
+    const classifiedAt = new Date("2026-04-05T10:00:00.000Z");
+
+    await upsertMessageClassification(
+      {
+        messageClassification: {
+          upsert: upsert as never
+        }
+      },
+      {
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        ingestionVersionKey: "mailbox_123:graph_message_123:change_key_123",
+        classifierVersion: "rules-and-model:v1",
+        classifiedAt,
+        actionability: MessageActionability.ACTIONABLE,
+        messageType: MessageType.INVOICE,
+        confidenceScore: 0.92,
+        explanation: {
+          summary: "The message requests payment by a stated due date.",
+          lowConfidence: false,
+          reasons: [
+            {
+              code: "DUE_DATE_DETECTED",
+              summary: "The body contains a payment deadline.",
+              provenance: [
+                {
+                  sourceKind: "BODY_TEXT",
+                  field: "bodyText"
+                }
+              ]
+            }
+          ]
+        },
+        signals: {
+          dueDates: [
+            {
+              id: "due_date_123",
+              label: "Invoice due date",
+              value: "2026-04-12T00:00:00.000Z",
+              confidenceScore: 0.91,
+              rationale: "The body says payment is due by April 12.",
+              provenance: [
+                {
+                  sourceKind: "BODY_TEXT",
+                  field: "bodyText"
+                },
+                {
+                  sourceKind: "ATTACHMENT_TEXT",
+                  attachmentId: "attachment_123",
+                  artifactId: "artifact_123",
+                  field: "textLength"
+                }
+              ]
+            }
+          ],
+          entities: [
+            {
+              id: "entity_123",
+              kind: "INVOICE",
+              value: "Invoice INV-2026-0042",
+              normalizedValue: "INV-2026-0042",
+              confidenceScore: 0.88,
+              rationale: "The invoice number appears in the PDF text.",
+              provenance: [
+                {
+                  sourceKind: "ATTACHMENT_TEXT",
+                  attachmentId: "attachment_123",
+                  artifactId: "artifact_123",
+                  field: "textLength"
+                }
+              ]
+            }
+          ],
+          taskCandidates: [
+            {
+              id: "task_candidate_123",
+              title: "Pay invoice INV-2026-0042",
+              summary: "Review and pay the attached invoice.",
+              dueAt: "2026-04-12T00:00:00.000Z",
+              confidenceScore: 0.9,
+              rationale: "The message explicitly requests payment before the due date.",
+              provenance: [
+                {
+                  sourceKind: "BODY_TEXT",
+                  field: "subject"
+                }
+              ]
+            }
+          ],
+          urgency: {
+            level: MessagePriority.HIGH,
+            confidenceScore: 0.86,
+            rationale: "A near-term due date makes the message time-sensitive.",
+            reasons: [
+              {
+                code: "DUE_DATE_DETECTED",
+                summary: "A concrete due date was detected in the message."
+              }
+            ]
+          },
+          criticality: {
+            level: WorkflowCriticalityLevel.ELEVATED,
+            confidenceScore: 0.81,
+            rationale: "Missing the payment deadline creates avoidable finance risk.",
+            reasons: [
+              {
+                code: "INVOICE_CUE_DETECTED",
+                summary: "Invoice handling is a business-critical workflow."
+              }
+            ]
+          }
+        }
+      }
+    );
+
+    expect(upsert).toHaveBeenCalledWith({
+      where: {
+        messageId_ingestionVersionKey_classifierVersion: {
+          messageId: "message_123",
+          ingestionVersionKey: "mailbox_123:graph_message_123:change_key_123",
+          classifierVersion: "rules-and-model:v1"
+        }
+      },
+      update: {
+        mailboxId: "mailbox_123",
+        actionability: MessageActionability.ACTIONABLE,
+        messageType: MessageType.INVOICE,
+        confidenceScore: 0.92,
+        explanationSummary: "The message requests payment by a stated due date.",
+        explanationLowConfidence: false,
+        explanationJson: {
+          summary: "The message requests payment by a stated due date.",
+          lowConfidence: false,
+          reasons: [
+            {
+              code: "DUE_DATE_DETECTED",
+              summary: "The body contains a payment deadline.",
+              provenance: [
+                {
+                  sourceKind: "BODY_TEXT",
+                  field: "bodyText"
+                }
+              ]
+            }
+          ]
+        },
+        dueDatesJson: [
+          {
+            id: "due_date_123",
+            label: "Invoice due date",
+            value: "2026-04-12T00:00:00.000Z",
+            confidenceScore: 0.91,
+            rationale: "The body says payment is due by April 12.",
+            provenance: [
+              {
+                sourceKind: "BODY_TEXT",
+                field: "bodyText"
+              },
+              {
+                sourceKind: "ATTACHMENT_TEXT",
+                attachmentId: "attachment_123",
+                artifactId: "artifact_123",
+                field: "textLength"
+              }
+            ]
+          }
+        ],
+        entitiesJson: [
+          {
+            id: "entity_123",
+            kind: "INVOICE",
+            value: "Invoice INV-2026-0042",
+            normalizedValue: "INV-2026-0042",
+            confidenceScore: 0.88,
+            rationale: "The invoice number appears in the PDF text.",
+            provenance: [
+              {
+                sourceKind: "ATTACHMENT_TEXT",
+                attachmentId: "attachment_123",
+                artifactId: "artifact_123",
+                field: "textLength"
+              }
+            ]
+          }
+        ],
+        taskCandidatesJson: [
+          {
+            id: "task_candidate_123",
+            title: "Pay invoice INV-2026-0042",
+            summary: "Review and pay the attached invoice.",
+            dueAt: "2026-04-12T00:00:00.000Z",
+            confidenceScore: 0.9,
+            rationale: "The message explicitly requests payment before the due date.",
+            provenance: [
+              {
+                sourceKind: "BODY_TEXT",
+                field: "subject"
+              }
+            ]
+          }
+        ],
+        urgencyLevel: MessagePriority.HIGH,
+        urgencyConfidenceScore: 0.86,
+        urgencyRationale: "A near-term due date makes the message time-sensitive.",
+        urgencyReasonsJson: [
+          {
+            code: "DUE_DATE_DETECTED",
+            summary: "A concrete due date was detected in the message."
+          }
+        ],
+        criticalityLevel: WorkflowCriticalityLevel.ELEVATED,
+        criticalityConfidenceScore: 0.81,
+        criticalityRationale: "Missing the payment deadline creates avoidable finance risk.",
+        criticalityReasonsJson: [
+          {
+            code: "INVOICE_CUE_DETECTED",
+            summary: "Invoice handling is a business-critical workflow."
+          }
+        ],
+        sourceAttachmentIds: ["attachment_123"],
+        sourceArtifactIds: ["artifact_123"],
+        classifiedAt
+      },
+      create: {
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        ingestionVersionKey: "mailbox_123:graph_message_123:change_key_123",
+        classifierVersion: "rules-and-model:v1",
+        actionability: MessageActionability.ACTIONABLE,
+        messageType: MessageType.INVOICE,
+        confidenceScore: 0.92,
+        explanationSummary: "The message requests payment by a stated due date.",
+        explanationLowConfidence: false,
+        explanationJson: {
+          summary: "The message requests payment by a stated due date.",
+          lowConfidence: false,
+          reasons: [
+            {
+              code: "DUE_DATE_DETECTED",
+              summary: "The body contains a payment deadline.",
+              provenance: [
+                {
+                  sourceKind: "BODY_TEXT",
+                  field: "bodyText"
+                }
+              ]
+            }
+          ]
+        },
+        dueDatesJson: [
+          {
+            id: "due_date_123",
+            label: "Invoice due date",
+            value: "2026-04-12T00:00:00.000Z",
+            confidenceScore: 0.91,
+            rationale: "The body says payment is due by April 12.",
+            provenance: [
+              {
+                sourceKind: "BODY_TEXT",
+                field: "bodyText"
+              },
+              {
+                sourceKind: "ATTACHMENT_TEXT",
+                attachmentId: "attachment_123",
+                artifactId: "artifact_123",
+                field: "textLength"
+              }
+            ]
+          }
+        ],
+        entitiesJson: [
+          {
+            id: "entity_123",
+            kind: "INVOICE",
+            value: "Invoice INV-2026-0042",
+            normalizedValue: "INV-2026-0042",
+            confidenceScore: 0.88,
+            rationale: "The invoice number appears in the PDF text.",
+            provenance: [
+              {
+                sourceKind: "ATTACHMENT_TEXT",
+                attachmentId: "attachment_123",
+                artifactId: "artifact_123",
+                field: "textLength"
+              }
+            ]
+          }
+        ],
+        taskCandidatesJson: [
+          {
+            id: "task_candidate_123",
+            title: "Pay invoice INV-2026-0042",
+            summary: "Review and pay the attached invoice.",
+            dueAt: "2026-04-12T00:00:00.000Z",
+            confidenceScore: 0.9,
+            rationale: "The message explicitly requests payment before the due date.",
+            provenance: [
+              {
+                sourceKind: "BODY_TEXT",
+                field: "subject"
+              }
+            ]
+          }
+        ],
+        urgencyLevel: MessagePriority.HIGH,
+        urgencyConfidenceScore: 0.86,
+        urgencyRationale: "A near-term due date makes the message time-sensitive.",
+        urgencyReasonsJson: [
+          {
+            code: "DUE_DATE_DETECTED",
+            summary: "A concrete due date was detected in the message."
+          }
+        ],
+        criticalityLevel: WorkflowCriticalityLevel.ELEVATED,
+        criticalityConfidenceScore: 0.81,
+        criticalityRationale: "Missing the payment deadline creates avoidable finance risk.",
+        criticalityReasonsJson: [
+          {
+            code: "INVOICE_CUE_DETECTED",
+            summary: "Invoice handling is a business-critical workflow."
+          }
+        ],
+        sourceAttachmentIds: ["attachment_123"],
+        sourceArtifactIds: ["artifact_123"],
+        classifiedAt
+      }
+    });
+  });
+
+  it("stores empty provenance linkage arrays when classification output only references message text", async () => {
+    const upsert = vi.fn().mockResolvedValue({
+      id: "classification_124"
+    });
+
+    await upsertMessageClassification(
+      {
+        messageClassification: {
+          upsert: upsert as never
+        }
+      },
+      {
+        mailboxId: "mailbox_123",
+        messageId: "message_456",
+        ingestionVersionKey: "mailbox_123:graph_message_456:change_key_123",
+        classifierVersion: "rules-and-model:v1",
+        actionability: MessageActionability.INFORMATIONAL,
+        messageType: MessageType.FYI,
+        confidenceScore: 0.71,
+        explanation: {
+          summary: "The message shares information without requesting follow-up.",
+          lowConfidence: false,
+          reasons: [
+            {
+              code: "AMBIGUOUS_CONTENT",
+              summary: "The message body reads like an FYI update.",
+              provenance: [
+                {
+                  sourceKind: "BODY_TEXT",
+                  field: "bodyText"
+                }
+              ]
+            }
+          ]
+        },
+        signals: {
+          dueDates: [],
+          entities: [],
+          taskCandidates: [],
+          urgency: {
+            level: MessagePriority.NORMAL,
+            confidenceScore: 0.64,
+            rationale: "No near-term deadline was found.",
+            reasons: []
+          },
+          criticality: {
+            level: WorkflowCriticalityLevel.NORMAL,
+            confidenceScore: 0.67,
+            rationale: "The message appears informational only.",
+            reasons: []
+          }
+        }
+      }
+    );
+
+    const call = upsert.mock.calls[0]?.[0];
+
+    expect(call.update.sourceAttachmentIds).toEqual([]);
+    expect(call.update.sourceArtifactIds).toEqual([]);
+    expect(call.create.sourceAttachmentIds).toEqual([]);
+    expect(call.create.sourceArtifactIds).toEqual([]);
   });
 });

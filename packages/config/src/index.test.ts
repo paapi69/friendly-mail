@@ -31,6 +31,9 @@ describe("getServerEnv", () => {
     expect(env.QUEUE_DRIVER).toBe("redis");
     expect(env.SESSION_COOKIE_NAME).toBe("friendly_mail_session");
     expect(env.SESSION_MAX_AGE_HOURS).toBe(12);
+    expect(env.OCR_PROVIDER).toBe("disabled");
+    expect(env.OCR_LANGUAGE).toBe("eng");
+    expect(env.OCR_CONFIDENCE_THRESHOLD).toBe(0.75);
     expect(env.MICROSOFT_GRAPH_SCOPES).toEqual([
       "openid",
       "profile",

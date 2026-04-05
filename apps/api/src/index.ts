@@ -9,6 +9,10 @@ import { createPrismaAuthService } from "./auth-service";
 import { createPrismaMailboxFolderSyncService } from "./mailbox-folder-sync-service";
 import { createPrismaMailboxMessageSyncService } from "./mailbox-message-sync-service";
 import { createPrismaMailboxIngestionService } from "./mailbox-ingestion-service";
+import { createPrismaMailboxAttachmentMetadataService } from "./mailbox-attachment-metadata-service";
+import { createPrismaMailboxMessageProcessingService } from "./mailbox-message-processing-service";
+import { createPrismaMailboxProcessingVerificationService } from "./mailbox-processing-verification-service";
+import { createPrismaMailboxPdfExtractionService } from "./mailbox-pdf-extraction-service";
 import { createPrismaMailboxOnboardingService } from "./mailbox-onboarding-service";
 import { createPrismaMailboxReadinessService } from "./mailbox-readiness-service";
 import { createPrismaMailboxSubscriptionService } from "./mailbox-subscription-service";
@@ -51,6 +55,27 @@ const mailboxIngestionService = createPrismaMailboxIngestionService({
   env,
   logger: logger as Logger
 });
+const mailboxAttachmentMetadataService = createPrismaMailboxAttachmentMetadataService({
+  prisma,
+  env,
+  logger: logger as Logger
+});
+const mailboxPdfExtractionService = createPrismaMailboxPdfExtractionService({
+  prisma,
+  env,
+  logger: logger as Logger
+});
+const mailboxMessageProcessingService = createPrismaMailboxMessageProcessingService({
+  prisma,
+  logger: logger as Logger,
+  mailboxIngestionService,
+  mailboxAttachmentMetadataService,
+  mailboxPdfExtractionService
+});
+const mailboxProcessingVerificationService = createPrismaMailboxProcessingVerificationService({
+  prisma,
+  logger: logger as Logger
+});
 const mailboxSubscriptionService = createPrismaMailboxSubscriptionService({
   prisma,
   env,
@@ -65,6 +90,10 @@ const server = createServer({
   mailboxFolderSyncService,
   mailboxMessageSyncService,
   mailboxIngestionService,
+  mailboxAttachmentMetadataService,
+  mailboxPdfExtractionService,
+  mailboxMessageProcessingService,
+  mailboxProcessingVerificationService,
   mailboxSubscriptionService,
   logger: logger as Logger
 });

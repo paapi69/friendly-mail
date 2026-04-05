@@ -40,6 +40,25 @@ enum MessageActionability {
   INFORMATIONAL
 }
 
+enum MessageType {
+  CONTRACT
+  NOTICE
+  LETTER
+  POLICY
+  COMMITTEE
+  EVENT
+  INVOICE
+  INTERNAL
+  FYI
+}
+
+enum MessagePriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
 enum FilingState {
   PENDING_CLASSIFICATION
   ACTIVE_ACTIONABLE
@@ -95,6 +114,12 @@ enum ExtractionStatus {
 enum ExtractionArtifactKind {
   ATTACHMENT_TEXT
   ATTACHMENT_OCR
+}
+
+enum WorkflowCriticalityLevel {
+  NORMAL
+  ELEVATED
+  CRITICAL
 }
 
 model Tenant {
@@ -176,6 +201,7 @@ model Mailbox {
   messages           Message[]
   attachments        MessageAttachment[]
   extractionArtifacts ExtractionArtifact[]
+  messageClassifications MessageClassification[]
   tasks              Task[]
 
   @@index([tenantId])
@@ -303,6 +329,7 @@ model Message {
   folder             Folder?              @relation(fields: [folderId], references: [id], onDelete: SetNull)
   attachments        MessageAttachment[]
   extractionArtifacts ExtractionArtifact[]
+  messageClassifications MessageClassification[]
   tasks              Task[]
   auditEvents        AuditEvent[]
 
@@ -361,6 +388,42 @@ model ExtractionArtifact {
   @@unique([attachmentId, artifactKind])
   @@index([mailboxId])
   @@index([messageId])
+}
+
+model MessageClassification {
+  id                         String                    @id @default(cuid())
+  mailboxId                  String
+  messageId                  String
+  ingestionVersionKey        String
+  classifierVersion          String
+  actionability              MessageActionability
+  messageType                MessageType
+  confidenceScore            Float
+  explanationSummary         String
+  explanationLowConfidence   Boolean                   @default(false)
+  explanationJson            Json
+  dueDatesJson               Json
+  entitiesJson               Json
+  taskCandidatesJson         Json
+  urgencyLevel               MessagePriority
+  urgencyConfidenceScore     Float
+  urgencyRationale           String
+  urgencyReasonsJson         Json
+  criticalityLevel           WorkflowCriticalityLevel
+  criticalityConfidenceScore Float
+  criticalityRationale       String
+  criticalityReasonsJson     Json
+  sourceAttachmentIds        String[]                  @default([])
+  sourceArtifactIds          String[]                  @default([])
+  classifiedAt               DateTime
+  createdAt                  DateTime                  @default(now())
+  updatedAt                  DateTime                  @updatedAt
+  mailbox                    Mailbox                   @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  message                    Message                   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, ingestionVersionKey, classifierVersion])
+  @@index([mailboxId, messageId])
+  @@index([mailboxId, classifiedAt])
 }
 
 model Task {

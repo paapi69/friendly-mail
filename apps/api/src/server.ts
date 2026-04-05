@@ -20,6 +20,10 @@ import type { MailboxReadinessService } from "./mailbox-readiness-service";
 import type { MailboxFolderSyncService } from "./mailbox-folder-sync-service";
 import type { MailboxMessageSyncService } from "./mailbox-message-sync-service";
 import type { MailboxIngestionService } from "./mailbox-ingestion-service";
+import type { MailboxAttachmentMetadataService } from "./mailbox-attachment-metadata-service";
+import type { MailboxMessageProcessingService } from "./mailbox-message-processing-service";
+import type { MailboxProcessingVerificationService } from "./mailbox-processing-verification-service";
+import type { MailboxPdfExtractionService } from "./mailbox-pdf-extraction-service";
 import type { MailboxSubscriptionService } from "./mailbox-subscription-service";
 
 type ApiEnv = {
@@ -50,6 +54,22 @@ export type ApiMailboxIngestionService = Pick<
   MailboxIngestionService,
   "ingestMessage"
 >;
+export type ApiMailboxAttachmentMetadataService = Pick<
+  MailboxAttachmentMetadataService,
+  "syncMessageAttachments"
+>;
+export type ApiMailboxPdfExtractionService = Pick<
+  MailboxPdfExtractionService,
+  "extractPdfAttachments"
+>;
+export type ApiMailboxMessageProcessingService = Pick<
+  MailboxMessageProcessingService,
+  "processMessage"
+>;
+export type ApiMailboxProcessingVerificationService = Pick<
+  MailboxProcessingVerificationService,
+  "getMailboxProcessingVerification"
+>;
 export type ApiMailboxSubscriptionService = Pick<
   MailboxSubscriptionService,
   "ensureMailboxSubscription" | "handleWebhookNotifications"
@@ -63,6 +83,10 @@ export type CreateServerInput = {
   mailboxFolderSyncService: ApiMailboxFolderSyncService;
   mailboxMessageSyncService: ApiMailboxMessageSyncService;
   mailboxIngestionService: ApiMailboxIngestionService;
+  mailboxAttachmentMetadataService: ApiMailboxAttachmentMetadataService;
+  mailboxPdfExtractionService: ApiMailboxPdfExtractionService;
+  mailboxMessageProcessingService: ApiMailboxMessageProcessingService;
+  mailboxProcessingVerificationService: ApiMailboxProcessingVerificationService;
   mailboxSubscriptionService: ApiMailboxSubscriptionService;
   logger: Logger;
 };
@@ -416,6 +440,109 @@ export function createServer(input: CreateServerInput) {
         return;
       }
 
+      const mailboxAttachmentSyncMatch =
+        request.method === "POST"
+          ? requestUrl.pathname.match(
+              /^\/mailboxes\/([^/]+)\/messages\/([^/]+)\/attachments\/sync$/
+            )
+          : null;
+
+      if (mailboxAttachmentSyncMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxAttachmentSyncMatch[1]);
+        const messageId = decodeURIComponent(mailboxAttachmentSyncMatch[2]);
+        const result = await input.mailboxAttachmentMetadataService.syncMessageAttachments({
+          session,
+          mailboxId,
+          messageId
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Synchronized mailbox attachment metadata", {
+          statusCode: 200,
+          mailboxId,
+          messageId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          graphMessageId: result.graphMessageId,
+          attachmentCount: result.attachmentCount,
+          candidateCount: result.candidateCount
+        });
+        return;
+      }
+
+      const mailboxPdfExtractionMatch =
+        request.method === "POST"
+          ? requestUrl.pathname.match(
+              /^\/mailboxes\/([^/]+)\/messages\/([^/]+)\/attachments\/extract-pdf$/
+            )
+          : null;
+
+      if (mailboxPdfExtractionMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxPdfExtractionMatch[1]);
+        const messageId = decodeURIComponent(mailboxPdfExtractionMatch[2]);
+        const result = await input.mailboxPdfExtractionService.extractPdfAttachments({
+          session,
+          mailboxId,
+          messageId
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Extracted PDF attachment text", {
+          statusCode: 200,
+          mailboxId,
+          messageId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          graphMessageId: result.graphMessageId,
+          extractedCount: result.extractedCount,
+          failedCount: result.failedCount
+        });
+        return;
+      }
+
+      const mailboxMessageProcessingMatch =
+        request.method === "POST"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/messages\/([^/]+)\/process$/)
+          : null;
+
+      if (mailboxMessageProcessingMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxMessageProcessingMatch[1]);
+        const messageId = decodeURIComponent(mailboxMessageProcessingMatch[2]);
+        const result = await input.mailboxMessageProcessingService.processMessage({
+          session,
+          mailboxId,
+          messageId
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Processed mailbox message through ingestion and extraction orchestration", {
+          statusCode: 200,
+          mailboxId,
+          messageId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          graphMessageId: result.graphMessageId,
+          ingestionVersionKey: result.ingestionVersionKey,
+          processingStatus: result.processingStatus
+        });
+        return;
+      }
+
       const mailboxOperationalVerificationMatch =
         request.method === "GET"
           ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/operational-verification$/)
@@ -435,6 +562,35 @@ export function createServer(input: CreateServerInput) {
 
         writeJson(response, 200, result);
         requestLogger.info("Fetched mailbox operational verification", {
+          statusCode: 200,
+          mailboxId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          overallStatus: result.overallStatus
+        });
+        return;
+      }
+
+      const mailboxProcessingVerificationMatch =
+        request.method === "GET"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/processing-verification$/)
+          : null;
+
+      if (mailboxProcessingVerificationMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxProcessingVerificationMatch[1]);
+        const result =
+          await input.mailboxProcessingVerificationService.getMailboxProcessingVerification({
+            session,
+            mailboxId
+          });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Fetched mailbox processing verification", {
           statusCode: 200,
           mailboxId,
           userId: session.principal.userId,

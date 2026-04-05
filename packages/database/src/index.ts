@@ -1,4 +1,4 @@
-import { AuthProvider, PrismaClient, UserRole } from "@prisma/client";
+import { AuthProvider, Prisma, PrismaClient, UserRole } from "@prisma/client";
 
 declare global {
   var __friendlyMailPrisma__: PrismaClient | undefined;
@@ -17,6 +17,7 @@ export const databaseTables = [
   "Message",
   "MessageAttachment",
   "ExtractionArtifact",
+  "MessageClassification",
   "Task",
   "AuditEvent"
 ] as const;
@@ -157,6 +158,123 @@ export type UpsertAttachmentExtractionArtifactInput = {
   confidenceScore?: number;
   sourceVersionKey: string;
   createdAt?: Date;
+};
+
+export type ClassificationReasonCodeValue =
+  | "ACTION_REQUESTED"
+  | "DUE_DATE_DETECTED"
+  | "DEADLINE_CUE_DETECTED"
+  | "INVOICE_CUE_DETECTED"
+  | "NOTICE_CUE_DETECTED"
+  | "COUNTERPARTY_DETECTED"
+  | "ATTACHMENT_EVIDENCE_USED"
+  | "LOW_CONFIDENCE"
+  | "AMBIGUOUS_CONTENT";
+
+export type WorkflowSignalSourceKindValue =
+  | "MESSAGE_METADATA"
+  | "BODY_TEXT"
+  | "UNIQUE_BODY_TEXT"
+  | "ATTACHMENT_TEXT"
+  | "ATTACHMENT_OCR";
+
+export type WorkflowEntityKindValue =
+  | "COUNTERPARTY"
+  | "COMMITTEE"
+  | "EVENT"
+  | "INVOICE"
+  | "PERSON"
+  | "ORGANIZATION"
+  | "POLICY"
+  | "DOCUMENT";
+
+export type WorkflowSignalProvenanceSnapshot = {
+  sourceKind: WorkflowSignalSourceKindValue;
+  attachmentId?: string;
+  artifactId?: string;
+  field?: string;
+  excerpt?: string;
+};
+
+export type ClassificationReasonSnapshot = {
+  code: ClassificationReasonCodeValue;
+  summary: string;
+  provenance?: WorkflowSignalProvenanceSnapshot[];
+};
+
+export type DueDateSignalSnapshot = {
+  id: string;
+  label: string;
+  value: string;
+  confidenceScore: number;
+  rationale?: string;
+  provenance: WorkflowSignalProvenanceSnapshot[];
+};
+
+export type WorkflowEntitySignalSnapshot = {
+  id: string;
+  kind: WorkflowEntityKindValue;
+  value: string;
+  normalizedValue?: string;
+  confidenceScore: number;
+  rationale?: string;
+  provenance: WorkflowSignalProvenanceSnapshot[];
+};
+
+export type TaskCandidateSignalSnapshot = {
+  id: string;
+  title: string;
+  summary?: string;
+  dueAt?: string;
+  confidenceScore: number;
+  rationale: string;
+  provenance: WorkflowSignalProvenanceSnapshot[];
+};
+
+export type WorkflowUrgencySignalSnapshot = {
+  level: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
+  confidenceScore: number;
+  rationale: string;
+  reasons: ClassificationReasonSnapshot[];
+};
+
+export type WorkflowCriticalitySignalSnapshot = {
+  level: "NORMAL" | "ELEVATED" | "CRITICAL";
+  confidenceScore: number;
+  rationale: string;
+  reasons: ClassificationReasonSnapshot[];
+};
+
+export type UpsertMessageClassificationInput = {
+  mailboxId: string;
+  messageId: string;
+  ingestionVersionKey: string;
+  classifierVersion: string;
+  classifiedAt?: Date;
+  actionability: "ACTIONABLE" | "INFORMATIONAL";
+  messageType:
+    | "CONTRACT"
+    | "NOTICE"
+    | "LETTER"
+    | "POLICY"
+    | "COMMITTEE"
+    | "EVENT"
+    | "INVOICE"
+    | "INTERNAL"
+    | "FYI";
+  confidenceScore: number;
+  explanation: {
+    summary: string;
+    lowConfidence: boolean;
+    reasons: ClassificationReasonSnapshot[];
+  };
+  signals: {
+    dueDates: DueDateSignalSnapshot[];
+    entities: WorkflowEntitySignalSnapshot[];
+    taskCandidates: TaskCandidateSignalSnapshot[];
+    urgency: WorkflowUrgencySignalSnapshot;
+    criticality: WorkflowCriticalitySignalSnapshot;
+  };
 };
 
 export type UpsertGraphSubscriptionInput = {
@@ -514,6 +632,69 @@ type ExtractionArtifactWriter = {
         confidenceScore: number | null;
         sourceVersionKey: string;
         createdAt: Date;
+      };
+    }) => Promise<unknown>;
+  };
+};
+
+type MessageClassificationWriter = {
+  messageClassification: {
+    upsert: (args: {
+      where: {
+        messageId_ingestionVersionKey_classifierVersion: {
+          messageId: string;
+          ingestionVersionKey: string;
+          classifierVersion: string;
+        };
+      };
+      update: {
+        mailboxId: string;
+        actionability: UpsertMessageClassificationInput["actionability"];
+        messageType: UpsertMessageClassificationInput["messageType"];
+        confidenceScore: number;
+        explanationSummary: string;
+        explanationLowConfidence: boolean;
+        explanationJson: Prisma.InputJsonValue;
+        dueDatesJson: Prisma.InputJsonValue;
+        entitiesJson: Prisma.InputJsonValue;
+        taskCandidatesJson: Prisma.InputJsonValue;
+        urgencyLevel: UpsertMessageClassificationInput["signals"]["urgency"]["level"];
+        urgencyConfidenceScore: number;
+        urgencyRationale: string;
+        urgencyReasonsJson: Prisma.InputJsonValue;
+        criticalityLevel: UpsertMessageClassificationInput["signals"]["criticality"]["level"];
+        criticalityConfidenceScore: number;
+        criticalityRationale: string;
+        criticalityReasonsJson: Prisma.InputJsonValue;
+        sourceAttachmentIds: string[];
+        sourceArtifactIds: string[];
+        classifiedAt: Date;
+      };
+      create: {
+        mailboxId: string;
+        messageId: string;
+        ingestionVersionKey: string;
+        classifierVersion: string;
+        actionability: UpsertMessageClassificationInput["actionability"];
+        messageType: UpsertMessageClassificationInput["messageType"];
+        confidenceScore: number;
+        explanationSummary: string;
+        explanationLowConfidence: boolean;
+        explanationJson: Prisma.InputJsonValue;
+        dueDatesJson: Prisma.InputJsonValue;
+        entitiesJson: Prisma.InputJsonValue;
+        taskCandidatesJson: Prisma.InputJsonValue;
+        urgencyLevel: UpsertMessageClassificationInput["signals"]["urgency"]["level"];
+        urgencyConfidenceScore: number;
+        urgencyRationale: string;
+        urgencyReasonsJson: Prisma.InputJsonValue;
+        criticalityLevel: UpsertMessageClassificationInput["signals"]["criticality"]["level"];
+        criticalityConfidenceScore: number;
+        criticalityRationale: string;
+        criticalityReasonsJson: Prisma.InputJsonValue;
+        sourceAttachmentIds: string[];
+        sourceArtifactIds: string[];
+        classifiedAt: Date;
       };
     }) => Promise<unknown>;
   };
@@ -897,8 +1078,106 @@ export async function upsertAttachmentExtractionArtifact(
   });
 }
 
+export async function upsertMessageClassification(
+  writer: MessageClassificationWriter,
+  input: UpsertMessageClassificationInput
+) {
+  const classifiedAt = input.classifiedAt ?? new Date();
+  const sourceLinkage = collectMessageClassificationSourceLinkage(input);
+  const data = {
+    mailboxId: input.mailboxId,
+    actionability: input.actionability,
+    messageType: input.messageType,
+    confidenceScore: input.confidenceScore,
+    explanationSummary: input.explanation.summary,
+    explanationLowConfidence: input.explanation.lowConfidence,
+    explanationJson: toInputJson(input.explanation),
+    dueDatesJson: toInputJson(input.signals.dueDates),
+    entitiesJson: toInputJson(input.signals.entities),
+    taskCandidatesJson: toInputJson(input.signals.taskCandidates),
+    urgencyLevel: input.signals.urgency.level,
+    urgencyConfidenceScore: input.signals.urgency.confidenceScore,
+    urgencyRationale: input.signals.urgency.rationale,
+    urgencyReasonsJson: toInputJson(input.signals.urgency.reasons),
+    criticalityLevel: input.signals.criticality.level,
+    criticalityConfidenceScore: input.signals.criticality.confidenceScore,
+    criticalityRationale: input.signals.criticality.rationale,
+    criticalityReasonsJson: toInputJson(input.signals.criticality.reasons),
+    sourceAttachmentIds: sourceLinkage.sourceAttachmentIds,
+    sourceArtifactIds: sourceLinkage.sourceArtifactIds,
+    classifiedAt
+  };
+
+  return writer.messageClassification.upsert({
+    where: {
+      messageId_ingestionVersionKey_classifierVersion: {
+        messageId: input.messageId,
+        ingestionVersionKey: input.ingestionVersionKey,
+        classifierVersion: input.classifierVersion
+      }
+    },
+    update: data,
+    create: {
+      ...data,
+      messageId: input.messageId,
+      ingestionVersionKey: input.ingestionVersionKey,
+      classifierVersion: input.classifierVersion
+    }
+  });
+}
+
 function normalizeStringList(values: string[]) {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))].sort();
+}
+
+function toInputJson(value: unknown) {
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+}
+
+function collectMessageClassificationSourceLinkage(input: UpsertMessageClassificationInput) {
+  const attachmentIds = new Set<string>();
+  const artifactIds = new Set<string>();
+
+  const collect = (provenance: WorkflowSignalProvenanceSnapshot[] | undefined) => {
+    for (const entry of provenance ?? []) {
+      if (entry.attachmentId) {
+        attachmentIds.add(entry.attachmentId);
+      }
+
+      if (entry.artifactId) {
+        artifactIds.add(entry.artifactId);
+      }
+    }
+  };
+
+  for (const reason of input.explanation.reasons) {
+    collect(reason.provenance);
+  }
+
+  for (const dueDate of input.signals.dueDates) {
+    collect(dueDate.provenance);
+  }
+
+  for (const entity of input.signals.entities) {
+    collect(entity.provenance);
+  }
+
+  for (const taskCandidate of input.signals.taskCandidates) {
+    collect(taskCandidate.provenance);
+  }
+
+  for (const reason of input.signals.urgency.reasons) {
+    collect(reason.provenance);
+  }
+
+  for (const reason of input.signals.criticality.reasons) {
+    collect(reason.provenance);
+  }
+
+  return {
+    sourceAttachmentIds: [...attachmentIds].sort(),
+    sourceArtifactIds: [...artifactIds].sort()
+  };
 }
 
 export * from "@prisma/client";

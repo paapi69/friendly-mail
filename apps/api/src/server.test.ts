@@ -9,6 +9,10 @@ import {
 } from "@friendly-mail/contracts";
 import {
   createServer,
+  type ApiMailboxAttachmentMetadataService,
+  type ApiMailboxMessageProcessingService,
+  type ApiMailboxProcessingVerificationService,
+  type ApiMailboxPdfExtractionService,
   type ApiAuthService,
   type ApiMailboxFolderSyncService,
   type ApiMailboxIngestionService,
@@ -487,6 +491,203 @@ describe("api auth routes", () => {
     });
   });
 
+  it("syncs message attachment metadata for an ingested mailbox message", async () => {
+    const mailboxAttachmentMetadataService: ApiMailboxAttachmentMetadataService = {
+      syncMessageAttachments: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        graphMessageId: "graph_message_123",
+        ingestionVersionKey: "mailbox_123:graph_message_123:change_key_456",
+        attachmentCount: 2,
+        candidateCount: 1,
+        unsupportedCount: 1,
+        syncedAt: "2026-04-04T11:05:00.000Z",
+        attachments: [
+          {
+            graphAttachmentId: "graph_attachment_pdf",
+            name: "notice.pdf",
+            contentType: "application/pdf",
+            sizeInBytes: 204800,
+            isInline: false,
+            attachmentKind: "file",
+            isExtractionCandidate: true,
+            extractionDecisionReason: "pdf_supported",
+            extractionStatus: "pending"
+          }
+        ]
+      })
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mailboxAttachmentMetadataService
+    );
+
+    const response = await request(server, {
+      method: "POST",
+      path: "/mailboxes/mailbox_123/messages/message_123/attachments/sync",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual(
+      expect.objectContaining({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        attachmentCount: 2
+      })
+    );
+    expect(mailboxAttachmentMetadataService.syncMessageAttachments).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123",
+      messageId: "message_123"
+    });
+  });
+
+  it("extracts PDF text for supported message attachments", async () => {
+    const mailboxPdfExtractionService: ApiMailboxPdfExtractionService = {
+      extractPdfAttachments: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        graphMessageId: "graph_message_123",
+        ingestionVersionKey: "mailbox_123:graph_message_123:change_key_456",
+        extractedCount: 1,
+        failedCount: 0,
+        skippedCount: 0,
+        extractedAt: "2026-04-04T11:15:00.000Z",
+        attachments: [
+          {
+            attachmentId: "attachment_123",
+            graphAttachmentId: "graph_attachment_pdf",
+            name: "invoice.pdf",
+            extractionStatus: "completed",
+            storageKey: "artifacts/mailbox_123/attachment_123/text.txt",
+            textLength: 55,
+            extractionAttempts: 1
+          }
+        ]
+      })
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mailboxPdfExtractionService
+    );
+
+    const response = await request(server, {
+      method: "POST",
+      path: "/mailboxes/mailbox_123/messages/message_123/attachments/extract-pdf",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual(
+      expect.objectContaining({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        extractedCount: 1
+      })
+    );
+    expect(mailboxPdfExtractionService.extractPdfAttachments).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123",
+      messageId: "message_123"
+    });
+  });
+
+  it("orchestrates repeat-safe message processing through ingestion and extraction", async () => {
+    const mailboxMessageProcessingService: ApiMailboxMessageProcessingService = {
+      processMessage: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        graphMessageId: "graph_message_123",
+        ingestionVersionKey: "mailbox_123:graph_message_123:change_key_456",
+        idempotencyKey: "mailbox_123:graph_message_123:change_key_456",
+        processingStatus: "processed",
+        ingestion: {
+          action: "reprocessed",
+          hasAttachments: true,
+          ingestedAt: "2026-04-04T11:00:00.000Z"
+        },
+        attachmentSync: {
+          action: "synced",
+          attachmentCount: 2,
+          candidateCount: 1,
+          unsupportedCount: 1,
+          syncedAt: "2026-04-04T11:05:00.000Z"
+        },
+        extraction: {
+          action: "processed",
+          extractedCount: 1,
+          failedCount: 0,
+          skippedCount: 0,
+          extractedAt: "2026-04-04T11:15:00.000Z"
+        }
+      })
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mailboxMessageProcessingService
+    );
+
+    const response = await request(server, {
+      method: "POST",
+      path: "/mailboxes/mailbox_123/messages/message_123/process",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual(
+      expect.objectContaining({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        processingStatus: "processed"
+      })
+    );
+    expect(mailboxMessageProcessingService.processMessage).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123",
+      messageId: "message_123"
+    });
+  });
+
   it("returns mailbox operational verification for an authenticated mailbox owner", async () => {
     const mailboxReadinessService: ApiMailboxReadinessService = {
       checkSharedMailboxReadiness: vi.fn(),
@@ -546,6 +747,82 @@ describe("api auth routes", () => {
       })
     );
     expect(mailboxReadinessService.getMailboxOperationalVerification).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123"
+    });
+  });
+
+  it("returns mailbox processing verification for an authenticated mailbox owner", async () => {
+    const mailboxProcessingVerificationService: ApiMailboxProcessingVerificationService = {
+      getMailboxProcessingVerification: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        checkedAt: "2026-04-04T11:30:00.000Z",
+        overallStatus: "warning",
+        ingestion: {
+          trackedMessages: 3,
+          ingestedMessages: 2,
+          pendingMessages: 1,
+          messagesWithAttachments: 2
+        },
+        extraction: {
+          trackedAttachments: 4,
+          candidateAttachments: 2,
+          completedAttachments: 1,
+          completedWithOcrAttachments: 0,
+          pendingAttachments: 1,
+          failedAttachments: 0,
+          unsupportedAttachments: 2,
+          retriedAttachments: 0,
+          retryBacklogAttachments: 1,
+          maxExtractionAttempts: 1,
+          failureRate: 0,
+          unsupportedReasons: [
+            {
+              reason: "file_type_unsupported",
+              count: 2
+            }
+          ],
+          failureReasons: []
+        },
+        checks: []
+      })
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mailboxProcessingVerificationService
+    );
+
+    const response = await request(server, {
+      method: "GET",
+      path: "/mailboxes/mailbox_123/processing-verification",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual(
+      expect.objectContaining({
+        mailboxId: "mailbox_123",
+        overallStatus: "warning"
+      })
+    );
+    expect(
+      mailboxProcessingVerificationService.getMailboxProcessingVerification
+    ).toHaveBeenCalledWith({
       session: exampleSession.session,
       mailboxId: "mailbox_123"
     });
@@ -733,7 +1010,11 @@ function createTestServer(
   mailboxFolderSyncService?: ApiMailboxFolderSyncService,
   mailboxMessageSyncService?: ApiMailboxMessageSyncService,
   mailboxSubscriptionService?: ApiMailboxSubscriptionService,
-  mailboxIngestionService?: ApiMailboxIngestionService
+  mailboxIngestionService?: ApiMailboxIngestionService,
+  mailboxAttachmentMetadataService?: ApiMailboxAttachmentMetadataService,
+  mailboxPdfExtractionService?: ApiMailboxPdfExtractionService,
+  mailboxMessageProcessingService?: ApiMailboxMessageProcessingService,
+  mailboxProcessingVerificationService?: ApiMailboxProcessingVerificationService
 ) {
   const server = createServer({
     env: {
@@ -763,6 +1044,18 @@ function createTestServer(
     },
     mailboxIngestionService: mailboxIngestionService ?? {
       ingestMessage: vi.fn()
+    },
+    mailboxAttachmentMetadataService: mailboxAttachmentMetadataService ?? {
+      syncMessageAttachments: vi.fn()
+    },
+    mailboxPdfExtractionService: mailboxPdfExtractionService ?? {
+      extractPdfAttachments: vi.fn()
+    },
+    mailboxMessageProcessingService: mailboxMessageProcessingService ?? {
+      processMessage: vi.fn()
+    },
+    mailboxProcessingVerificationService: mailboxProcessingVerificationService ?? {
+      getMailboxProcessingVerification: vi.fn()
     },
     logger: {
       child() {

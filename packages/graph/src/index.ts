@@ -49,6 +49,14 @@ const DEFAULT_MESSAGE_DETAIL_SELECT = [
   "hasAttachments",
   "webLink"
 ] as const;
+const DEFAULT_ATTACHMENT_SELECT = [
+  "id",
+  "name",
+  "contentType",
+  "size",
+  "isInline",
+  "lastModifiedDateTime"
+] as const;
 const DEFAULT_FOLDER_SELECT = [
   "id",
   "displayName",
@@ -108,6 +116,18 @@ export type GraphEmailAddress = {
 export type GraphItemBody = {
   contentType: "text" | "html";
   content?: string;
+};
+
+export type GraphAttachmentKind = "file" | "item" | "reference";
+
+export type GraphAttachment = {
+  id: string;
+  name: string;
+  contentType?: string;
+  size: number;
+  isInline: boolean;
+  lastModifiedDateTime?: string;
+  attachmentKind: GraphAttachmentKind;
 };
 
 export type GraphMessageDetail = {
@@ -170,6 +190,7 @@ type RequestOptions = {
   absoluteUrl?: string;
   query?: Record<string, string | number | boolean | undefined>;
   body?: unknown;
+  accept?: string;
   immutableId?: boolean;
   bodyContentType?: "text" | "html";
 };
@@ -188,7 +209,7 @@ export function createGraphConnector(options: CreateGraphConnectorOptions) {
   const retryBaseDelayMs = options.retryBaseDelayMs ?? DEFAULT_RETRY_DELAY_MS;
   const sleep = options.sleep ?? defaultSleep;
 
-  async function requestJson<T>(request: RequestOptions): Promise<T> {
+  async function performRequest(request: RequestOptions) {
     let attempt = 0;
 
     while (true) {
@@ -200,11 +221,7 @@ export function createGraphConnector(options: CreateGraphConnectorOptions) {
       });
 
       if (response.ok) {
-        if (response.status === 204) {
-          return undefined as T;
-        }
-
-        return (await response.json()) as T;
+        return response;
       }
 
       if (RETRYABLE_STATUS_CODES.has(response.status) && attempt < maxRetries) {
@@ -224,6 +241,21 @@ export function createGraphConnector(options: CreateGraphConnectorOptions) {
 
       throw await toGraphError(response, request);
     }
+  }
+
+  async function requestJson<T>(request: RequestOptions): Promise<T> {
+    const response = await performRequest(request);
+
+    if (response.status === 204) {
+      return undefined as T;
+    }
+
+    return (await response.json()) as T;
+  }
+
+  async function requestBytes(request: RequestOptions) {
+    const response = await performRequest(request);
+    return new Uint8Array(await response.arrayBuffer());
   }
 
   async function requestPage<T>(
@@ -367,6 +399,43 @@ export function createGraphConnector(options: CreateGraphConnectorOptions) {
       return mapMessageDetail(payload);
     },
 
+    listMessageAttachments(input: {
+      messageId: string;
+      userId?: string;
+      pageUrl?: string;
+      select?: string[];
+      top?: number;
+    }) {
+      return requestPage<GraphAttachment>(
+        {
+          absoluteUrl: input.pageUrl,
+          path: input.pageUrl
+            ? undefined
+            : `${getUserRoot(input.userId)}/messages/${encodeURIComponent(input.messageId)}/attachments`,
+          query: input.pageUrl
+            ? undefined
+            : {
+                $top: input.top,
+                $select: normalizeFieldSelection(input.select, DEFAULT_ATTACHMENT_SELECT)
+              },
+          immutableId: true
+        },
+        mapAttachment
+      );
+    },
+
+    downloadMessageAttachmentContent(input: {
+      messageId: string;
+      attachmentId: string;
+      userId?: string;
+    }) {
+      return requestBytes({
+        path: `${getUserRoot(input.userId)}/messages/${encodeURIComponent(input.messageId)}/attachments/${encodeURIComponent(input.attachmentId)}/$value`,
+        accept: "application/octet-stream",
+        immutableId: true
+      });
+    },
+
     async getCurrentUser() {
       const payload = await requestJson<Record<string, unknown>>({
         path: "/me",
@@ -430,7 +499,7 @@ export function createGraphConnector(options: CreateGraphConnectorOptions) {
 
 function buildHeaders(accessToken: string, request: RequestOptions) {
   const headers = new Headers({
-    Accept: "application/json",
+    Accept: request.accept ?? "application/json",
     Authorization: `Bearer ${accessToken}`
   });
 
@@ -588,6 +657,18 @@ function mapMessageDetail(value: Record<string, unknown>): GraphMessageDetail {
   };
 }
 
+function mapAttachment(value: Record<string, unknown>): GraphAttachment {
+  return {
+    id: asRequiredString(value.id, "attachment id"),
+    name: asOptionalString(value.name) ?? "",
+    contentType: asOptionalString(value.contentType),
+    size: asNumber(value.size),
+    isInline: asBoolean(value.isInline),
+    lastModifiedDateTime: asOptionalString(value.lastModifiedDateTime),
+    attachmentKind: mapAttachmentKind(asOptionalString(value["@odata.type"]))
+  };
+}
+
 function mapUser(value: Record<string, unknown>): GraphUser {
   return {
     id: asRequiredString(value.id, "user id"),
@@ -709,6 +790,26 @@ function asBoolean(value: unknown) {
 
 function asRemovedReason(value: unknown) {
   return value === "changed" || value === "deleted" ? value : undefined;
+}
+
+function mapAttachmentKind(value: string | undefined): GraphAttachmentKind {
+  const normalized = value?.toLowerCase() ?? "";
+
+  if (normalized.includes("fileattachment")) {
+    return "file";
+  }
+
+  if (normalized.includes("itemattachment")) {
+    return "item";
+  }
+
+  if (normalized.includes("referenceattachment")) {
+    return "reference";
+  }
+
+  throw new AppError("GRAPH_PAYLOAD_INVALID", "Missing required Graph field: attachment type.", {
+    statusCode: 502
+  });
 }
 
 function readEmailAddress(value: unknown) {
