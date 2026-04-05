@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-04",
+  "lastUpdated": "2026-04-05",
   "epics": [
     {
       "id": "E1",
@@ -108,7 +108,7 @@
     {
       "id": "E3",
       "title": "Message Ingestion and Attachment Extraction",
-      "status": "pending",
+      "status": "done",
       "tickets": [
         {
           "id": "E3-T1",
@@ -128,44 +128,170 @@
         {
           "id": "E3-T4",
           "title": "Implement Attachment Metadata Retrieval and Durable Linking",
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E3-T5",
           "title": "Implement PDF-First Attachment Text Extraction",
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E3-T6",
           "title": "Add OCR Fallback and Extraction Confidence Handling",
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E3-T7",
           "title": "Orchestrate Idempotent Ingestion and Attachment Processing",
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E3-T8",
           "title": "Add Operational Verification for Ingestion and Extraction",
-          "status": "pending"
+          "status": "done"
         }
       ]
     },
     {
       "id": "E4",
       "title": "Classification and Workflow Intelligence",
-      "status": "pending"
+      "status": "done",
+      "tickets": [
+        {
+          "id": "E4-T1",
+          "title": "Define the Classification and Workflow Intelligence Contract",
+          "status": "done"
+        },
+        {
+          "id": "E4-T2",
+          "title": "Extend Persistence for Classification Results and Workflow Signals",
+          "status": "done"
+        },
+        {
+          "id": "E4-T3",
+          "title": "Implement the Classification Orchestration Service",
+          "status": "done"
+        },
+        {
+          "id": "E4-T4",
+          "title": "Implement Actionability and Message-Type Classification",
+          "status": "done"
+        },
+        {
+          "id": "E4-T5",
+          "title": "Implement Due Date, Entity, and Task-Candidate Extraction",
+          "status": "done"
+        },
+        {
+          "id": "E4-T6",
+          "title": "Implement Urgency and Criticality Signal Scoring",
+          "status": "done"
+        },
+        {
+          "id": "E4-T7",
+          "title": "Add Confidence and Explanation Read Models for Downstream Surfaces",
+          "status": "done"
+        },
+        {
+          "id": "E4-T8",
+          "title": "Add Operational Verification for Classification Quality and Readiness",
+          "status": "done"
+        }
+      ]
     },
     {
       "id": "E5",
       "title": "Task and Workflow State Engine",
-      "status": "pending"
+      "status": "done",
+      "tickets": [
+        {
+          "id": "E5-T1",
+          "title": "Define the Task and Workflow State Contract",
+          "status": "done"
+        },
+        {
+          "id": "E5-T2",
+          "title": "Extend Persistence for Tasks, Source Links, and Message Workflow State",
+          "status": "done"
+        },
+        {
+          "id": "E5-T3",
+          "title": "Implement Task Materialization from Classification Output",
+          "status": "done"
+        },
+        {
+          "id": "E5-T4",
+          "title": "Implement Task Lifecycle Transitions and Resolution Semantics",
+          "status": "done"
+        },
+        {
+          "id": "E5-T5",
+          "title": "Implement Message Workflow State Projection and Filing Blockers",
+          "status": "done"
+        },
+        {
+          "id": "E5-T6",
+          "title": "Implement Task Ownership, Delegation, and Criticality Persistence",
+          "status": "done"
+        },
+        {
+          "id": "E5-T7",
+          "title": "Add Workflow Read Models and Internal APIs for Downstream Surfaces",
+          "status": "done"
+        },
+        {
+          "id": "E5-T8",
+          "title": "Add Operational Verification for Task and Workflow Readiness",
+          "status": "done"
+        }
+      ]
     },
     {
       "id": "E6",
       "title": "Delayed Filing and Mailbox Actions",
-      "status": "pending"
+      "status": "done",
+      "tickets": [
+        {
+          "id": "E6-T1",
+          "title": "Define the Delayed Filing and Mailbox Action Contract",
+          "status": "done"
+        },
+        {
+          "id": "E6-T2",
+          "title": "Extend Persistence for Filing Decisions, Target Folders, and Mailbox Action Audit",
+          "status": "done"
+        },
+        {
+          "id": "E6-T3",
+          "title": "Implement Filing Decision Orchestration from Workflow State",
+          "status": "done"
+        },
+        {
+          "id": "E6-T4",
+          "title": "Implement Informational Filing Execution for Read or Reviewed Messages",
+          "status": "done"
+        },
+        {
+          "id": "E6-T5",
+          "title": "Implement Actionable Filing Execution for Resolved Workflow State",
+          "status": "done"
+        },
+        {
+          "id": "E6-T6",
+          "title": "Implement Folder Suggestion and Category Application Flow",
+          "status": "done"
+        },
+        {
+          "id": "E6-T7",
+          "title": "Implement Invoice Routing and Outgoing Numbering Mailbox Actions",
+          "status": "done"
+        },
+        {
+          "id": "E6-T8",
+          "title": "Add Operational Verification for Delayed Filing and Mailbox Action Readiness",
+          "status": "done"
+        }
+      ]
     },
     {
       "id": "E7",

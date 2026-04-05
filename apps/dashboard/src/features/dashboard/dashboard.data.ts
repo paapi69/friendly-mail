@@ -343,6 +343,318 @@ const boardCardMetadata: BoardCardMetadata[] = [
     syncWithPlanning: true
   },
   {
+    id: "E4-T1",
+    title: "Define the classification and workflow intelligence contract",
+    stakeholderSummary:
+      "Locks the classification output shape so later task and filing work can build on explainable workflow signals instead of ad hoc inference.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Ready",
+    points: 3,
+    size: "S",
+    labels: ["backend", "epic:E4", "surface:workflow", "type:spec", "priority:P0"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E4-T2",
+    title: "Extend persistence for classification results and workflow signals",
+    stakeholderSummary:
+      "Stores classification output, confidence, and extracted workflow cues so later features can trust a durable intelligence layer.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E4", "surface:api", "type:feature", "priority:P0"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E4-T3",
+    title: "Implement the classification orchestration service",
+    stakeholderSummary:
+      "Creates the repeat-safe pipeline that packages message and attachment content into one classification path.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E4", "surface:workflow", "type:integration", "priority:P0"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E4-T4",
+    title: "Implement actionability and message-type classification",
+    stakeholderSummary:
+      "Lets Friendly Mail tell whether an email needs action and what kind of work it represents before task state exists.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 8,
+    size: "L",
+    labels: ["backend", "epic:E4", "surface:workflow", "type:feature", "priority:P0"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E4-T5",
+    title: "Implement due date, entity, and task-candidate extraction",
+    stakeholderSummary:
+      "Pulls out the dates, parties, and suggested actions that later become real workflow records.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 8,
+    size: "L",
+    labels: ["backend", "epic:E4", "surface:workflow", "type:feature", "priority:P0"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E4-T6",
+    title: "Implement urgency and criticality signal scoring",
+    stakeholderSummary:
+      "Adds a trust-first way to surface important notices and near-due work before automations act on them.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E4", "surface:workflow", "type:feature", "priority:P1", "risk:workflow-safety"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E4-T7",
+    title: "Add confidence and explanation read models for downstream surfaces",
+    stakeholderSummary:
+      "Makes the intelligence layer explainable enough for the add-in and dashboard to show why Friendly Mail reached a conclusion.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E4", "surface:workflow", "type:integration", "priority:P1", "risk:workflow-safety"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E4-T8",
+    title: "Add operational verification for classification quality and readiness",
+    stakeholderSummary:
+      "Shows whether classification coverage and confidence are strong enough to safely feed later workflow features.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E4", "surface:workflow", "type:verification", "priority:P1", "risk:operational-readiness"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E5-T1",
+    title: "Define the task and workflow state contract",
+    stakeholderSummary:
+      "Locks the task and workflow-state shape so delayed filing and user surfaces build on one stable state engine.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Ready",
+    points: 3,
+    size: "S",
+    labels: ["backend", "epic:E5", "surface:workflow", "type:spec", "priority:P0"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E5-T2",
+    title: "Extend persistence for tasks, source links, and message workflow state",
+    stakeholderSummary:
+      "Stores first-class tasks and message workflow state so Friendly Mail can track work independently from folder location.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E5", "surface:api", "type:feature", "priority:P0"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E5-T3",
+    title: "Implement task materialization from classification output",
+    stakeholderSummary:
+      "Turns Epic 4 task candidates into durable tasks so actionable email becomes real tracked work.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E5", "surface:workflow", "type:integration", "priority:P0"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E5-T4",
+    title: "Implement task lifecycle transitions and resolution semantics",
+    stakeholderSummary:
+      "Defines how work moves through snooze, delegation, completion, and dismissal without losing accountability.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 8,
+    size: "L",
+    labels: ["backend", "epic:E5", "surface:workflow", "type:feature", "priority:P0", "risk:workflow-safety"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E5-T5",
+    title: "Implement message workflow state projection and filing blockers",
+    stakeholderSummary:
+      "Keeps email visibility tied to work state and read state instead of folder moves or hidden assumptions.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 8,
+    size: "L",
+    labels: ["backend", "epic:E5", "surface:workflow", "type:feature", "priority:P0", "risk:workflow-safety"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E5-T6",
+    title: "Implement task ownership, delegation, and criticality persistence",
+    stakeholderSummary:
+      "Makes responsibility and urgency durable so critical work stays attributable across personal and shared-mailbox flows.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E5", "surface:workflow", "type:feature", "priority:P1"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E5-T7",
+    title: "Add workflow read models and internal APIs for downstream surfaces",
+    stakeholderSummary:
+      "Gives the add-in, dashboard, and later filing flows one stable backend shape for task and workflow state.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E5", "surface:api", "type:integration", "priority:P1"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E5-T8",
+    title: "Add operational verification for task and workflow readiness",
+    stakeholderSummary:
+      "Shows whether task creation, lifecycle integrity, and workflow blockers are reliable before delayed filing depends on them.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E5", "surface:workflow", "type:verification", "priority:P1", "risk:operational-readiness"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E6-T1",
+    title: "Define the delayed filing and mailbox action contract",
+    stakeholderSummary:
+      "Locks how Friendly Mail turns workflow eligibility into safe mailbox actions without blurring mailbox state and workflow state.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Ready",
+    points: 3,
+    size: "S",
+    labels: ["backend", "epic:E6", "surface:workflow", "type:spec", "priority:P0", "risk:workflow-safety"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E6-T2",
+    title: "Extend persistence for filing decisions, target folders, and mailbox action audit",
+    stakeholderSummary:
+      "Stores delayed-filing decisions and mailbox-action history so every future move or route remains auditable.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Ready",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E6", "surface:api", "type:feature", "priority:P0"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E6-T3",
+    title: "Implement filing decision orchestration from workflow state",
+    stakeholderSummary:
+      "Turns explicit filing blockers into one repeat-safe decision the mailbox-action layer can trust.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Ready",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E6", "surface:workflow", "type:integration", "priority:P0"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E6-T4",
+    title: "Implement informational filing execution for read or reviewed messages",
+    stakeholderSummary:
+      "Applies delayed filing to low-risk informational mail only after the message is safe to move.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E6", "surface:workflow", "type:feature", "priority:P0", "risk:workflow-safety"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E6-T5",
+    title: "Implement actionable filing execution for resolved workflow state",
+    stakeholderSummary:
+      "Moves actionable mail only after real work is resolved, keeping delayed filing trustworthy.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 8,
+    size: "L",
+    labels: ["backend", "epic:E6", "surface:workflow", "type:feature", "priority:P0", "risk:workflow-safety"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E6-T6",
+    title: "Implement folder suggestion and category application flow",
+    stakeholderSummary:
+      "Gives users understandable filing destinations and low-risk mailbox actions before full automation.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E6", "surface:api", "type:integration", "priority:P1"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E6-T7",
+    title: "Implement invoice routing and outgoing numbering mailbox actions",
+    stakeholderSummary:
+      "Covers the MVP's highest-value specialized mailbox actions for finance and outbound workflows.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 8,
+    size: "L",
+    labels: ["backend", "epic:E6", "surface:api", "type:feature", "priority:P1", "integration:microsoft-graph"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E6-T8",
+    title: "Add operational verification for delayed filing and mailbox action readiness",
+    stakeholderSummary:
+      "Shows whether filing decisions and mailbox actions are safe enough to trust before they touch live mail.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E6", "surface:workflow", "type:verification", "priority:P1", "risk:operational-readiness"],
+    syncWithPlanning: true
+  },
+  {
     id: "E7-T6",
     title: "Expose prototype mailbox status endpoint for add-in",
     stakeholderSummary:
@@ -357,6 +669,9 @@ const boardCardMetadata: BoardCardMetadata[] = [
 ];
 
 const planningTicketMap = createPlanningTicketMap(planningStatus as PlanningStatusDocument);
+const autoInProgressTicketIds = createAutoInProgressTicketIds(
+  planningStatus as PlanningStatusDocument
+);
 const columnSortOrder: Record<BoardColumn, number> = {
   Backlog: 0,
   Ready: 1,
@@ -365,11 +680,16 @@ const columnSortOrder: Record<BoardColumn, number> = {
   Done: 4
 };
 
-export const cards = buildBoardCards(boardCardMetadata, planningTicketMap);
+export const cards = buildBoardCards(
+  boardCardMetadata,
+  planningTicketMap,
+  autoInProgressTicketIds
+);
 
 export function buildBoardCards(
   metadata: BoardCardMetadata[],
-  planningTickets: Map<string, PlanningTicketRecord>
+  planningTickets: Map<string, PlanningTicketRecord>,
+  autoInProgressIds: Set<string> = new Set()
 ) {
   return metadata
     .map((meta, index) => {
@@ -381,7 +701,7 @@ export function buildBoardCards(
         );
       }
 
-      const column = resolveBoardColumn(meta, planningTicket);
+      const column = resolveBoardColumn(meta, planningTicket, autoInProgressIds);
 
       return {
         id: meta.id,
@@ -403,6 +723,29 @@ export function buildBoardCards(
       void orderIndex;
       return card satisfies BoardCard;
     });
+}
+
+export function createAutoInProgressTicketIds(document: PlanningStatusDocument) {
+  const ids = new Set<string>();
+
+  for (const epic of document.epics) {
+    const tickets = epic.tickets ?? [];
+    if (tickets.length === 0) {
+      continue;
+    }
+
+    const hasCompletedWork = tickets.some((ticket) => ticket.status === "done");
+    if (!hasCompletedWork) {
+      continue;
+    }
+
+    const nextPendingTicket = tickets.find((ticket) => ticket.status === "pending");
+    if (nextPendingTicket) {
+      ids.add(nextPendingTicket.id);
+    }
+  }
+
+  return ids;
 }
 
 function compareBoardCards(
@@ -478,10 +821,15 @@ function createPlanningTicketMap(document: PlanningStatusDocument) {
 
 function resolveBoardColumn(
   meta: BoardCardMetadata,
-  planningTicket?: PlanningTicketRecord
+  planningTicket: PlanningTicketRecord | undefined,
+  autoInProgressIds: Set<string>
 ): BoardColumn {
   if (planningTicket?.status === "done") {
     return "Done";
+  }
+
+  if (planningTicket?.status === "pending" && autoInProgressIds.has(meta.id)) {
+    return "In Progress";
   }
 
   return meta.plannedColumn;

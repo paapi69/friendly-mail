@@ -2,16 +2,16 @@
 
 Generated from `.planning/epic-status.json`.
 
-Progress: 2/10 epics complete
+Progress: 6/10 epics complete
 
 ## Epics
 
 - [x] E1: Platform Foundation
 - [x] E2: Microsoft Graph and Mailbox Connectivity
-- [ ] E3: Message Ingestion and Attachment Extraction
-- [ ] E4: Classification and Workflow Intelligence
-- [ ] E5: Task and Workflow State Engine
-- [ ] E6: Delayed Filing and Mailbox Actions
+- [x] E3: Message Ingestion and Attachment Extraction
+- [x] E4: Classification and Workflow Intelligence
+- [x] E5: Task and Workflow State Engine
+- [x] E6: Delayed Filing and Mailbox Actions
 - [ ] E7: Outlook Add-in Experience
 - [ ] E8: Companion Web Dashboard and Admin
 - [ ] E9: Digests, Alerts, and Reminder Operations
@@ -46,15 +46,48 @@ Progress: 2/10 epics complete
 - [x] E3-T1: Define Message Ingestion and Extraction Contract
 - [x] E3-T2: Extend Persistence for Message Bodies, Attachments, and Extraction State
 - [x] E3-T3: Implement the Message Ingestion Service
-- [ ] E3-T4: Implement Attachment Metadata Retrieval and Durable Linking
-- [ ] E3-T5: Implement PDF-First Attachment Text Extraction
-- [ ] E3-T6: Add OCR Fallback and Extraction Confidence Handling
-- [ ] E3-T7: Orchestrate Idempotent Ingestion and Attachment Processing
-- [ ] E3-T8: Add Operational Verification for Ingestion and Extraction
+- [x] E3-T4: Implement Attachment Metadata Retrieval and Durable Linking
+- [x] E3-T5: Implement PDF-First Attachment Text Extraction
+- [x] E3-T6: Add OCR Fallback and Extraction Confidence Handling
+- [x] E3-T7: Orchestrate Idempotent Ingestion and Attachment Processing
+- [x] E3-T8: Add Operational Verification for Ingestion and Extraction
+
+## E4 Tickets
+
+- [x] E4-T1: Define the Classification and Workflow Intelligence Contract
+- [x] E4-T2: Extend Persistence for Classification Results and Workflow Signals
+- [x] E4-T3: Implement the Classification Orchestration Service
+- [x] E4-T4: Implement Actionability and Message-Type Classification
+- [x] E4-T5: Implement Due Date, Entity, and Task-Candidate Extraction
+- [x] E4-T6: Implement Urgency and Criticality Signal Scoring
+- [x] E4-T7: Add Confidence and Explanation Read Models for Downstream Surfaces
+- [x] E4-T8: Add Operational Verification for Classification Quality and Readiness
+
+## E5 Tickets
+
+- [x] E5-T1: Define the Task and Workflow State Contract
+- [x] E5-T2: Extend Persistence for Tasks, Source Links, and Message Workflow State
+- [x] E5-T3: Implement Task Materialization from Classification Output
+- [x] E5-T4: Implement Task Lifecycle Transitions and Resolution Semantics
+- [x] E5-T5: Implement Message Workflow State Projection and Filing Blockers
+- [x] E5-T6: Implement Task Ownership, Delegation, and Criticality Persistence
+- [x] E5-T7: Add Workflow Read Models and Internal APIs for Downstream Surfaces
+- [x] E5-T8: Add Operational Verification for Task and Workflow Readiness
+
+## E6 Tickets
+
+- [x] E6-T1: Define the Delayed Filing and Mailbox Action Contract
+- [x] E6-T2: Extend Persistence for Filing Decisions, Target Folders, and Mailbox Action Audit
+- [x] E6-T3: Implement Filing Decision Orchestration from Workflow State
+- [x] E6-T4: Implement Informational Filing Execution for Read or Reviewed Messages
+- [x] E6-T5: Implement Actionable Filing Execution for Resolved Workflow State
+- [x] E6-T6: Implement Folder Suggestion and Category Application Flow
+- [x] E6-T7: Implement Invoice Routing and Outgoing Numbering Mailbox Actions
+- [x] E6-T8: Add Operational Verification for Delayed Filing and Mailbox Action Readiness
 
 ## Notes
 
 - Update high-level epics with `node scripts/set-epic-status.mjs <E#> <pending|done>`.
 - Update detailed tickets with `node scripts/set-ticket-status.mjs <ticket-id> <pending|done>`.
 - Rebuild this file with `node scripts/sync-checklist.mjs`.
-- Last status update: 2026-04-04
+- Last status update: 2026-04-05

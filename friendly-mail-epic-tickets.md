@@ -4,9 +4,9 @@
 
 - Product: Friendly Mail
 - Document type: Implementation Ticket Breakdown
-- Version: v0.1
+- Version: v0.2
 - Status: Draft
-- Date: 2026-03-31
+- Date: 2026-04-05
 - Related documents:
   - `friendly-mail-mvp-epics.md`
   - `friendly-mail-mvp-roadmap.md`
@@ -835,3 +835,815 @@ Epic 3 can be marked complete when:
 - OCR fallback behavior is explicit where enabled
 - repeated mailbox events do not create duplicate extraction artifacts
 - ingestion and extraction failures are observable and recoverable
+
+## Epic 4: Classification and Workflow Intelligence
+
+**Goal**
+
+Turn normalized message and attachment content into structured workflow signals that later epics can persist as task state, filing decisions, and user-visible explanations without collapsing mailbox state into workflow state.
+
+**Includes**
+
+- classification contract and workflow-signal boundaries
+- persistence for classification output and extracted workflow signals
+- classification orchestration over message and attachment content
+- actionable vs informational classification
+- message-type classification
+- due date, entity, and task-candidate extraction
+- urgency and criticality scoring with explainable reasoning
+- confidence scoring and operational verification for representative samples
+
+**Dependencies**
+
+- Epic 3
+
+**Definition of Done**
+
+- the system can classify core MVP email types from representative email and PDF samples
+- actionable and informational messages are distinguished reliably enough for downstream workflow use
+- due dates, entities, and task candidates are extracted in a structured form
+- criticality decisions and confidence signals are explicit and explainable
+- Epic 5 can consume classification outputs without redefining their shape or provenance
+
+### Proposed Ticket List
+
+#### E4-T1: Define the Classification and Workflow Intelligence Contract
+
+**Goal**
+Lock the structured output shape for classification, extracted workflow signals, explanations, and confidence so Epic 4 stays separate from Epic 5 task-state ownership.
+
+**Scope**
+
+- define the classification result model for actionable vs informational and message-type outputs
+- define the extracted workflow-signal model for due dates, entities, and task candidates
+- define explanation and confidence fields for downstream user surfaces
+- define the handoff boundary between Epic 4 classification output and Epic 5 task creation
+- keep mailbox state, classification output, and workflow state explicitly separate
+
+**Expected Output**
+
+- Epic 4 classification contract
+- explicit handoff boundary to Epic 5
+- documented explanation and confidence output shape
+
+**Definition of Done**
+
+- implementers have one documented classification contract to build against
+- Epic 4 output shape is stable enough for downstream services and UI consumers
+- the boundary between workflow signals and first-class tasks is explicit
+- delayed-filing and mailbox-action policy are not pulled into Epic 4 by accident
+
+#### E4-T2: Extend Persistence for Classification Results and Workflow Signals
+
+**Goal**
+Add the persistence needed to store classification output, extracted workflow signals, explanations, and confidence without yet creating task records.
+
+**Scope**
+
+- extend the schema for message-level classification output
+- add storage for extracted due dates, entities, and task-candidate payloads
+- add provenance, versioning, and confidence fields for classification runs
+- preserve linkage back to source messages and extraction artifacts
+- keep Epic 4 persistence separate from Epic 5 task and workflow state tables
+
+**Expected Output**
+
+- schema and typed persistence contract for classification output
+- durable storage for workflow signals and explanations
+- repeat-safe linkage between classification runs and source content versions
+
+**Definition of Done**
+
+- classification output can be stored durably and read back consistently
+- workflow signals can be linked to the message and attachment content they came from
+- confidence and explanation data survive retries and reprocessing
+- the persistence layer is ready for classification orchestration work
+
+#### E4-T3: Implement the Classification Orchestration Service
+
+**Goal**
+Create the service that packages normalized message and attachment content into a repeat-safe classification job and stores the resulting output.
+
+**Scope**
+
+- gather normalized body content and extracted attachment text for a message version
+- prepare the classification input payload and provenance markers
+- call the classification path through one orchestration service
+- persist the result against the current ingestion and extraction version state
+- keep idempotency and reprocessing rules explicit for changed messages
+
+**Expected Output**
+
+- classification orchestration service
+- repeat-safe classification job flow
+- durable classification-run baseline
+
+**Definition of Done**
+
+- a normalized message with extracted attachments can enter one classification path
+- the orchestration service can skip duplicate work for unchanged message versions
+- changed message content can trigger explicit reclassification
+- later Epic 4 tickets can add intelligence without scattering orchestration logic
+
+#### E4-T4: Implement Actionability and Message-Type Classification
+
+**Goal**
+Classify each message into actionable vs informational state and the core Friendly Mail message taxonomy needed for later workflow decisions.
+
+**Scope**
+
+- classify actionable vs informational state
+- classify message type for the MVP taxonomy such as contract, notice, letter, policy, committee, event, invoice, internal, and FYI
+- keep classification rationale explicit for later explanation output
+- support representative body-only and body-plus-attachment cases
+- keep task creation and filing decisions out of this ticket
+
+**Expected Output**
+
+- actionability classification path
+- message-type classification path
+- rationale-bearing classification baseline
+
+**Definition of Done**
+
+- representative MVP message types can be classified end to end
+- actionable and informational states are explicit in stored output
+- message-type labels are stable enough for later task and filing logic
+- unsupported or ambiguous cases remain visible instead of silently defaulting
+
+#### E4-T5: Implement Due Date, Entity, and Task-Candidate Extraction
+
+**Goal**
+Extract the structured workflow signals that later become real task state, without yet creating or resolving tasks.
+
+**Scope**
+
+- extract due dates and date ranges where present
+- extract key entities such as counterparties, committees, event names, and invoice cues
+- extract task candidates with title and source rationale
+- support both body-derived and attachment-derived signals with provenance
+- keep extracted task candidates as suggestions, not first-class task records yet
+
+**Expected Output**
+
+- due-date extraction path
+- entity extraction path
+- task-candidate extraction output
+
+**Definition of Done**
+
+- representative messages can yield structured due dates and entities
+- extracted task candidates are explicit and traceable to source content
+- body and attachment provenance is preserved in the output
+- Epic 5 can consume task-candidate output without re-solving extraction logic
+
+#### E4-T6: Implement Urgency and Criticality Signal Scoring
+
+**Goal**
+Compute urgency and criticality signals from extracted content and deterministic rules so important work can be surfaced safely later.
+
+**Scope**
+
+- score urgency and criticality using extracted cues and deterministic rules
+- merge rule-based signals with classification output in an explainable way
+- keep criticality reasons explicit for downstream review
+- support high-risk MVP cases such as notices and near-due invoices
+- avoid auto-action policy or reminder scheduling in this ticket
+
+**Expected Output**
+
+- criticality scoring path
+- merged rules and intelligence baseline
+- explicit criticality rationale
+
+**Definition of Done**
+
+- representative urgent message types can receive a structured criticality signal
+- scoring output includes the reasons that drove urgency decisions
+- rule and intelligence outputs do not conflict silently
+- later epics can persist and surface criticality without redefining scoring semantics
+
+#### E4-T7: Add Confidence and Explanation Read Models for Downstream Surfaces
+
+**Goal**
+Make Epic 4 output explainable and consumable by later user surfaces and workflow services.
+
+**Scope**
+
+- define the downstream read model for explanations, confidence, and structured signal summaries
+- expose the stored classification result in a stable internal shape for later APIs
+- preserve source provenance so users can understand why a message was classified a certain way
+- keep the read model separate from final add-in and dashboard UI concerns
+- support explanation-first trust building for pilot scenarios
+
+**Expected Output**
+
+- explanation and confidence read model
+- stable internal consumer shape for later APIs
+- provenance-aware summary baseline
+
+**Definition of Done**
+
+- downstream services can read classification output without decoding raw stored artifacts
+- explanation and confidence information is preserved in one stable read shape
+- provenance remains visible for body and attachment-derived signals
+- later Epic 7 and Epic 8 work can consume the read model without redefining it
+
+#### E4-T8: Add Operational Verification for Classification Quality and Readiness
+
+**Goal**
+Finish Epic 4 with operational visibility and representative-sample checks before task-state and filing work begin.
+
+**Scope**
+
+- report classification coverage and missing-signal cases across representative messages
+- add verification coverage for actionability, message type, due date, and criticality output presence
+- define degraded or unsupported behavior for low-confidence and ambiguous cases
+- document the rollout checks required before moving into Epic 5
+- keep the first verification baseline focused on readiness, not full pilot evaluation
+
+**Expected Output**
+
+- classification operational verification path
+- low-confidence and unsupported-case visibility
+- Epic 4 rollout checklist
+
+**Definition of Done**
+
+- Epic 4 observability covers classification coverage, low-confidence output, and missing critical workflow signals
+- unsupported or ambiguous classification cases fail clearly
+- representative sample checks exist for the MVP message taxonomy
+- the team can enter Epic 5 without ambiguity about classification readiness
+
+### Suggested Execution Order
+
+1. E4-T1 Classification contract
+2. E4-T2 Persistence for classification output
+3. E4-T3 Classification orchestration service
+4. E4-T4 Actionability and message-type classification
+5. E4-T5 Due date, entity, and task-candidate extraction
+6. E4-T6 Urgency and criticality signal scoring
+7. E4-T7 Confidence and explanation read models
+8. E4-T8 Operational verification
+
+### Suggested First Implementation Slice
+
+The first practical build slice for Epic 4 should combine:
+
+- E4-T1 Classification contract
+- E4-T2 Persistence for classification output
+- E4-T3 Classification orchestration service
+- E4-T4 Actionability and message-type classification
+
+That slice proves the first end-to-end classification path before deeper extraction, scoring, explanation, and operational verification work widen the intelligence layer.
+
+### Epic 4 Exit Check
+
+Epic 4 can be marked complete when:
+
+- representative messages can be classified into actionable vs informational state and core MVP message types
+- due dates, entities, and task candidates can be extracted in a structured form
+- urgency and criticality signals are explicit and explainable
+- confidence and provenance are visible to downstream consumers
+- classification failures, ambiguity, and low-confidence cases are observable and recoverable
+
+## Epic 5: Task and Workflow State Engine
+
+**Goal**
+
+Turn Epic 4 workflow signals into first-class task and message workflow state without collapsing workflow ownership into mailbox location or pulling actual filing execution into Epic 6 too early.
+
+**Includes**
+
+- task and workflow-state contract boundaries
+- persistence for tasks, task-message linkage, and message workflow state
+- task materialization from Epic 4 task candidates
+- task lifecycle transitions and resolution semantics
+- message workflow-state projection and filing blockers
+- task ownership and delegation model for MVP
+- criticality persistence and workflow auditability
+- operational verification before delayed filing depends on the state engine
+
+**Dependencies**
+
+- Epic 4
+
+**Definition of Done**
+
+- Epic 4 task candidates can become durable first-class tasks repeatably
+- task lifecycle state is explicit and auditable
+- message workflow state remains separate from folder state and survives mailbox changes
+- critical unresolved work remains visible through task and message workflow projections
+- Epic 6 can depend on filing blockers and workflow state without redefining their semantics
+
+### Proposed Ticket List
+
+#### E5-T1: Define the Task and Workflow State Contract
+
+**Goal**
+Lock the task model, message workflow-state vocabulary, lifecycle semantics, and Epic 5 to Epic 6 boundary before persistence and orchestration work begins.
+
+**Scope**
+
+- define the first-class task model built from Epic 4 task candidates
+- define task-source linkage and message workflow-state vocabulary
+- define lifecycle states such as open, snoozed, delegated, done, and dismissed
+- define filing-blocker and eligibility-prerequisite semantics without performing mailbox actions
+- define the handoff boundary between Epic 5 workflow state and Epic 6 delayed-filing execution
+
+**Expected Output**
+
+- Epic 5 task and workflow-state contract
+- documented lifecycle and filing-blocker vocabulary
+- explicit boundary between workflow state and mailbox actions
+
+**Definition of Done**
+
+- implementers have one documented contract for task and message workflow state
+- lifecycle states and transition intent are explicit
+- filing blockers are defined without pulling move execution into Epic 5
+- later add-in, dashboard, and mailbox-action work can depend on the model without redefining it
+
+#### E5-T2: Extend Persistence for Tasks, Source Links, and Message Workflow State
+
+**Goal**
+Add the persistence needed to store first-class tasks, task-message links, workflow-state projections, and audit-friendly metadata.
+
+**Scope**
+
+- extend the schema for tasks and task-source links
+- add persistence for message workflow state and filing blockers
+- persist criticality and priority fields at the workflow-state layer
+- store lifecycle timestamps, actor references, and supporting metadata
+- keep actual folder-move execution and mailbox actions out of scope
+
+**Expected Output**
+
+- schema and typed persistence contract for tasks and workflow state
+- durable task-source linking model
+- persisted workflow-state and filing-blocker baseline
+
+**Definition of Done**
+
+- the system can store tasks, source links, and message workflow state durably
+- workflow-state records can survive reprocessing and message movement
+- criticality and lifecycle metadata are persisted in one coherent model
+- the persistence layer is ready for task materialization and lifecycle work
+
+#### E5-T3: Implement Task Materialization from Classification Output
+
+**Goal**
+Create repeat-safe task creation that turns Epic 4 task candidates into durable tasks linked back to the message and source signals they came from.
+
+**Scope**
+
+- read Epic 4 classification output and task candidates for a message version
+- create zero or more first-class tasks from supported task candidates
+- preserve source rationale, provenance, and linkage back to message and attachment signals
+- make repeated task creation idempotent for unchanged classification versions
+- keep manual resolution and delayed filing behavior out of this ticket
+
+**Expected Output**
+
+- task materialization service
+- repeat-safe task creation baseline
+- durable linkage between task records and source workflow signals
+
+**Definition of Done**
+
+- representative actionable messages can create first-class tasks end to end
+- repeated processing does not create duplicate tasks for unchanged input
+- task records remain traceable to their message and source rationale
+- later lifecycle work can operate on a stable created-task baseline
+
+#### E5-T4: Implement Task Lifecycle Transitions and Resolution Semantics
+
+**Goal**
+Define and enforce the state transitions that keep work visible until it is truly resolved, deferred, delegated, or dismissed.
+
+**Scope**
+
+- implement allowed task transitions for open, snoozed, delegated, done, and dismissed
+- capture actor, timestamp, notes, and resolution metadata for lifecycle changes
+- enforce invalid-transition protection and explicit transition reasons where needed
+- preserve auditability for workflow-state changes
+- keep reminder scheduling and mailbox moves out of scope
+
+**Expected Output**
+
+- task lifecycle service
+- explicit resolution semantics
+- auditable transition baseline
+
+**Definition of Done**
+
+- tasks can move through the MVP lifecycle states safely
+- invalid or conflicting transitions fail clearly
+- lifecycle changes preserve actor and timing context
+- later filing and reminder work can trust task resolution state
+
+#### E5-T5: Implement Message Workflow State Projection and Filing Blockers
+
+**Goal**
+Project message-level workflow state from task, read, and classification context so Friendly Mail knows whether a message is still active or is becoming filing-eligible.
+
+**Scope**
+
+- derive message workflow state independently from folder location
+- represent actionable, informational-unread, blocked, and eligible states explicitly
+- compute filing blockers from open task state, unresolved criticality, and read-state prerequisites
+- persist or refresh workflow-state projections as task state changes
+- avoid actually moving, categorizing, or forwarding mail in this ticket
+
+**Expected Output**
+
+- message workflow-state projection service
+- explicit filing-blocker model
+- stable filing-readiness baseline for later Epic 6 work
+
+**Definition of Done**
+
+- message workflow state can be recomputed from current task and mailbox-read context
+- filing blockers are explicit and explainable
+- mailbox folder location is not treated as workflow truth
+- Epic 6 can consume workflow-state projections without redefining them
+
+#### E5-T6: Implement Task Ownership, Delegation, and Criticality Persistence
+
+**Goal**
+Add the MVP ownership model so tasks can remain attributable, delegable, and visibly critical across personal and shared-mailbox scenarios.
+
+**Scope**
+
+- define and persist task owner and assignee semantics for MVP users
+- support delegated task state with clear ownership and responsibility fields
+- persist criticality at the task and message workflow layers where appropriate
+- define shared-mailbox-friendly ownership assumptions without overreaching into team collaboration features
+- keep broad team workload balancing out of scope
+
+**Expected Output**
+
+- task ownership and delegation baseline
+- persisted criticality across workflow state
+- MVP-ready responsibility model for later surfaces
+
+**Definition of Done**
+
+- tasks have explicit owner or assignee semantics
+- delegated work remains visible and attributable
+- critical tasks and messages stay marked as such through lifecycle updates
+- later surfaces can show responsibility and urgency without inventing new state
+
+#### E5-T7: Add Workflow Read Models and Internal APIs for Downstream Surfaces
+
+**Goal**
+Expose Epic 5 state in a downstream-friendly shape for the Outlook add-in, dashboard, and later mailbox-action workflows.
+
+**Scope**
+
+- define read models for tasks, linked messages, workflow state, and filing blockers
+- expose internal API shapes for reading and mutating task state
+- provide stable summaries for criticality, ownership, and resolution status
+- keep the API layer separate from final surface-specific presentation concerns
+- support trust-building explanations for why a message is still active or filing-blocked
+
+**Expected Output**
+
+- workflow read models
+- internal task and workflow APIs
+- stable downstream consumer shape for add-in and dashboard work
+
+**Definition of Done**
+
+- downstream services can read task and message workflow state without decoding raw persistence records
+- filing blockers and ownership are available in stable API shapes
+- later Epic 6, Epic 7, and Epic 8 work can build on the read models without re-solving the data contract
+- user-facing surfaces have one canonical backend shape to depend on
+
+#### E5-T8: Add Operational Verification for Task and Workflow Readiness
+
+**Goal**
+Finish Epic 5 with visibility into task-creation coverage, workflow-state integrity, and filing-blocker correctness before delayed-filing behavior depends on it.
+
+**Scope**
+
+- report task-creation coverage from classified actionable messages
+- verify linkage integrity between tasks, source messages, and workflow-state projections
+- surface invalid lifecycle state, orphaned tasks, and missing filing-blocker cases
+- document rollout checks required before moving into Epic 6
+- keep this baseline focused on readiness, not full pilot analytics
+
+**Expected Output**
+
+- task and workflow operational verification path
+- linkage and lifecycle integrity checks
+- Epic 5 rollout checklist
+
+**Definition of Done**
+
+- Epic 5 observability covers task creation, lifecycle integrity, and workflow-state coverage
+- orphaned or inconsistent workflow records fail clearly
+- representative actionable messages can be checked from classification output through task-state projection
+- the team can enter Epic 6 without ambiguity about workflow-state readiness
+
+### Suggested Execution Order
+
+1. E5-T1 Task and workflow-state contract
+2. E5-T2 Persistence for tasks and workflow state
+3. E5-T3 Task materialization from classification output
+4. E5-T4 Task lifecycle transitions and resolution semantics
+5. E5-T5 Message workflow-state projection and filing blockers
+6. E5-T6 Task ownership, delegation, and criticality persistence
+7. E5-T7 Workflow read models and internal APIs
+8. E5-T8 Operational verification
+
+### Suggested First Implementation Slice
+
+The first practical build slice for Epic 5 should combine:
+
+- E5-T1 Task and workflow-state contract
+- E5-T2 Persistence for tasks and workflow state
+- E5-T3 Task materialization from classification output
+
+That slice proves the first end-to-end transition from Epic 4 workflow signals into durable task state before lifecycle, workflow projection, ownership, and operational verification deepen the state engine.
+
+### Epic 5 Exit Check
+
+Epic 5 can be marked complete when:
+
+- Epic 4 task candidates can become first-class tasks repeatably and traceably
+- task lifecycle transitions are explicit, safe, and auditable
+- message workflow state is derived independently from folder location
+- filing blockers and eligibility prerequisites are visible for later delayed-filing work
+- ownership, delegation, and criticality remain visible across workflow updates
+- task and workflow-state integrity is observable before Epic 6 depends on it
+
+## Epic 6: Delayed Filing and Mailbox Actions
+
+**Goal**
+
+Turn Epic 5 workflow eligibility into safe, explainable mailbox actions for delayed filing, category application, invoice routing, and outgoing numbering without collapsing workflow state back into mailbox state.
+
+**Includes**
+
+- delayed-filing and mailbox-action contract boundaries
+- persistence for filing decisions, mailbox-action intent, and audit-friendly execution history
+- filing-decision orchestration from Epic 5 workflow state
+- read or reviewed informational-message filing execution
+- resolved actionable-message filing execution
+- folder suggestion and category application flow
+- invoice routing and outgoing numbering mailbox actions
+- operational verification before user-facing surfaces depend on live mailbox mutations
+
+**Dependencies**
+
+- Epic 5
+
+**Definition of Done**
+
+- filing decisions are derived from explicit Epic 5 workflow state instead of ad hoc mailbox flags
+- informational and actionable messages can follow delayed-filing rules safely
+- mailbox actions are auditable, explainable, and reversible at the workflow layer
+- representative invoice-routing and outgoing-numbering workflows are supported for the MVP
+- later add-in and dashboard work can depend on stable mailbox-action contracts and readiness checks
+
+### Proposed Ticket List
+
+#### E6-T1: Define the Delayed Filing and Mailbox Action Contract
+
+**Goal**
+Lock the delayed-filing vocabulary, mailbox-action intent model, audit expectations, and Epic 6 boundaries before persistence and execution work begins.
+
+**Scope**
+
+- define filing-decision, action-intent, and mailbox-action result vocabulary
+- define the boundary between Epic 5 filing eligibility and Epic 6 mailbox execution
+- define informational read or review filing semantics and actionable resolution filing semantics
+- define suggestion-first versus auto-apply expectations for high-impact mailbox actions
+- define the shared contract for move, category, forward, and draft-numbering action paths
+
+**Expected Output**
+
+- Epic 6 delayed-filing and mailbox-action contract
+- documented mailbox-action intent and result vocabulary
+- explicit boundary between workflow-state truth and mailbox execution
+
+**Definition of Done**
+
+- implementers have one documented contract for filing decisions and mailbox-action execution
+- delayed-filing semantics are explicit for informational and actionable messages
+- mailbox actions remain auditable and separate from task-state ownership
+- later persistence, API, and surface work can build on the model without redefining it
+
+#### E6-T2: Extend Persistence for Filing Decisions, Target Folders, and Mailbox Action Audit
+
+**Goal**
+Add the persistence needed to store filing decisions, suggested targets, mailbox-action attempts, and execution history safely.
+
+**Scope**
+
+- extend the schema for filing decisions, target folders, and mailbox-action attempt records
+- persist suggested and applied categories, folder targets, and action-mode metadata
+- store actor, approval, outcome, and error context for mailbox actions
+- keep mailbox execution separate from task and workflow-state records while linking back to them
+- avoid implementing live mailbox mutations in this ticket
+
+**Expected Output**
+
+- schema and typed persistence contract for delayed-filing and mailbox-action state
+- durable filing-decision and mailbox-action audit model
+- persisted target-folder and category baseline for later execution work
+
+**Definition of Done**
+
+- the system can store filing decisions and mailbox-action attempts durably
+- action outcomes and failures are auditable without decoding raw logs
+- delayed-filing history remains linked to workflow state without replacing it
+- the persistence layer is ready for mailbox-action orchestration and execution
+
+#### E6-T3: Implement Filing Decision Orchestration from Workflow State
+
+**Goal**
+Create the repeat-safe filing-decision path that turns Epic 5 workflow-state and filing eligibility into one mailbox-action-ready decision.
+
+**Scope**
+
+- read message workflow state, filing eligibility, and source message context
+- derive filing readiness, target action mode, and blocked or eligible decision output
+- preserve explanation and blocker context for downstream review
+- make repeated evaluation idempotent for unchanged workflow state
+- keep actual move, category, forward, and draft actions out of scope
+
+**Expected Output**
+
+- filing-decision orchestration service
+- repeat-safe delayed-filing decision baseline
+- stable decision record for later mailbox-action execution
+
+**Definition of Done**
+
+- representative messages can yield a stable filing decision from current workflow state
+- repeated evaluation does not create duplicate or conflicting decision state
+- blockers and readiness rationale remain visible in the decision output
+- later execution tickets can depend on one canonical filing-decision path
+
+#### E6-T4: Implement Informational Filing Execution for Read or Reviewed Messages
+
+**Goal**
+Apply delayed filing to informational mail only when the read or review condition is satisfied and the mailbox action is allowed by policy.
+
+**Scope**
+
+- execute informational-message filing when read or reviewed prerequisites are met
+- support suggestion-first and controlled auto-apply behavior where configured
+- preserve source folder, target folder, and action-result audit context
+- keep blocked or unread informational mail safely untouched
+- avoid actionable-message resolution logic in this ticket
+
+**Expected Output**
+
+- informational delayed-filing execution path
+- read or reviewed gating baseline
+- auditable move-result handling for informational mail
+
+**Definition of Done**
+
+- informational messages are not moved before read or review conditions are satisfied
+- eligible informational messages can be moved or suggested safely
+- mailbox-action results and failures are explicit and auditable
+- the system does not silently file blocked informational mail
+
+#### E6-T5: Implement Actionable Filing Execution for Resolved Workflow State
+
+**Goal**
+Apply delayed filing to actionable mail only after required work is resolved, dismissed, or otherwise cleared by explicit workflow policy.
+
+**Scope**
+
+- execute actionable-message filing when workflow state is eligible
+- preserve explicit blocker handling for open, snoozed, delegated, and critical-work cases
+- support suggestion-first and controlled auto-apply behavior for actionable filing
+- capture audit context for source folder, target folder, actor, and decision rationale
+- avoid invoice-routing and outgoing-numbering special cases in this ticket
+
+**Expected Output**
+
+- actionable delayed-filing execution path
+- resolution-gated filing baseline
+- auditable move-result handling for actionable mail
+
+**Definition of Done**
+
+- actionable messages are not moved before workflow-state prerequisites are satisfied
+- resolved or dismissed work can become filing-executable safely
+- blocked actionable mail remains visible and unmoved
+- later user surfaces can trust the actionable filing semantics
+
+#### E6-T6: Implement Folder Suggestion and Category Application Flow
+
+**Goal**
+Provide understandable mailbox-action suggestions and low-risk category actions that help users see where a message should go before or alongside delayed filing.
+
+**Scope**
+
+- derive folder suggestions from message type, entities, counterparties, and filing context
+- support visible category application for supported mailbox actions
+- preserve rationale for why a folder or category suggestion was chosen
+- keep suggestion logic and category application auditable
+- avoid collapsing folder suggestion into an automatic move requirement
+
+**Expected Output**
+
+- folder suggestion engine
+- category application baseline
+- mailbox-action rationale model for later surfaces
+
+**Definition of Done**
+
+- representative messages can receive explainable folder suggestions
+- supported categories can be suggested or applied through the mailbox-action layer
+- suggestion rationale is visible to later add-in and dashboard surfaces
+- delayed filing can reuse the same target-folder logic without re-solving it
+
+#### E6-T7: Implement Invoice Routing and Outgoing Numbering Mailbox Actions
+
+**Goal**
+Support the MVP's highest-value specialized mailbox actions for finance and outbound workflows without weakening delayed-filing safety.
+
+**Scope**
+
+- implement invoice-routing mailbox actions or suggestion flows for configured processors
+- implement outgoing reference-number allocation and draft update support
+- preserve audit history for forwarding, routing, and draft-numbering actions
+- keep mailbox capability checks explicit for send, send-shared, and draft scenarios
+- avoid broad admin configuration or workflow orchestration beyond the MVP paths
+
+**Expected Output**
+
+- invoice-routing mailbox-action path
+- outgoing-numbering mailbox-action path
+- auditable specialized mailbox-action baseline
+
+**Definition of Done**
+
+- representative invoice messages can be routed or suggested to the configured processor
+- supported outgoing messages can receive a company-specific reference number before send
+- mailbox capability limitations fail clearly and safely
+- specialized mailbox actions remain visible and auditable in the same state model
+
+#### E6-T8: Add Operational Verification for Delayed Filing and Mailbox Action Readiness
+
+**Goal**
+Finish Epic 6 with visibility into filing-decision integrity, mailbox-action safety, and execution readiness before live Outlook-facing surfaces depend on automated or suggested mailbox mutations.
+
+**Scope**
+
+- report filing-decision coverage and blocked-versus-eligible correctness across representative messages
+- verify mailbox-action audit integrity, target-folder resolution, and action-result coverage
+- surface failed moves, failed routes, failed draft actions, and capability-gated scenarios clearly
+- document rollout checks required before moving into add-in and dashboard execution surfaces
+- keep this baseline focused on readiness, not pilot-scale analytics
+
+**Expected Output**
+
+- delayed-filing and mailbox-action verification path
+- mailbox-action integrity and failure visibility
+- Epic 6 rollout checklist
+
+**Definition of Done**
+
+- Epic 6 observability covers filing decisions, mailbox-action attempts, and execution safety
+- failed or unsupported mailbox actions are explicit and recoverable
+- representative messages can be checked from workflow state through mailbox-action readiness
+- the team can enter Epic 7 and Epic 8 without ambiguity about delayed-filing and mailbox-action readiness
+
+### Suggested Execution Order
+
+1. E6-T1 Delayed filing and mailbox-action contract
+2. E6-T2 Persistence for filing decisions and mailbox-action audit
+3. E6-T3 Filing decision orchestration from workflow state
+4. E6-T4 Informational filing execution
+5. E6-T5 Actionable filing execution
+6. E6-T6 Folder suggestion and category application flow
+7. E6-T7 Invoice routing and outgoing numbering mailbox actions
+8. E6-T8 Operational verification
+
+### Suggested First Implementation Slice
+
+The first practical build slice for Epic 6 should combine:
+
+- E6-T1 Delayed filing and mailbox-action contract
+- E6-T2 Persistence for filing decisions and mailbox-action audit
+- E6-T3 Filing decision orchestration from workflow state
+
+That slice proves the first end-to-end transition from explicit workflow-state eligibility into mailbox-action-ready filing decisions before live move execution, folder suggestions, category application, and specialized mailbox actions widen the action layer.
+
+### Epic 6 Exit Check
+
+Epic 6 can be marked complete when:
+
+- filing decisions are derived from explicit Epic 5 workflow state repeatably and traceably
+- informational and actionable delayed-filing rules are enforced safely
+- folder suggestions, categories, and mailbox actions are explainable and auditable
+- invoice routing and outgoing numbering work for supported MVP scenarios
+- mailbox-action failures and unsupported capability cases are observable before user surfaces depend on them

@@ -4,9 +4,9 @@
 
 - Product: Friendly Mail
 - Document type: MVP Epic Breakdown
-- Version: v0.1
+- Version: v0.2
 - Status: Draft
-- Date: 2026-03-30
+- Date: 2026-04-05
 - Related documents:
   - `friendly-mail-prd.md`
   - `friendly-mail-technical-design.md`
@@ -23,6 +23,12 @@ The epics are sequenced to support the core product promise:
 - unresolved work remains visible
 - filing happens only when a message is safe to move
 - Outlook remains the primary system of engagement
+
+## Current Status
+
+- Epics 1 through 6 are complete in the implementation baseline.
+- Epic 6 now provides the delayed-filing and mailbox-action backend baseline, including filing decisions, mailbox-action execution, specialized invoice and numbering paths, and mailbox-action verification.
+- The next implementation move is to start the Epic 7 Outlook add-in experience against the now-stable workflow and mailbox-action contracts.
 
 ## Epic 1: Platform Foundation
 

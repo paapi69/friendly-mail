@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBoardCards } from "./dashboard.data";
+import { buildBoardCards, createAutoInProgressTicketIds } from "./dashboard.data";
 
 describe("dashboard board data", () => {
   it("maps done planning tickets into the done column", () => {
@@ -72,6 +72,105 @@ describe("dashboard board data", () => {
       column: "Ready"
     });
     expect(cards[0].labels).toEqual(["backend"]);
+  });
+
+  it("promotes the first pending tracked ticket in an epic into in progress", () => {
+    const autoInProgressTicketIds = createAutoInProgressTicketIds({
+      epics: [
+        {
+          id: "E3",
+          tickets: [
+            {
+              id: "E3-T1",
+              title: "Define Message Ingestion and Extraction Contract",
+              status: "done"
+            },
+            {
+              id: "E3-T2",
+              title: "Extend Persistence for Message Bodies, Attachments, and Extraction State",
+              status: "done"
+            },
+            {
+              id: "E3-T3",
+              title: "Implement the Message Ingestion Service",
+              status: "done"
+            },
+            {
+              id: "E3-T4",
+              title: "Implement Attachment Metadata Retrieval and Durable Linking",
+              status: "done"
+            },
+            {
+              id: "E3-T5",
+              title: "Implement PDF-First Attachment Text Extraction",
+              status: "pending"
+            },
+            {
+              id: "E3-T6",
+              title: "Add OCR Fallback and Extraction Confidence Handling",
+              status: "pending"
+            }
+          ]
+        }
+      ]
+    });
+    const cards = buildBoardCards(
+      [
+        {
+          id: "E3-T5",
+          title: "Fallback title",
+          stakeholderSummary: "Summary",
+          owner: "Harry",
+          lane: "Backend",
+          plannedColumn: "Backlog",
+          points: 8,
+          size: "L",
+          labels: ["backend"],
+          syncWithPlanning: true
+        },
+        {
+          id: "E3-T6",
+          title: "Fallback title",
+          stakeholderSummary: "Summary",
+          owner: "Harry",
+          lane: "Backend",
+          plannedColumn: "Backlog",
+          points: 5,
+          size: "M",
+          labels: ["backend"],
+          syncWithPlanning: true
+        }
+      ],
+      new Map([
+        [
+          "E3-T5",
+          {
+            id: "E3-T5",
+            title: "Implement PDF-First Attachment Text Extraction",
+            status: "pending" as const
+          }
+        ],
+        [
+          "E3-T6",
+          {
+            id: "E3-T6",
+            title: "Add OCR Fallback and Extraction Confidence Handling",
+            status: "pending" as const
+          }
+        ]
+      ]),
+      autoInProgressTicketIds
+    );
+
+    expect(cards.find((card) => card.id === "E3-T5")).toMatchObject({
+      id: "E3-T5",
+      title: "Implement PDF-First Attachment Text Extraction",
+      column: "In Progress"
+    });
+    expect(cards.find((card) => card.id === "E3-T6")).toMatchObject({
+      id: "E3-T6",
+      column: "Backlog"
+    });
   });
 
   it("supports preview-only tickets that are not tracked in planning yet", () => {

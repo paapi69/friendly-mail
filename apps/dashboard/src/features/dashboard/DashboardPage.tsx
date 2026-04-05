@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { deriveDashboardAnalytics, ticketStatusHistoryEvents } from "./dashboard.analytics";
 import { cards } from "./dashboard.data";
 import type { BoardView } from "./dashboard.types";
 import { AnalyticsSidebar } from "./components/AnalyticsSidebar";
@@ -14,45 +15,10 @@ export function DashboardPage() {
     [activeView]
   );
 
-  const counts = useMemo(
-    () => ({
-      total: visibleCards.length,
-      backlog: visibleCards.filter((card) => card.column === "Backlog").length,
-      ready: visibleCards.filter((card) => card.column === "Ready").length,
-      progress: visibleCards.filter((card) => card.column === "In Progress").length,
-      blocked: visibleCards.filter((card) => card.column === "Blocked").length,
-      done: visibleCards.filter((card) => card.column === "Done").length
-    }),
+  const analytics = useMemo(
+    () => deriveDashboardAnalytics(visibleCards, ticketStatusHistoryEvents),
     [visibleCards]
   );
-
-  const completion = counts.total ? Math.round((counts.done / counts.total) * 100) : 0;
-
-  const laneBreakdown = useMemo(() => {
-    const lanes = ["Design", "Frontend", "Backend"] as const;
-    const total = Math.max(visibleCards.length, 1);
-
-    return lanes.map((lane) => {
-      const count = visibleCards.filter((card) => card.lane === lane).length;
-      return {
-        lane,
-        count,
-        percent: Math.round((count / total) * 100)
-      };
-    });
-  }, [visibleCards]);
-
-  const activityBars = [
-    { label: "B", value: counts.backlog },
-    { label: "R", value: counts.ready },
-    { label: "W", value: counts.progress },
-    { label: "X", value: counts.blocked },
-    { label: "D", value: counts.done }
-  ];
-
-  const growthText = counts.total
-    ? `+${Math.max(1, Math.round((counts.ready / counts.total) * 100))}%`
-    : "+0%";
 
   return (
     <div className="dashboard-shell">
@@ -64,11 +30,12 @@ export function DashboardPage() {
         <div className="board-layout">
           <KanbanBoard cards={visibleCards} />
           <AnalyticsSidebar
-            completion={completion}
-            growthText={growthText}
-            activityBars={activityBars}
-            laneBreakdown={laneBreakdown}
-            total={counts.total}
+            completion={analytics.snapshot.completionPercent}
+            activityBars={analytics.snapshot.activityBars}
+            laneBreakdown={analytics.snapshot.laneBreakdown}
+            total={analytics.snapshot.totalCards}
+            completedTicketsPerDay={analytics.completedTicketsPerDay}
+            averageCycleTimeMinutes={analytics.averageCycleTimeMinutes}
           />
         </div>
 

@@ -1,92 +1,153 @@
-import { DonutChart } from "./DonutChart";
-
-const reminderItems = [
-  { title: "Team Standup", time: "Today at 10:00 AM", tone: "danger" },
-  { title: "Review Kanban Backlog", time: "Tomorrow at 1:30 PM", tone: "success" }
-] as const;
+import type {
+  DailyCompletionDatum,
+  LaneBreakdownDatum,
+} from "../dashboard.analytics";
 
 export function AnalyticsSidebar({
   completion,
-  growthText,
   activityBars,
   laneBreakdown,
-  total
+  total,
+  completedTicketsPerDay,
+  averageCycleTimeMinutes
 }: {
   completion: number;
-  growthText: string;
   activityBars: Array<{ label: string; value: number }>;
-  laneBreakdown: Array<{ lane: string; percent: number }>;
+  laneBreakdown: LaneBreakdownDatum[];
   total: number;
+  completedTicketsPerDay: DailyCompletionDatum[];
+  averageCycleTimeMinutes: number | null;
 }) {
+  const doneCount = activityBars.find((bar) => bar.label === "D")?.value ?? 0;
+  const latestCompletedCount = completedTicketsPerDay.at(-1)?.completedTickets ?? 0;
+  const maxCompletedCount = Math.max(
+    ...completedTicketsPerDay.map((item) => item.completedTickets),
+    1
+  );
+  const clampedCompletion = Math.max(0, Math.min(100, completion));
+  const cycleTimeLabel =
+    averageCycleTimeMinutes === null ? "--" : `${averageCycleTimeMinutes} min`;
+  const cycleTimeCopy =
+    averageCycleTimeMinutes === null
+      ? "Waiting for tracked tickets completed in the last 14 days."
+      : "Average elapsed time from first in progress to first done, shown in minutes over the last 14 days.";
+  const laneRows = ["Frontend", "Backend", "Design"].map((lane) => {
+    const match = laneBreakdown.find((item) => item.lane === lane);
+
+    return {
+      lane,
+      percent: match?.percent ?? 0
+    };
+  });
+
   return (
     <aside className="analytics-sidebar">
-      <section className="analytics-panel">
-        <div className="analytics-panel__header">
-          <h2 className="analytics-panel__title">Activity</h2>
-          <span className="analytics-panel__link">See all</span>
+      <section className="analytics-section">
+        <div className="analytics-section__header">
+          <h2 className="analytics-section__title">Board Completion</h2>
         </div>
 
-        <div className="analytics-panel__metric">
-          <span className="analytics-panel__metric-value">{completion}%</span>
-          <div className="analytics-panel__metric-copy">
-            <p className="analytics-panel__growth">
-              <span className="material-symbols-outlined analytics-panel__growth-icon">
-                trending_up
-              </span>
-              {growthText}
-            </p>
-            <p className="analytics-panel__growth-label">Growth</p>
+        <div className="analytics-completion-card">
+          <div className="analytics-completion-card__summary">
+            <div className="analytics-completion-card__value-wrap">
+              <p className="analytics-completion-card__value">{clampedCompletion}%</p>
+            </div>
+            <div className="analytics-completion-card__copy">
+              <p className="analytics-completion-card__eyebrow">Visible board cards</p>
+              <p className="analytics-completion-card__detail">
+                {doneCount} of {total} in Done
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="analytics-panel__bars">
-          {activityBars.map((bar) => {
-            const max = Math.max(...activityBars.map((item) => item.value), 1);
-            const height = Math.max(40, Math.round((bar.value / max) * 95));
-
-            return (
-              <div key={bar.label} className="analytics-panel__bar-group">
-                <div className="analytics-panel__bar-shell">
-                  <div className="analytics-panel__bar-fill" style={{ height: `${height}%` }} />
-                </div>
-                <span className="analytics-panel__bar-label">{bar.label}</span>
-              </div>
-            );
-          })}
+          <div className="analytics-completion-card__track" data-testid="board-completion-track">
+            <div
+              className="analytics-completion-card__fill"
+              data-testid="board-completion-fill"
+              style={{ width: `${clampedCompletion}%` }}
+            />
+          </div>
         </div>
       </section>
 
-      <section className="analytics-panel analytics-panel--projects">
-        <h2 className="analytics-panel__title">Projects worked</h2>
-        <div className="analytics-panel__projects">
-          <DonutChart values={laneBreakdown.map((item) => item.percent)} total={total} />
-          <div className="analytics-panel__legend">
-            {laneBreakdown.map((item) => (
-              <div key={item.lane} className="analytics-panel__legend-row">
-                <div className="analytics-panel__legend-label">
+      <section className="analytics-section">
+        <div className="analytics-section__header analytics-section__header--split">
+          <h2 className="analytics-section__title">Completed Tickets Per Day</h2>
+          <p className="analytics-section__meta">{latestCompletedCount} today</p>
+        </div>
+
+        <div className="analytics-throughput-chart">
+          <div className="analytics-throughput-chart__grid" aria-hidden="true">
+            <span className="analytics-throughput-chart__line" />
+            <span className="analytics-throughput-chart__line" />
+          </div>
+
+          <div className="analytics-throughput-chart__bars">
+            {completedTicketsPerDay.map((bar, index) => {
+              const height =
+                bar.completedTickets === 0
+                  ? 10
+                  : Math.max(18, Math.round((bar.completedTickets / maxCompletedCount) * 100));
+              const isActive = index === completedTicketsPerDay.length - 1;
+
+              return (
+                <div
+                  key={bar.dayStart}
+                  className="analytics-throughput-chart__bar-group"
+                  data-testid="throughput-bar"
+                >
+                  <span className="analytics-throughput-chart__value">{bar.completedTickets}</span>
+                  <div className="analytics-throughput-chart__bar-shell">
+                    <div
+                      className={`analytics-throughput-chart__bar-fill${
+                        isActive ? " analytics-throughput-chart__bar-fill--active" : ""
+                      }`}
+                      style={{ height: `${height}%` }}
+                    />
+                  </div>
                   <span
-                    className={`analytics-panel__legend-dot analytics-panel__legend-dot--${item.lane.toLowerCase()}`}
-                  />
-                  <span>{item.lane}</span>
+                    className={`analytics-throughput-chart__label${
+                      isActive ? " analytics-throughput-chart__label--active" : ""
+                    }`}
+                  >
+                    {bar.label}
+                  </span>
                 </div>
-                <span className="analytics-panel__legend-value">{item.percent}%</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
-      <section className="analytics-panel">
-        <h2 className="analytics-panel__title">Reminders</h2>
-        <div className="reminders-list">
-          {reminderItems.map((reminder) => (
-            <div key={reminder.title} className="reminder-card">
-              <span className={`reminder-card__dot reminder-card__dot--${reminder.tone}`} />
-              <div className="reminder-card__copy">
-                <p className="reminder-card__title">{reminder.title}</p>
-                <p className="reminder-card__time">{reminder.time}</p>
+      <section className="analytics-section">
+        <div className="analytics-section__header">
+          <h2 className="analytics-section__title">Avg Cycle Time</h2>
+        </div>
+
+        <div className="analytics-cycle-card">
+          <p className="analytics-cycle-card__value">{cycleTimeLabel}</p>
+          <p className="analytics-cycle-card__caption">{cycleTimeCopy}</p>
+        </div>
+      </section>
+
+      <section className="analytics-section">
+        <div className="analytics-section__header">
+          <h2 className="analytics-section__title">Lane Breakdown</h2>
+        </div>
+
+        <div className="analytics-lane-list">
+          {laneRows.map((row) => (
+            <div key={row.lane} className="analytics-lane-row" data-testid="lane-row">
+              <div className="analytics-lane-row__header">
+                <span className="analytics-lane-row__label">{row.lane}</span>
+                <span className="analytics-lane-row__value">{row.percent}%</span>
               </div>
-              <span className="material-symbols-outlined reminder-card__chevron">chevron_right</span>
+              <div className="analytics-lane-row__track">
+                <div
+                  className={`analytics-lane-row__fill analytics-lane-row__fill--${row.lane.toLowerCase()}`}
+                  style={{ width: `${row.percent}%` }}
+                />
+              </div>
             </div>
           ))}
         </div>

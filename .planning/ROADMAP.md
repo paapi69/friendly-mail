@@ -2,12 +2,12 @@
 
 ## Overview
 
-Friendly Mail will move from product definition to a trustworthy v1 that organizes Outlook-based work without hiding unresolved email. The roadmap prioritizes product clarity, safe workflow design, and a strong initial architecture before broader automation.
+Friendly Mail is now moving from implemented workflow-state delivery into delayed filing and user-surface execution. The roadmap still prioritizes product clarity, safe workflow design, and a strong initial architecture before broader automation, but the project has already completed the first five engineering epics and should use that reality as the baseline for next-phase planning.
 
 ## Phases
 
-- [ ] **Phase 1: Product Foundation** - Finalize core product definition, user workflows, and success boundaries
-- [ ] **Phase 2: System Design** - Define technical architecture, data model, and integration constraints
+- [x] **Phase 1: Product Foundation** - Finalize core product definition, user workflows, and success boundaries
+- [x] **Phase 2: System Design** - Define technical architecture, data model, and integration constraints
 - [ ] **Phase 3: Workflow UX** - Specify user flows for triage, task tracking, delayed filing, and reminders
 - [ ] **Phase 4: MVP Execution Plan** - Convert the spec into engineering epics, acceptance scope, and launch sequencing
 
@@ -24,7 +24,7 @@ Friendly Mail will move from product definition to a trustworthy v1 that organiz
 **Plans**: 1 plan
 
 Plans:
-- [ ] 01-01: Finalize PRD and confirm product principles
+- [x] 01-01: Finalize PRD and confirm product principles
 
 ### Phase 2: System Design
 **Goal**: Produce an implementation-ready technical architecture aligned with Microsoft Graph capabilities.
@@ -37,8 +37,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: Define service architecture and event flow
-- [ ] 02-02: Define data model and Graph integration boundaries
+- [x] 02-01: Define service architecture and event flow
+- [x] 02-02: Define data model and Graph integration boundaries
 
 ### Phase 3: Workflow UX
 **Goal**: Define how users experience triage, action tracking, and delayed filing inside the product.
@@ -65,14 +65,21 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: Break MVP into epics and milestones
+- [x] 04-01: Break MVP into epics and milestones
 - [ ] 04-02: Define pilot rollout and validation metrics
+
+## Current Implementation Baseline
+
+- Epics 1 through 6 are complete in the codebase: platform foundation, Microsoft Graph connectivity, message ingestion and attachment extraction, classification plus workflow intelligence, the task plus workflow-state engine, and the delayed-filing plus mailbox-action layer.
+- The mailbox-action baseline now includes filing decisions, auditable mailbox-action attempts, folder suggestions, category application, invoice routing, outgoing numbering, and mailbox-action verification.
+- The next implementation move is to start Epic 7 surface work from the Outlook add-in side, beginning with the first `E7-T#` slice that consumes the now-stable workflow and mailbox-action contracts.
+- Dashboard and digest work remain later-phase work after the Outlook add-in baseline advances.
 
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Product Foundation | 1/1 | Complete | 2026-03-30 |
-| 2. System Design | 1/2 | In progress | - |
-| 3. Workflow UX | 0/2 | Not started | - |
-| 4. MVP Execution Plan | 0/2 | Not started | - |
+| 2. System Design | 2/2 | Complete | 2026-04-05 |
+| 3. Workflow UX | 0/2 | In progress | - |
+| 4. MVP Execution Plan | 1/2 | In progress | - |

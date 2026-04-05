@@ -238,4 +238,44 @@
     <item>If tighter visual parity is still needed, the next frontend pass should use the connected Figma file after the Figma token is re-authenticated.</item>
     <item>`E3-T3` is now complete; the best next move is `E3-T4`, which should fetch attachment metadata for ingested messages and persist durable attachment linkage against the normalized envelope.</item>
   </continuationNotes>
+  <handoffAppend updatedAt="2026-04-05T14:00:00+05:30">
+    <summary>
+      <item>Epic 4 is complete, including classification persistence, orchestration, deterministic rules-based classification, workflow-signal extraction, urgency and criticality scoring, classification read models, and mailbox-wide classification verification.</item>
+      <item>Epic 5 is complete, including the task and workflow-state contract, persistence for tasks and workflow state, task materialization, lifecycle transitions, workflow-state projection, ownership and delegation persistence, downstream workflow read models, and operational verification.</item>
+      <item>Epic 6 is complete, including delayed-filing and mailbox-action contracts, persistence for filing decisions and mailbox-action attempts, filing-decision orchestration, informational and actionable delayed filing, folder suggestions, category application, invoice routing, outgoing numbering, and mailbox-action verification.</item>
+      <item>The new Epic 6 contract document is `docs/delayed-filing-mailbox-actions-contract.md`.</item>
+      <item>The main Epic 6 service is `apps/api/src/mailbox-action-service.ts`.</item>
+      <item>The main Epic 6 API routes now include filing decisions, delayed filing execution, invoice routing, outgoing numbering, and mailbox-action verification in `apps/api/src/server.ts`.</item>
+      <item>The latest Epic 6 migration is `packages/database/prisma/migrations/20260405113000_delayed_filing_actionability_fix/migration.sql`.</item>
+      <item>Planning, checklist, STATE, ROADMAP, technical design, MVP epics, dashboard board data, and `docs/prototype-kanban-board.md` were all synced to reflect Epic 6 as done.</item>
+    </summary>
+
+    <verification>
+      <command>npm run db:generate --workspace @friendly-mail/database</command>
+      <command>npm run db:validate --workspace @friendly-mail/database</command>
+      <command>npm run db:migrate:deploy --workspace @friendly-mail/database</command>
+      <command>npm run db:migrate:status --workspace @friendly-mail/database</command>
+      <command>npm run typecheck</command>
+      <command>npm run build</command>
+      <command>npm run test</command>
+      <result>Passing at the end of the session, with 172 tests passing in the final full test run.</result>
+    </verification>
+
+    <devLinks>
+      <dashboard>http://localhost:5173</dashboard>
+      <api>http://localhost:4000</api>
+      <outlookAddIn>https://localhost:4173</outlookAddIn>
+    </devLinks>
+
+    <nextRecommendedWork>
+      <item>The next recommended move is Epic 7, starting from the Outlook add-in experience against the now-stable workflow and mailbox-action APIs.</item>
+      <item>Preserve suggestion-first behavior in user-facing Epic 7 flows for filing and other high-impact mailbox actions unless explicit approval UX is present.</item>
+    </nextRecommendedWork>
+
+    <importantNotes>
+      <item>The worktree is intentionally dirty with other existing repo changes, and those were left untouched unless directly part of the current work.</item>
+      <item>A new session should read `session_summary.md`, `checklist.md`, and `.planning/STATE.md` first.</item>
+      <item>The established shorthand `/auto ...` means continue autonomously without ticket-by-ticket approval unless there is a blocker, risky fork, unrelated-work conflict, or required planning gate.</item>
+    </importantNotes>
+  </handoffAppend>
 </sessionSummary>

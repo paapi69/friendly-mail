@@ -6,28 +6,28 @@ This board is for the first user-meaningful Friendly Mail prototype.
 
 Prototype target:
 
-- backend mailbox-connectivity flow works through Epic 2 operational verification
+- backend workflow-state delivery works through Epic 5 operational verification
 - Outlook add-in has a minimal workflow surface to show what Friendly Mail knows about a message
 
 ## Accuracy Notes
 
 The board below uses:
 
-- **Actual completed engineering work** for `E1` and `E2-T1` through `E2-T9`
+- **Actual completed engineering work** for `E1` through `E4`
 - **Planned prototype tickets** for design and frontend work that have not yet been tracked in `.planning/epic-status.json`
 
 So:
 
-- `Done` items in Epic 1 and current Epic 2 backend are factual
+- `Done` items in the current backend implementation are factual
 - new role-split prototype tickets below are planning tickets created from the current roadmap and frontend strategy
-- when an implementation ticket changes status, this document and `apps/dashboard/src/App.tsx` should be updated in the same session when practical
+- when an implementation ticket changes status, this document and `apps/dashboard/src/features/dashboard/dashboard.data.ts` should be updated in the same session when practical
 - the dashboard preview also shows a one-line stakeholder summary for each ticket so non-engineering viewers can scan the board quickly
 - tracked engineering ticket status in the preview should be derived from `.planning/epic-status.json`
 - the dashboard preview shell now switches between `Master Board`, `Tom`, `Dick`, and `Harry`
 
 ## Prototype Milestone
 
-- **Prototype checkpoint**: backend through `E3-T8` plus a thin add-in UI slice
+- **Prototype checkpoint**: backend through `E5-T8` plus a thin add-in UI slice
 
 ## Swimlane: Design
 
@@ -73,28 +73,41 @@ So:
 | `E3-T1` | Define Message Ingestion and Extraction Contract | Defined what email and attachment content Friendly Mail will capture before it starts classifying or automating work. | `Harry` | `E3` | `3` | `S` | `backend`, `epic:E3`, `surface:workflow`, `type:spec`, `priority:P0`, `size:S`, `status:done`, `milestone:prototype-v1` |
 | `E3-T2` | Extend Persistence for Message Bodies, Attachments, and Extraction State | Stores email body and attachment information so later features can understand what work the message contains. | `Harry` | `E3` | `5` | `M` | `backend`, `epic:E3`, `surface:api`, `type:feature`, `priority:P0`, `size:M`, `status:done`, `milestone:prototype-v1` |
 | `E3-T3` | Implement the message ingestion service | Turns synced mailbox records into normalized email content that the rest of Friendly Mail can reason about. | `Harry` | `E3` | `5` | `M` | `backend`, `epic:E3`, `surface:workflow`, `type:feature`, `priority:P0`, `size:M`, `status:done`, `milestone:prototype-v1` |
+| `E3-T4` | Implement attachment metadata retrieval and durable linking | Gives Friendly Mail a dependable inventory of attachments so important supporting documents are not overlooked. | `Harry` | `E3` | `5` | `M` | `backend`, `epic:E3`, `surface:api`, `type:integration`, `priority:P0`, `size:M`, `status:done`, `milestone:prototype-v1` |
+| `E3-T5` | Implement PDF-first attachment text extraction | Lets Friendly Mail read the contents of PDF attachments, where many notices, invoices, and contracts actually live. | `Harry` | `E3` | `8` | `L` | `backend`, `epic:E3`, `surface:workflow`, `type:feature`, `priority:P0`, `size:L`, `status:done`, `milestone:prototype-v1` |
+| `E3-T6` | Add OCR fallback and extraction confidence handling | Improves coverage for scanned documents while still showing when Friendly Mail is less certain about what it read. | `Harry` | `E3` | `5` | `M` | `backend`, `epic:E3`, `surface:workflow`, `type:feature`, `priority:P1`, `size:M`, `status:done`, `milestone:prototype-v1` |
+| `E3-T7` | Orchestrate idempotent ingestion and attachment processing | Prevents duplicate processing so repeated mailbox updates do not create noisy or inconsistent downstream results. | `Harry` | `E3` | `8` | `L` | `backend`, `epic:E3`, `surface:workflow`, `type:integration`, `priority:P0`, `size:L`, `status:done`, `milestone:prototype-v1` |
+| `E3-T8` | Add operational verification for ingestion and extraction | Shows whether content ingestion and document reading are healthy so the team can spot reliability gaps early. | `Harry` | `E3` | `5` | `M` | `backend`, `epic:E3`, `surface:workflow`, `type:verification`, `priority:P1`, `size:M`, `status:done`, `milestone:prototype-v1` |
+| `E4-T1` | Define the classification and workflow intelligence contract | Locks the classification output shape so later task and filing work can build on explainable workflow signals instead of ad hoc inference. | `Harry` | `E4` | `3` | `S` | `backend`, `epic:E4`, `surface:workflow`, `type:spec`, `priority:P0`, `size:S`, `status:done`, `milestone:prototype-v1` |
+| `E4-T2` | Extend persistence for classification results and workflow signals | Stores classification output, confidence, and extracted workflow cues so later features can trust a durable intelligence layer. | `Harry` | `E4` | `5` | `M` | `E4-T1` | `backend`, `epic:E4`, `surface:api`, `type:feature`, `priority:P0`, `size:M`, `status:done`, `milestone:prototype-v1` |
+| `E4-T3` | Implement the classification orchestration service | Creates the repeat-safe pipeline that packages message and attachment content into one classification path. | `Harry` | `E4` | `5` | `M` | `E4-T1`, `E4-T2` | `backend`, `epic:E4`, `surface:workflow`, `type:integration`, `priority:P0`, `size:M`, `status:done`, `milestone:prototype-v1` |
+| `E4-T4` | Implement actionability and message-type classification | Lets Friendly Mail tell whether an email needs action and what kind of work it represents before task state exists. | `Harry` | `E4` | `8` | `L` | `E4-T3` | `backend`, `epic:E4`, `surface:workflow`, `type:feature`, `priority:P0`, `size:L`, `status:done`, `milestone:prototype-v1` |
+| `E4-T5` | Implement due date, entity, and task-candidate extraction | Pulls out the dates, parties, and suggested actions that later become real workflow records. | `Harry` | `E4` | `8` | `L` | `E4-T3`, `E4-T4` | `backend`, `epic:E4`, `surface:workflow`, `type:feature`, `priority:P0`, `size:L`, `status:done`, `milestone:prototype-v1` |
+| `E4-T6` | Implement urgency and criticality signal scoring | Adds a trust-first way to surface important notices and near-due work before automations act on them. | `Harry` | `E4` | `5` | `M` | `E4-T4`, `E4-T5` | `backend`, `epic:E4`, `surface:workflow`, `type:feature`, `priority:P1`, `size:M`, `status:done`, `milestone:prototype-v1`, `risk:workflow-safety` |
+| `E4-T7` | Add confidence and explanation read models for downstream surfaces | Makes the intelligence layer explainable enough for the add-in and dashboard to show why Friendly Mail reached a conclusion. | `Harry` | `E4` | `5` | `M` | `E4-T4`, `E4-T5`, `E4-T6` | `backend`, `epic:E4`, `surface:workflow`, `type:integration`, `priority:P1`, `size:M`, `status:done`, `milestone:prototype-v1`, `risk:workflow-safety` |
+| `E4-T8` | Add operational verification for classification quality and readiness | Shows whether classification coverage and confidence are strong enough to safely feed later workflow features. | `Harry` | `E4` | `5` | `M` | `E4-T4`, `E4-T5`, `E4-T6`, `E4-T7` | `backend`, `epic:E4`, `surface:workflow`, `type:verification`, `priority:P1`, `size:M`, `status:done`, `milestone:prototype-v1`, `risk:operational-readiness` |
+| `E5-T1` | Define the task and workflow state contract | Locks the task and workflow-state shape so delayed filing and user surfaces build on one stable state engine. | `Harry` | `E5` | `3` | `S` | `E4-T8` | `backend`, `epic:E5`, `surface:workflow`, `type:spec`, `priority:P0`, `size:S`, `status:done`, `milestone:prototype-v1` |
+| `E5-T2` | Extend persistence for tasks, source links, and message workflow state | Stores first-class tasks and message workflow state so Friendly Mail can track work independently from folder location. | `Harry` | `E5` | `5` | `M` | `E5-T1` | `backend`, `epic:E5`, `surface:api`, `type:feature`, `priority:P0`, `size:M`, `status:done`, `milestone:prototype-v1` |
+| `E5-T3` | Implement task materialization from classification output | Turns Epic 4 task candidates into durable tasks so actionable email becomes real tracked work. | `Harry` | `E5` | `5` | `M` | `E5-T1`, `E5-T2` | `backend`, `epic:E5`, `surface:workflow`, `type:integration`, `priority:P0`, `size:M`, `status:done`, `milestone:prototype-v1` |
+| `E5-T4` | Implement task lifecycle transitions and resolution semantics | Defines how work moves through snooze, delegation, completion, and dismissal without losing accountability. | `Harry` | `E5` | `8` | `L` | `E5-T3` | `backend`, `epic:E5`, `surface:workflow`, `type:feature`, `priority:P0`, `size:L`, `status:done`, `milestone:prototype-v1`, `risk:workflow-safety` |
+| `E5-T5` | Implement message workflow state projection and filing blockers | Keeps email visibility tied to work state and read state instead of folder moves or hidden assumptions. | `Harry` | `E5` | `8` | `L` | `E5-T3`, `E5-T4` | `backend`, `epic:E5`, `surface:workflow`, `type:feature`, `priority:P0`, `size:L`, `status:done`, `milestone:prototype-v1`, `risk:workflow-safety` |
+| `E5-T6` | Implement task ownership, delegation, and criticality persistence | Makes responsibility and urgency durable so critical work stays attributable across personal and shared-mailbox flows. | `Harry` | `E5` | `5` | `M` | `E5-T4`, `E5-T5` | `backend`, `epic:E5`, `surface:workflow`, `type:feature`, `priority:P1`, `size:M`, `status:done`, `milestone:prototype-v1` |
+| `E5-T7` | Add workflow read models and internal APIs for downstream surfaces | Gives the add-in, dashboard, and later filing flows one stable backend shape for task and workflow state. | `Harry` | `E5` | `5` | `M` | `E5-T5`, `E5-T6` | `backend`, `epic:E5`, `surface:api`, `type:integration`, `priority:P1`, `size:M`, `status:done`, `milestone:prototype-v1` |
+| `E5-T8` | Add operational verification for task and workflow readiness | Shows whether task creation, lifecycle integrity, and workflow blockers are reliable before delayed filing depends on them. | `Harry` | `E5` | `5` | `M` | `E5-T3`, `E5-T4`, `E5-T5`, `E5-T6`, `E5-T7` | `backend`, `epic:E5`, `surface:workflow`, `type:verification`, `priority:P1`, `size:M`, `status:done`, `milestone:prototype-v1`, `risk:operational-readiness` |
+| `E6-T1` | Define the delayed filing and mailbox action contract | Locks how Friendly Mail turns workflow eligibility into safe mailbox actions without blurring mailbox state and workflow state. | `Harry` | `E6` | `3` | `S` | `E5-T8` | `backend`, `epic:E6`, `surface:workflow`, `type:spec`, `priority:P0`, `size:S`, `status:done`, `milestone:prototype-v1`, `risk:workflow-safety` |
+| `E6-T2` | Extend persistence for filing decisions, target folders, and mailbox action audit | Stores delayed-filing decisions and mailbox-action history so every future move or route remains auditable. | `Harry` | `E6` | `5` | `M` | `E6-T1` | `backend`, `epic:E6`, `surface:api`, `type:feature`, `priority:P0`, `size:M`, `status:done`, `milestone:prototype-v1` |
+| `E6-T3` | Implement filing decision orchestration from workflow state | Turns explicit filing blockers into one repeat-safe decision the mailbox-action layer can trust. | `Harry` | `E6` | `5` | `M` | `E6-T1`, `E6-T2` | `backend`, `epic:E6`, `surface:workflow`, `type:integration`, `priority:P0`, `size:M`, `status:done`, `milestone:prototype-v1` |
+| `E6-T4` | Implement informational filing execution for read or reviewed messages | Applies delayed filing to low-risk informational mail only after the message is safe to move. | `Harry` | `E6` | `5` | `M` | `E6-T3` | `backend`, `epic:E6`, `surface:workflow`, `type:feature`, `priority:P0`, `size:M`, `status:done`, `milestone:prototype-v1`, `risk:workflow-safety` |
+| `E6-T5` | Implement actionable filing execution for resolved workflow state | Moves actionable mail only after real work is resolved, keeping delayed filing trustworthy. | `Harry` | `E6` | `8` | `L` | `E6-T3` | `backend`, `epic:E6`, `surface:workflow`, `type:feature`, `priority:P0`, `size:L`, `status:done`, `milestone:prototype-v1`, `risk:workflow-safety` |
+| `E6-T6` | Implement folder suggestion and category application flow | Gives users understandable filing destinations and low-risk mailbox actions before full automation. | `Harry` | `E6` | `5` | `M` | `E6-T3` | `backend`, `epic:E6`, `surface:api`, `type:integration`, `priority:P1`, `size:M`, `status:done`, `milestone:prototype-v1` |
+| `E6-T7` | Implement invoice routing and outgoing numbering mailbox actions | Covers the MVP's highest-value specialized mailbox actions for finance and outbound workflows. | `Harry` | `E6` | `8` | `L` | `E6-T6` | `backend`, `epic:E6`, `surface:api`, `type:feature`, `priority:P1`, `size:L`, `status:done`, `milestone:prototype-v1`, `integration:microsoft-graph` |
+| `E6-T8` | Add operational verification for delayed filing and mailbox action readiness | Shows whether filing decisions and mailbox actions are safe enough to trust before they touch live mail. | `Harry` | `E6` | `5` | `M` | `E6-T3`, `E6-T4`, `E6-T5`, `E6-T6`, `E6-T7` | `backend`, `epic:E6`, `surface:workflow`, `type:verification`, `priority:P1`, `size:M`, `status:done`, `milestone:prototype-v1`, `risk:operational-readiness` |
 
 ### Backlog
 
 | Ticket | Title | Stakeholder Summary | Owner | Epic | Points | Size | Depends On | Labels |
 |---|---|---|---|---|---:|---|---|---|
-| `E3-T5` | Implement PDF-first attachment text extraction | Lets Friendly Mail read the contents of PDF attachments, where many notices, invoices, and contracts actually live. | `Harry` | `E3` | `8` | `L` | `E3-T3`, `E3-T4` | `backend`, `epic:E3`, `surface:workflow`, `type:feature`, `priority:P0`, `size:L`, `status:backlog`, `milestone:prototype-v1` |
-| `E3-T6` | Add OCR fallback and extraction confidence handling | Improves coverage for scanned documents while still showing when Friendly Mail is less certain about what it read. | `Harry` | `E3` | `5` | `M` | `E3-T5` | `backend`, `epic:E3`, `surface:workflow`, `type:feature`, `priority:P1`, `size:M`, `status:backlog`, `milestone:prototype-v1` |
-| `E3-T7` | Orchestrate idempotent ingestion and attachment processing | Prevents duplicate processing so repeated mailbox updates do not create noisy or inconsistent downstream results. | `Harry` | `E3` | `8` | `L` | `E3-T3`, `E3-T4`, `E3-T5` | `backend`, `epic:E3`, `surface:workflow`, `type:integration`, `priority:P0`, `size:L`, `status:backlog`, `milestone:prototype-v1` |
-| `E3-T8` | Add operational verification for ingestion and extraction | Shows whether content ingestion and document reading are healthy so the team can spot reliability gaps early. | `Harry` | `E3` | `5` | `M` | `E3-T5`, `E3-T6`, `E3-T7` | `backend`, `epic:E3`, `surface:workflow`, `type:verification`, `priority:P1`, `size:M`, `status:backlog`, `milestone:prototype-v1` |
 | `E7-T6` | Expose a prototype mailbox status endpoint for the add-in UI | Gives the add-in a simple backend signal for showing mailbox health and sync readiness inside Outlook. | `Harry` | `E7` | `3` | `S` | `E2-T8` | `backend`, `epic:E7`, `surface:api`, `type:feature`, `priority:P1`, `size:S`, `status:backlog`, `milestone:prototype-v1`, `integration:outlook-addin` |
-
-### Ready
-
-| Ticket | Title | Stakeholder Summary | Owner | Epic | Points | Size | Depends On | Labels |
-|---|---|---|---|---|---:|---|---|---|
-| `E3-T4` | Implement attachment metadata retrieval and durable linking | Gives Friendly Mail a dependable inventory of attachments so important supporting documents are not overlooked. | `Harry` | `E3` | `5` | `M` | `E3-T2`, `E3-T3` | `backend`, `epic:E3`, `surface:api`, `type:integration`, `priority:P0`, `size:M`, `status:ready`, `milestone:prototype-v1` |
-
-### Blocked
-
-| Ticket | Title | Owner | Epic | Points | Size | Blocker | Labels |
-|---|---|---|---|---:|---|---|---|
-| `E4-T1` | Add classification and task summary data for the add-in prototype | `Harry` | `E4` / `E5` | `13` | `XL` | `E3`, `E4`, `E5` not yet started | `backend`, `surface:workflow`, `type:feature`, `priority:P1`, `size:XL`, `status:blocked`, `milestone:prototype-v1`, `risk:workflow-safety` |
 
 ## Suggested Sprint Framing
 
