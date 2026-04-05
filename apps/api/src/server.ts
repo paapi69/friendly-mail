@@ -5,7 +5,14 @@ import {
   serializeClearedSessionCookie,
   serializeSessionCookie
 } from "@friendly-mail/auth";
-import { MailSurface, WorkflowStatus } from "@friendly-mail/contracts";
+import {
+  MailSurface,
+  MailboxActionMode,
+  type TaskTransitionRequest,
+  TaskStatus,
+  TaskStatusReason,
+  WorkflowStatus
+} from "@friendly-mail/contracts";
 import {
   AppError,
   createCorrelationId,
@@ -21,9 +28,13 @@ import type { MailboxFolderSyncService } from "./mailbox-folder-sync-service";
 import type { MailboxMessageSyncService } from "./mailbox-message-sync-service";
 import type { MailboxIngestionService } from "./mailbox-ingestion-service";
 import type { MailboxAttachmentMetadataService } from "./mailbox-attachment-metadata-service";
+import type { MailboxClassificationService } from "./mailbox-classification-service";
+import type { MailboxClassificationVerificationService } from "./mailbox-classification-verification-service";
 import type { MailboxMessageProcessingService } from "./mailbox-message-processing-service";
 import type { MailboxProcessingVerificationService } from "./mailbox-processing-verification-service";
 import type { MailboxPdfExtractionService } from "./mailbox-pdf-extraction-service";
+import type { MailboxTaskWorkflowService } from "./mailbox-task-workflow-service";
+import type { MailboxActionService } from "./mailbox-action-service";
 import type { MailboxSubscriptionService } from "./mailbox-subscription-service";
 
 type ApiEnv = {
@@ -66,9 +77,29 @@ export type ApiMailboxMessageProcessingService = Pick<
   MailboxMessageProcessingService,
   "processMessage"
 >;
+export type ApiMailboxClassificationService = Pick<
+  MailboxClassificationService,
+  "classifyMessage" | "getMessageClassificationReadModel"
+>;
+export type ApiMailboxTaskWorkflowService = Pick<
+  MailboxTaskWorkflowService,
+  "materializeTasks" | "transitionTask" | "getMessageWorkflowReadModel" | "getMailboxTaskWorkflowVerification"
+>;
+export type ApiMailboxActionService = Pick<
+  MailboxActionService,
+  | "evaluateFilingDecision"
+  | "executeFiling"
+  | "routeInvoiceMessage"
+  | "stampOutgoingReference"
+  | "getMailboxActionVerification"
+>;
 export type ApiMailboxProcessingVerificationService = Pick<
   MailboxProcessingVerificationService,
   "getMailboxProcessingVerification"
+>;
+export type ApiMailboxClassificationVerificationService = Pick<
+  MailboxClassificationVerificationService,
+  "getMailboxClassificationVerification"
 >;
 export type ApiMailboxSubscriptionService = Pick<
   MailboxSubscriptionService,
@@ -86,7 +117,11 @@ export type CreateServerInput = {
   mailboxAttachmentMetadataService: ApiMailboxAttachmentMetadataService;
   mailboxPdfExtractionService: ApiMailboxPdfExtractionService;
   mailboxMessageProcessingService: ApiMailboxMessageProcessingService;
+  mailboxClassificationService: ApiMailboxClassificationService;
+  mailboxTaskWorkflowService: ApiMailboxTaskWorkflowService;
+  mailboxActionService: ApiMailboxActionService;
   mailboxProcessingVerificationService: ApiMailboxProcessingVerificationService;
+  mailboxClassificationVerificationService: ApiMailboxClassificationVerificationService;
   mailboxSubscriptionService: ApiMailboxSubscriptionService;
   logger: Logger;
 };
@@ -543,6 +578,305 @@ export function createServer(input: CreateServerInput) {
         return;
       }
 
+      const mailboxMessageClassificationReadModelMatch =
+        request.method === "GET"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/messages\/([^/]+)\/classification$/)
+          : null;
+
+      if (mailboxMessageClassificationReadModelMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxMessageClassificationReadModelMatch[1]);
+        const messageId = decodeURIComponent(mailboxMessageClassificationReadModelMatch[2]);
+        const result = await input.mailboxClassificationService.getMessageClassificationReadModel({
+          session,
+          mailboxId,
+          messageId
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Loaded mailbox classification read model", {
+          statusCode: 200,
+          mailboxId,
+          messageId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          classifierVersion: result.classifierVersion
+        });
+        return;
+      }
+
+      const mailboxMessageClassificationMatch =
+        request.method === "POST"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/messages\/([^/]+)\/classify$/)
+          : null;
+
+      if (mailboxMessageClassificationMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxMessageClassificationMatch[1]);
+        const messageId = decodeURIComponent(mailboxMessageClassificationMatch[2]);
+        const result = await input.mailboxClassificationService.classifyMessage({
+          session,
+          mailboxId,
+          messageId
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Classified mailbox message through orchestration service", {
+          statusCode: 200,
+          mailboxId,
+          messageId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          graphMessageId: result.graphMessageId,
+          ingestionVersionKey: result.ingestionVersionKey,
+          classifierVersion: result.classifierVersion,
+          classificationStatus: result.classificationStatus
+        });
+        return;
+      }
+
+      const mailboxTaskMaterializationMatch =
+        request.method === "POST"
+          ? requestUrl.pathname.match(
+              /^\/mailboxes\/([^/]+)\/messages\/([^/]+)\/tasks\/materialize$/
+            )
+          : null;
+
+      if (mailboxTaskMaterializationMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxTaskMaterializationMatch[1]);
+        const messageId = decodeURIComponent(mailboxTaskMaterializationMatch[2]);
+        const result = await input.mailboxTaskWorkflowService.materializeTasks({
+          session,
+          mailboxId,
+          messageId
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Materialized mailbox tasks from classification output", {
+          statusCode: 200,
+          mailboxId,
+          messageId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          materializationStatus: result.materializationStatus,
+          createdTaskCount: result.createdTaskCount
+        });
+        return;
+      }
+
+      const mailboxMessageWorkflowReadModelMatch =
+        request.method === "GET"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/messages\/([^/]+)\/workflow$/)
+          : null;
+
+      if (mailboxMessageWorkflowReadModelMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxMessageWorkflowReadModelMatch[1]);
+        const messageId = decodeURIComponent(mailboxMessageWorkflowReadModelMatch[2]);
+        const result = await input.mailboxTaskWorkflowService.getMessageWorkflowReadModel({
+          session,
+          mailboxId,
+          messageId
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Loaded mailbox workflow read model", {
+          statusCode: 200,
+          mailboxId,
+          messageId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId
+        });
+        return;
+      }
+
+      const mailboxMessageFilingDecisionMatch =
+        request.method === "GET"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/messages\/([^/]+)\/filing-decision$/)
+          : null;
+
+      if (mailboxMessageFilingDecisionMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxMessageFilingDecisionMatch[1]);
+        const messageId = decodeURIComponent(mailboxMessageFilingDecisionMatch[2]);
+        const mode = parseMailboxActionMode(requestUrl.searchParams.get("mode"));
+        const result = await input.mailboxActionService.evaluateFilingDecision({
+          session,
+          mailboxId,
+          messageId,
+          mode
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Loaded filing decision read model", {
+          statusCode: 200,
+          mailboxId,
+          messageId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          filingDecisionStatus: result.decision.status
+        });
+        return;
+      }
+
+      const mailboxMessageExecuteFilingMatch =
+        request.method === "POST"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/messages\/([^/]+)\/file$/)
+          : null;
+
+      if (mailboxMessageExecuteFilingMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxMessageExecuteFilingMatch[1]);
+        const messageId = decodeURIComponent(mailboxMessageExecuteFilingMatch[2]);
+        const body = await readJsonBody(request);
+        const mode = parseMailboxActionModeFromBody(body);
+        const result = await input.mailboxActionService.executeFiling({
+          session,
+          mailboxId,
+          messageId,
+          mode
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Executed delayed filing mailbox action", {
+          statusCode: 200,
+          mailboxId,
+          messageId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          filingDecisionStatus: result.decision.status,
+          attemptCount: result.attempts.length
+        });
+        return;
+      }
+
+      const mailboxMessageInvoiceRouteMatch =
+        request.method === "POST"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/messages\/([^/]+)\/invoice-route$/)
+          : null;
+
+      if (mailboxMessageInvoiceRouteMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxMessageInvoiceRouteMatch[1]);
+        const messageId = decodeURIComponent(mailboxMessageInvoiceRouteMatch[2]);
+        const body = await readJsonBody(request);
+        const routeInput = parseInvoiceRoute(body);
+        const result = await input.mailboxActionService.routeInvoiceMessage({
+          session,
+          mailboxId,
+          messageId,
+          ...routeInput
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Executed invoice routing mailbox action", {
+          statusCode: 200,
+          mailboxId,
+          messageId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          attemptCount: result.attempts.length
+        });
+        return;
+      }
+
+      const mailboxMessageOutgoingNumberingMatch =
+        request.method === "POST"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/messages\/([^/]+)\/outgoing-numbering$/)
+          : null;
+
+      if (mailboxMessageOutgoingNumberingMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxMessageOutgoingNumberingMatch[1]);
+        const messageId = decodeURIComponent(mailboxMessageOutgoingNumberingMatch[2]);
+        const body = await readJsonBody(request);
+        const numberingInput = parseOutgoingNumbering(body);
+        const result = await input.mailboxActionService.stampOutgoingReference({
+          session,
+          mailboxId,
+          messageId,
+          ...numberingInput
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Executed outgoing numbering mailbox action", {
+          statusCode: 200,
+          mailboxId,
+          messageId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          attemptCount: result.attempts.length
+        });
+        return;
+      }
+
+      const mailboxTaskTransitionMatch =
+        request.method === "PATCH"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/tasks\/([^/]+)$/)
+          : null;
+
+      if (mailboxTaskTransitionMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxTaskTransitionMatch[1]);
+        const taskId = decodeURIComponent(mailboxTaskTransitionMatch[2]);
+        const body = await readJsonBody(request);
+        const transition = parseTaskTransition(body);
+        const result = await input.mailboxTaskWorkflowService.transitionTask({
+          session,
+          mailboxId,
+          taskId,
+          ...transition
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Applied mailbox task lifecycle transition", {
+          statusCode: 200,
+          mailboxId,
+          taskId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          status: result.task.task.status
+        });
+        return;
+      }
+
       const mailboxOperationalVerificationMatch =
         request.method === "GET"
           ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/operational-verification$/)
@@ -591,6 +925,93 @@ export function createServer(input: CreateServerInput) {
 
         writeJson(response, 200, result);
         requestLogger.info("Fetched mailbox processing verification", {
+          statusCode: 200,
+          mailboxId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          overallStatus: result.overallStatus
+        });
+        return;
+      }
+
+      const mailboxClassificationVerificationMatch =
+        request.method === "GET"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/classification-verification$/)
+          : null;
+
+      if (mailboxClassificationVerificationMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxClassificationVerificationMatch[1]);
+        const result =
+          await input.mailboxClassificationVerificationService.getMailboxClassificationVerification(
+            {
+              session,
+              mailboxId
+            }
+          );
+
+        writeJson(response, 200, result);
+        requestLogger.info("Fetched mailbox classification verification", {
+          statusCode: 200,
+          mailboxId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          overallStatus: result.overallStatus
+        });
+        return;
+      }
+
+      const mailboxTaskWorkflowVerificationMatch =
+        request.method === "GET"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/task-workflow-verification$/)
+          : null;
+
+      if (mailboxTaskWorkflowVerificationMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxTaskWorkflowVerificationMatch[1]);
+        const result = await input.mailboxTaskWorkflowService.getMailboxTaskWorkflowVerification({
+          session,
+          mailboxId
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Fetched mailbox task-workflow verification", {
+          statusCode: 200,
+          mailboxId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId,
+          overallStatus: result.overallStatus
+        });
+        return;
+      }
+
+      const mailboxActionVerificationMatch =
+        request.method === "GET"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/mailbox-action-verification$/)
+          : null;
+
+      if (mailboxActionVerificationMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxActionVerificationMatch[1]);
+        const result = await input.mailboxActionService.getMailboxActionVerification({
+          session,
+          mailboxId
+        });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Fetched mailbox action verification", {
           statusCode: 200,
           mailboxId,
           userId: session.principal.userId,
@@ -727,6 +1148,125 @@ function parseLoginInput(body: unknown, request: http.IncomingMessage): LoginInp
       : undefined,
     ipAddress: request.socket.remoteAddress ?? undefined
   };
+}
+
+function parseTaskTransition(body: unknown): TaskTransitionRequest {
+  if (!isObject(body) || !isNonEmptyString(body.status)) {
+    throw new AppError("INVALID_TASK_TRANSITION", "Task transition payload is invalid.", {
+      statusCode: 400
+    });
+  }
+
+  const status = parseTaskStatus(body.status);
+  const reason =
+    isNonEmptyString(body.reason) ? parseTaskStatusReason(body.reason) : undefined;
+
+  return {
+    status,
+    reason,
+    note: isNonEmptyString(body.note) ? body.note : undefined,
+    snoozedUntil: isNonEmptyString(body.snoozedUntil) ? body.snoozedUntil : undefined,
+    assignedUserId: isNonEmptyString(body.assignedUserId) ? body.assignedUserId : undefined
+  };
+}
+
+function parseMailboxActionMode(value: string | null) {
+  if (!value) {
+    return undefined;
+  }
+
+  return parseMailboxActionModeValue(value);
+}
+
+function parseMailboxActionModeFromBody(body: unknown) {
+  if (!isObject(body) || !isNonEmptyString(body.mode)) {
+    return undefined;
+  }
+
+  return parseMailboxActionModeValue(body.mode);
+}
+
+function parseMailboxActionModeValue(value: string) {
+  switch (value) {
+    case MailboxActionMode.SuggestionOnly:
+      return MailboxActionMode.SuggestionOnly;
+    case MailboxActionMode.AutoApply:
+      return MailboxActionMode.AutoApply;
+    case MailboxActionMode.ApprovedApply:
+      return MailboxActionMode.ApprovedApply;
+    default:
+      throw new AppError("INVALID_MAILBOX_ACTION", "Mailbox action mode is invalid.", {
+        statusCode: 400
+      });
+  }
+}
+
+function parseInvoiceRoute(body: unknown) {
+  if (!isObject(body) || !isNonEmptyString(body.forwardTo)) {
+    throw new AppError(
+      "INVALID_MAILBOX_ACTION",
+      "Invoice routing requires a forwardTo email address.",
+      {
+        statusCode: 400
+      }
+    );
+  }
+
+  return {
+    forwardTo: body.forwardTo.trim().toLowerCase(),
+    comment: isNonEmptyString(body.comment) ? body.comment : undefined,
+    mode: parseMailboxActionModeFromBody(body)
+  };
+}
+
+function parseOutgoingNumbering(body: unknown) {
+  if (!isObject(body)) {
+    return {};
+  }
+
+  return {
+    mode: parseMailboxActionModeFromBody(body),
+    prefix: isNonEmptyString(body.prefix) ? body.prefix.trim() : undefined,
+    sequenceKey: isNonEmptyString(body.sequenceKey) ? body.sequenceKey.trim() : undefined
+  };
+}
+
+function parseTaskStatus(value: string) {
+  switch (value) {
+    case TaskStatus.Open:
+      return TaskStatus.Open;
+    case TaskStatus.Snoozed:
+      return TaskStatus.Snoozed;
+    case TaskStatus.Delegated:
+      return TaskStatus.Delegated;
+    case TaskStatus.Done:
+      return TaskStatus.Done;
+    case TaskStatus.Dismissed:
+      return TaskStatus.Dismissed;
+    default:
+      throw new AppError("INVALID_TASK_TRANSITION", "Task transition status is invalid.", {
+        statusCode: 400
+      });
+  }
+}
+
+function parseTaskStatusReason(value: string) {
+  switch (value) {
+    case TaskStatusReason.UserCompleted:
+      return TaskStatusReason.UserCompleted;
+    case TaskStatusReason.UserDismissed:
+      return TaskStatusReason.UserDismissed;
+    case TaskStatusReason.ResolvedByWorkflow:
+      return TaskStatusReason.ResolvedByWorkflow;
+    case TaskStatusReason.Delegated:
+      return TaskStatusReason.Delegated;
+    case TaskStatusReason.Snoozed:
+      return TaskStatusReason.Snoozed;
+    default:
+      throw new AppError("INVALID_TASK_TRANSITION", "Task transition reason is invalid.", {
+        statusCode: 400
+      });
+  }
 }
 
 function writeJson(

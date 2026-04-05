@@ -9,6 +9,10 @@ import {
 } from "@friendly-mail/contracts";
 import {
   createServer,
+  type ApiMailboxActionService,
+  type ApiMailboxClassificationService,
+  type ApiMailboxClassificationVerificationService,
+  type ApiMailboxTaskWorkflowService,
   type ApiMailboxAttachmentMetadataService,
   type ApiMailboxMessageProcessingService,
   type ApiMailboxProcessingVerificationService,
@@ -688,6 +692,952 @@ describe("api auth routes", () => {
     });
   });
 
+  it("orchestrates repeat-safe message classification for an authenticated mailbox owner", async () => {
+    const mailboxClassificationService: ApiMailboxClassificationService = {
+      getMessageClassificationReadModel: vi.fn(),
+      classifyMessage: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        graphMessageId: "graph_message_123",
+        ingestionVersionKey: "mailbox_123:graph_message_123:change_key_456",
+        idempotencyKey: "mailbox_123:graph_message_123:change_key_456:baseline-classifier:v1",
+        classifierVersion: "baseline-classifier:v1",
+        processingStatus: "processed",
+        classificationStatus: "classified",
+        classifiedAt: "2026-04-05T09:30:00.000Z",
+        result: {
+          mailboxId: "mailbox_123",
+          messageId: "message_123",
+          ingestionVersionKey: "mailbox_123:graph_message_123:change_key_456",
+          classifiedAt: "2026-04-05T09:30:00.000Z",
+          classifierVersion: "baseline-classifier:v1",
+          actionability: "informational",
+          messageType: "fyi",
+          confidenceScore: 0.2,
+          explanation: {
+            summary: "Placeholder orchestration baseline result.",
+            lowConfidence: true,
+            reasons: []
+          },
+          signals: {
+            dueDates: [],
+            entities: [],
+            taskCandidates: [],
+            urgency: {
+              level: "normal",
+              confidenceScore: 0.2,
+              rationale: "Placeholder orchestration baseline result.",
+              reasons: []
+            },
+            criticality: {
+              level: "normal",
+              confidenceScore: 0.2,
+              rationale: "Placeholder orchestration baseline result.",
+              reasons: []
+            }
+          }
+        }
+      })
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mailboxClassificationService
+    );
+
+    const response = await request(server, {
+      method: "POST",
+      path: "/mailboxes/mailbox_123/messages/message_123/classify",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual(
+      expect.objectContaining({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        classificationStatus: "classified"
+      })
+    );
+    expect(mailboxClassificationService.classifyMessage).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123",
+      messageId: "message_123"
+    });
+  });
+
+  it("returns the stored classification read model for an authenticated mailbox owner", async () => {
+    const mailboxClassificationService: ApiMailboxClassificationService = {
+      classifyMessage: vi.fn(),
+      getMessageClassificationReadModel: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        ingestionVersionKey: "mailbox_123:graph_message_123:change_key_456",
+        classifiedAt: "2026-04-05T09:30:00.000Z",
+        classifierVersion: "rules-classifier:v1",
+        actionability: "actionable",
+        messageType: "invoice",
+        confidence: {
+          overall: {
+            score: 0.92,
+            band: "high",
+            lowConfidence: false
+          },
+          signals: {
+            dueDates: {
+              count: 1,
+              maxScore: 0.91
+            },
+            entities: {
+              count: 1,
+              maxScore: 0.89
+            },
+            taskCandidates: {
+              count: 1,
+              maxScore: 0.84
+            },
+            urgency: {
+              score: 0.84,
+              band: "high",
+              level: "high"
+            },
+            criticality: {
+              score: 0.82,
+              band: "high",
+              level: "elevated"
+            }
+          }
+        },
+        explanation: {
+          summary: "The message is actionable because it requests invoice payment by a stated due date.",
+          lowConfidence: false,
+          reasons: [],
+          urgency: {
+            level: "high",
+            rationale: "The message includes a near-term due date.",
+            reasons: []
+          },
+          criticality: {
+            level: "elevated",
+            rationale: "Invoices have finance consequences if missed.",
+            reasons: []
+          }
+        },
+        signals: {
+          summary: {
+            dueDateCount: 1,
+            entityCount: 1,
+            taskCandidateCount: 1,
+            nextDueDate: {
+              id: "due_date_123",
+              label: "Requested due date",
+              value: "2026-04-10T00:00:00.000Z",
+              confidenceScore: 0.91
+            },
+            topEntities: [],
+            topTaskCandidates: []
+          },
+          dueDates: [],
+          entities: [],
+          taskCandidates: []
+        }
+      })
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mailboxClassificationService
+    );
+
+    const response = await request(server, {
+      method: "GET",
+      path: "/mailboxes/mailbox_123/messages/message_123/classification",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual(
+      expect.objectContaining({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        confidence: expect.objectContaining({
+          overall: expect.objectContaining({
+            band: "high"
+          })
+        })
+      })
+    );
+    expect(mailboxClassificationService.getMessageClassificationReadModel).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123",
+      messageId: "message_123"
+    });
+  });
+
+  it("materializes tasks from current classification output for an authenticated mailbox owner", async () => {
+    const mailboxTaskWorkflowService: ApiMailboxTaskWorkflowService = {
+      materializeTasks: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        ingestionVersionKey: "mailbox_123:graph_message_123:change_key_456",
+        classifierVersion: "rules-classifier:v1",
+        actionability: "actionable",
+        materializationStatus: "materialized",
+        createdTaskCount: 1,
+        reusedTaskCount: 0,
+        materializedAt: "2026-04-05T11:00:00.000Z",
+        workflowState: {
+          id: "workflow_state_123",
+          mailboxId: "mailbox_123",
+          messageId: "message_123",
+          actionability: "actionable",
+          status: "active_actionable",
+          filingState: "active_actionable",
+          priority: "high",
+          criticality: "elevated",
+          isEligibleToFile: false,
+          requirements: ["all_required_tasks_resolved"],
+          blockedBy: ["open_task"],
+          blockingTaskIds: ["task_123"],
+          unresolvedTaskCount: 1,
+          openTaskCount: 1,
+          snoozedTaskCount: 0,
+          delegatedTaskCount: 0,
+          informationalReadRequired: false,
+          messageIsRead: false,
+          lastEvaluatedAt: "2026-04-05T11:00:00.000Z"
+        },
+        filingEligibility: {
+          mailboxId: "mailbox_123",
+          messageId: "message_123",
+          workflowStateId: "workflow_state_123",
+          state: "active_actionable",
+          isEligible: false,
+          requirements: ["all_required_tasks_resolved"],
+          blockedBy: ["open_task"],
+          summary: "The message stays active because at least one workflow task is still unresolved.",
+          evaluatedAt: "2026-04-05T11:00:00.000Z"
+        },
+        tasks: []
+      }),
+      transitionTask: vi.fn(),
+      getMessageWorkflowReadModel: vi.fn(),
+      getMailboxTaskWorkflowVerification: vi.fn()
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mailboxTaskWorkflowService
+    );
+
+    const response = await request(server, {
+      method: "POST",
+      path: "/mailboxes/mailbox_123/messages/message_123/tasks/materialize",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual(
+      expect.objectContaining({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        materializationStatus: "materialized"
+      })
+    );
+    expect(mailboxTaskWorkflowService.materializeTasks).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123",
+      messageId: "message_123"
+    });
+  });
+
+  it("returns the message workflow read model for an authenticated mailbox owner", async () => {
+    const mailboxTaskWorkflowService: ApiMailboxTaskWorkflowService = {
+      materializeTasks: vi.fn(),
+      transitionTask: vi.fn(),
+      getMessageWorkflowReadModel: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        workflowState: {
+          id: "workflow_state_123",
+          mailboxId: "mailbox_123",
+          messageId: "message_123",
+          actionability: "actionable",
+          status: "active_actionable",
+          filingState: "active_actionable",
+          priority: "high",
+          criticality: "elevated",
+          isEligibleToFile: false,
+          requirements: ["all_required_tasks_resolved"],
+          blockedBy: ["open_task"],
+          blockingTaskIds: ["task_123"],
+          unresolvedTaskCount: 1,
+          openTaskCount: 1,
+          snoozedTaskCount: 0,
+          delegatedTaskCount: 0,
+          informationalReadRequired: false,
+          messageIsRead: false,
+          lastEvaluatedAt: "2026-04-05T11:00:00.000Z"
+        },
+        filingEligibility: {
+          mailboxId: "mailbox_123",
+          messageId: "message_123",
+          workflowStateId: "workflow_state_123",
+          state: "active_actionable",
+          isEligible: false,
+          requirements: ["all_required_tasks_resolved"],
+          blockedBy: ["open_task"],
+          summary: "The message stays active because at least one workflow task is still unresolved.",
+          evaluatedAt: "2026-04-05T11:00:00.000Z"
+        },
+        classification: {
+          ingestionVersionKey: "mailbox_123:graph_message_123:change_key_456",
+          classifierVersion: "rules-classifier:v1",
+          actionability: "actionable",
+          messageType: "invoice",
+          confidenceScore: 0.91,
+          explanationSummary: "The message requests invoice payment by a stated due date."
+        },
+        tasks: []
+      }),
+      getMailboxTaskWorkflowVerification: vi.fn()
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mailboxTaskWorkflowService
+    );
+
+    const response = await request(server, {
+      method: "GET",
+      path: "/mailboxes/mailbox_123/messages/message_123/workflow",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual(
+      expect.objectContaining({
+        mailboxId: "mailbox_123",
+        messageId: "message_123"
+      })
+    );
+    expect(mailboxTaskWorkflowService.getMessageWorkflowReadModel).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123",
+      messageId: "message_123"
+    });
+  });
+
+  it("applies task lifecycle transitions for an authenticated mailbox owner", async () => {
+    const mailboxTaskWorkflowService: ApiMailboxTaskWorkflowService = {
+      materializeTasks: vi.fn(),
+      transitionTask: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        task: {
+          task: {
+            id: "task_123",
+            mailboxId: "mailbox_123",
+            sourceMessageId: "message_123",
+            title: "Pay invoice INV-42",
+            status: "delegated",
+            priority: "high",
+            criticality: "elevated",
+            ownerUserId: "user_123",
+            assignedUserId: "user_delegate",
+            delegatedByUserId: "user_123",
+            createdAt: "2026-04-05T11:00:00.000Z"
+          },
+          sourceLinks: [],
+          latestLifecycleEvent: {
+            id: "task_event_123",
+            mailboxId: "mailbox_123",
+            taskId: "task_123",
+            fromStatus: "open",
+            toStatus: "delegated",
+            reason: "delegated",
+            actorUserId: "user_123",
+            delegatedToUserId: "user_delegate",
+            occurredAt: "2026-04-05T11:10:00.000Z"
+          },
+          sourceMessage: {
+            mailboxId: "mailbox_123",
+            messageId: "message_123",
+            subject: "Invoice due Friday"
+          }
+        }
+      }),
+      getMessageWorkflowReadModel: vi.fn(),
+      getMailboxTaskWorkflowVerification: vi.fn()
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mailboxTaskWorkflowService
+    );
+
+    const response = await request(server, {
+      method: "PATCH",
+      path: "/mailboxes/mailbox_123/tasks/task_123",
+      body: {
+        status: "delegated",
+        reason: "delegated",
+        assignedUserId: "user_delegate",
+        note: "Finance will handle payment."
+      },
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual(
+      expect.objectContaining({
+        mailboxId: "mailbox_123",
+        task: expect.objectContaining({
+          task: expect.objectContaining({
+            status: "delegated"
+          })
+        })
+      })
+    );
+    expect(mailboxTaskWorkflowService.transitionTask).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123",
+      taskId: "task_123",
+      status: "delegated",
+      reason: "delegated",
+      assignedUserId: "user_delegate",
+      note: "Finance will handle payment."
+    });
+  });
+
+  it("returns task-workflow verification for an authenticated mailbox owner", async () => {
+    const mailboxTaskWorkflowService: ApiMailboxTaskWorkflowService = {
+      materializeTasks: vi.fn(),
+      transitionTask: vi.fn(),
+      getMessageWorkflowReadModel: vi.fn(),
+      getMailboxTaskWorkflowVerification: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        checkedAt: "2026-04-05T11:30:00.000Z",
+        overallStatus: "warning",
+        coverage: {
+          classifiedActionableMessages: 2,
+          messagesWithTaskCandidates: 2,
+          messagesWithMaterializedTasks: 1,
+          pendingMaterializationMessages: 1,
+          workflowStateMessages: 1,
+          totalTasks: 1
+        },
+        integrity: {
+          orphanedTaskIds: [],
+          taskIdsMissingSourceLinks: [],
+          messageIdsMissingWorkflowState: ["message_999"],
+          messageIdsMarkedEligibleWithUnresolvedTasks: [],
+          invalidLifecycleTaskIds: []
+        },
+        checks: []
+      })
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mailboxTaskWorkflowService
+    );
+
+    const response = await request(server, {
+      method: "GET",
+      path: "/mailboxes/mailbox_123/task-workflow-verification",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual(
+      expect.objectContaining({
+        mailboxId: "mailbox_123",
+        overallStatus: "warning"
+      })
+    );
+    expect(mailboxTaskWorkflowService.getMailboxTaskWorkflowVerification).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123"
+    });
+  });
+
+  it("returns the filing decision read model for an authenticated mailbox owner", async () => {
+    const mailboxActionService: ApiMailboxActionService = {
+      evaluateFilingDecision: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        decision: {
+          id: "filing_decision_123",
+          mailboxId: "mailbox_123",
+          messageId: "message_123",
+          actionability: "informational",
+          status: "eligible",
+          mode: "suggestion_only",
+          requirements: ["message_read"],
+          blockedBy: [],
+          targetFolderId: "folder_archive",
+          targetFolderGraphId: "graph_folder_archive",
+          targetFolderName: "Archive",
+          suggestedCategories: ["FriendlyMail/Informational", "FriendlyMail/Fyi"],
+          summary: "The message is ready to file.",
+          sourceMessageIsRead: true,
+          decidedAt: "2026-04-05T11:00:00.000Z"
+        },
+        workflowState: {
+          id: "workflow_state_123",
+          mailboxId: "mailbox_123",
+          messageId: "message_123",
+          actionability: "informational",
+          status: "eligible_to_file",
+          filingState: "eligible_to_file",
+          priority: "normal",
+          criticality: "normal",
+          isEligibleToFile: true,
+          requirements: ["message_read"],
+          blockedBy: [],
+          blockingTaskIds: [],
+          unresolvedTaskCount: 0,
+          openTaskCount: 0,
+          snoozedTaskCount: 0,
+          delegatedTaskCount: 0,
+          informationalReadRequired: true,
+          messageIsRead: true,
+          lastEvaluatedAt: "2026-04-05T11:00:00.000Z"
+        },
+        filingEligibility: {
+          messageId: "message_123",
+          isEligible: true,
+          requirements: ["message_read"],
+          blockedBy: [],
+          summary: "The message is ready to file."
+        },
+        classification: {
+          ingestionVersionKey: "version_123",
+          classifierVersion: "rules-classifier:v1",
+          actionability: "informational",
+          messageType: "fyi",
+          confidenceScore: 0.82,
+          explanationSummary: "The message is informational."
+        },
+        targetFolder: {
+          id: "folder_archive",
+          graphFolderId: "graph_folder_archive",
+          name: "Archive",
+          source: "mailbox_folder"
+        },
+        recommendedActions: []
+      }),
+      executeFiling: vi.fn(),
+      routeInvoiceMessage: vi.fn(),
+      stampOutgoingReference: vi.fn(),
+      getMailboxActionVerification: vi.fn()
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mailboxActionService
+    );
+
+    const response = await request(server, {
+      method: "GET",
+      path: "/mailboxes/mailbox_123/messages/message_123/filing-decision?mode=suggestion_only",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(mailboxActionService.evaluateFilingDecision).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123",
+      messageId: "message_123",
+      mode: "suggestion_only"
+    });
+  });
+
+  it("executes delayed filing for an authenticated mailbox owner", async () => {
+    const mailboxActionService: ApiMailboxActionService = {
+      evaluateFilingDecision: vi.fn(),
+      executeFiling: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        decision: {
+          id: "filing_decision_123",
+          mailboxId: "mailbox_123",
+          messageId: "message_123",
+          actionability: "informational",
+          status: "executed",
+          mode: "approved_apply",
+          requirements: ["message_read"],
+          blockedBy: [],
+          suggestedCategories: ["FriendlyMail/Informational"],
+          summary: "The message was filed.",
+          sourceMessageIsRead: true,
+          decidedAt: "2026-04-05T11:00:00.000Z",
+          executedAt: "2026-04-05T11:01:00.000Z"
+        },
+        attempts: [],
+        workflowState: undefined,
+        filingEligibility: undefined,
+        message: {
+          graphMessageId: "graph_message_123",
+          graphParentFolderId: "graph_folder_archive",
+          filingState: "filed"
+        }
+      }),
+      routeInvoiceMessage: vi.fn(),
+      stampOutgoingReference: vi.fn(),
+      getMailboxActionVerification: vi.fn()
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mailboxActionService
+    );
+
+    const response = await request(server, {
+      method: "POST",
+      path: "/mailboxes/mailbox_123/messages/message_123/file",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      },
+      body: {
+        mode: "approved_apply"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(mailboxActionService.executeFiling).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123",
+      messageId: "message_123",
+      mode: "approved_apply"
+    });
+  });
+
+  it("routes invoices and stamps outgoing references for an authenticated mailbox owner", async () => {
+    const mailboxActionService: ApiMailboxActionService = {
+      evaluateFilingDecision: vi.fn(),
+      executeFiling: vi.fn(),
+      routeInvoiceMessage: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        decision: {
+          id: "filing_decision_123",
+          mailboxId: "mailbox_123",
+          messageId: "message_123",
+          actionability: "actionable",
+          status: "blocked",
+          mode: "approved_apply",
+          requirements: ["all_required_tasks_resolved"],
+          blockedBy: ["open_task"],
+          suggestedCategories: ["FriendlyMail/Invoice"],
+          summary: "The invoice remains active.",
+          sourceMessageIsRead: false,
+          decidedAt: "2026-04-05T11:00:00.000Z"
+        },
+        attempts: [],
+        workflowState: undefined,
+        filingEligibility: undefined
+      }),
+      stampOutgoingReference: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        decision: {
+          id: "filing_decision_123",
+          mailboxId: "mailbox_123",
+          messageId: "message_123",
+          actionability: "informational",
+          status: "eligible",
+          mode: "approved_apply",
+          requirements: [],
+          blockedBy: [],
+          suggestedCategories: [],
+          summary: "Draft ready.",
+          sourceMessageIsRead: false,
+          decidedAt: "2026-04-05T11:00:00.000Z"
+        },
+        attempts: [
+          {
+            id: "attempt_123",
+            mailboxId: "mailbox_123",
+            messageId: "message_123",
+            actionType: "stamp_outgoing_reference",
+            mode: "approved_apply",
+            status: "succeeded",
+            referenceNumber: "FM-2026-0001",
+            attemptedAt: "2026-04-05T11:00:00.000Z"
+          }
+        ],
+        workflowState: undefined,
+        filingEligibility: undefined
+      }),
+      getMailboxActionVerification: vi.fn()
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mailboxActionService
+    );
+
+    const invoiceRouteResponse = await request(server, {
+      method: "POST",
+      path: "/mailboxes/mailbox_123/messages/message_123/invoice-route",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      },
+      body: {
+        forwardTo: "ap@friendlymail.dev",
+        mode: "approved_apply"
+      }
+    });
+    const numberingResponse = await request(server, {
+      method: "POST",
+      path: "/mailboxes/mailbox_123/messages/message_123/outgoing-numbering",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      },
+      body: {
+        mode: "approved_apply",
+        prefix: "FM-2026"
+      }
+    });
+
+    expect(invoiceRouteResponse.statusCode).toBe(200);
+    expect(numberingResponse.statusCode).toBe(200);
+    expect(mailboxActionService.routeInvoiceMessage).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123",
+      messageId: "message_123",
+      forwardTo: "ap@friendlymail.dev",
+      comment: undefined,
+      mode: "approved_apply"
+    });
+    expect(mailboxActionService.stampOutgoingReference).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123",
+      messageId: "message_123",
+      mode: "approved_apply",
+      prefix: "FM-2026",
+      sequenceKey: undefined
+    });
+  });
+
+  it("returns mailbox-action verification for an authenticated mailbox owner", async () => {
+    const mailboxActionService: ApiMailboxActionService = {
+      evaluateFilingDecision: vi.fn(),
+      executeFiling: vi.fn(),
+      routeInvoiceMessage: vi.fn(),
+      stampOutgoingReference: vi.fn(),
+      getMailboxActionVerification: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        checkedAt: "2026-04-05T12:00:00.000Z",
+        overallStatus: "warning",
+        coverage: {
+          trackedMessages: 3,
+          decisions: 2,
+          eligibleDecisions: 1,
+          executedDecisions: 1,
+          attempts: 4,
+          succeededAttempts: 3,
+          failedAttempts: 1
+        },
+        integrity: {
+          messageIdsMissingDecision: ["message_999"],
+          decisionIdsMissingAttempts: [],
+          decisionIdsWithFailedLatestAttempt: ["filing_decision_123"],
+          messageIdsFiledWithoutSucceededMove: []
+        },
+        capabilityGaps: {
+          routingBlockedMessageIds: ["message_123"],
+          numberingBlockedMessageIds: []
+        },
+        checks: []
+      })
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mailboxActionService
+    );
+
+    const response = await request(server, {
+      method: "GET",
+      path: "/mailboxes/mailbox_123/mailbox-action-verification",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(mailboxActionService.getMailboxActionVerification).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123"
+    });
+  });
+
   it("returns mailbox operational verification for an authenticated mailbox owner", async () => {
     const mailboxReadinessService: ApiMailboxReadinessService = {
       checkSharedMailboxReadiness: vi.fn(),
@@ -747,6 +1697,87 @@ describe("api auth routes", () => {
       })
     );
     expect(mailboxReadinessService.getMailboxOperationalVerification).toHaveBeenCalledWith({
+      session: exampleSession.session,
+      mailboxId: "mailbox_123"
+    });
+  });
+
+  it("returns mailbox classification verification for an authenticated mailbox owner", async () => {
+    const mailboxClassificationVerificationService: ApiMailboxClassificationVerificationService = {
+      getMailboxClassificationVerification: vi.fn().mockResolvedValue({
+        mailboxId: "mailbox_123",
+        checkedAt: "2026-04-05T12:00:00.000Z",
+        overallStatus: "warning",
+        coverage: {
+          trackedMessages: 5,
+          eligibleMessages: 4,
+          classifiedMessages: 3,
+          pendingClassificationMessages: 1,
+          actionableMessages: 2,
+          informationalMessages: 1,
+          messageTypeCounts: []
+        },
+        confidence: {
+          averageScore: 0.7,
+          lowConfidenceMessages: 1,
+          mediumConfidenceMessages: 0,
+          highConfidenceMessages: 2,
+          ambiguousMessages: 1
+        },
+        signals: {
+          messagesWithDueDates: 1,
+          messagesWithEntities: 1,
+          messagesWithTaskCandidates: 2,
+          messagesWithCriticality: 3,
+          highRiskMessages: 2,
+          highRiskMessagesWithDueDates: 1
+        },
+        degradedCases: {
+          lowConfidenceMessageIds: ["message_fyi"],
+          ambiguousMessageIds: ["message_fyi"],
+          highRiskMissingDueDateMessageIds: ["message_notice"]
+        },
+        checks: []
+      })
+    };
+    const server = createTestServer(
+      {
+        login: vi.fn(),
+        getSession: vi.fn().mockResolvedValue(exampleSession.session),
+        logout: vi.fn()
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mailboxClassificationVerificationService
+    );
+
+    const response = await request(server, {
+      method: "GET",
+      path: "/mailboxes/mailbox_123/classification-verification",
+      headers: {
+        Cookie: "friendly_mail_session=cookie-session-token"
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual(
+      expect.objectContaining({
+        mailboxId: "mailbox_123",
+        overallStatus: "warning"
+      })
+    );
+    expect(
+      mailboxClassificationVerificationService.getMailboxClassificationVerification
+    ).toHaveBeenCalledWith({
       session: exampleSession.session,
       mailboxId: "mailbox_123"
     });
@@ -1014,7 +2045,11 @@ function createTestServer(
   mailboxAttachmentMetadataService?: ApiMailboxAttachmentMetadataService,
   mailboxPdfExtractionService?: ApiMailboxPdfExtractionService,
   mailboxMessageProcessingService?: ApiMailboxMessageProcessingService,
-  mailboxProcessingVerificationService?: ApiMailboxProcessingVerificationService
+  mailboxProcessingVerificationService?: ApiMailboxProcessingVerificationService,
+  mailboxClassificationService?: ApiMailboxClassificationService,
+  mailboxClassificationVerificationService?: ApiMailboxClassificationVerificationService,
+  mailboxTaskWorkflowService?: ApiMailboxTaskWorkflowService,
+  mailboxActionService?: ApiMailboxActionService
 ) {
   const server = createServer({
     env: {
@@ -1056,6 +2091,26 @@ function createTestServer(
     },
     mailboxProcessingVerificationService: mailboxProcessingVerificationService ?? {
       getMailboxProcessingVerification: vi.fn()
+    },
+    mailboxClassificationService: mailboxClassificationService ?? {
+      getMessageClassificationReadModel: vi.fn(),
+      classifyMessage: vi.fn()
+    },
+    mailboxClassificationVerificationService: mailboxClassificationVerificationService ?? {
+      getMailboxClassificationVerification: vi.fn()
+    },
+    mailboxTaskWorkflowService: mailboxTaskWorkflowService ?? {
+      materializeTasks: vi.fn(),
+      transitionTask: vi.fn(),
+      getMessageWorkflowReadModel: vi.fn(),
+      getMailboxTaskWorkflowVerification: vi.fn()
+    },
+    mailboxActionService: mailboxActionService ?? {
+      evaluateFilingDecision: vi.fn(),
+      executeFiling: vi.fn(),
+      routeInvoiceMessage: vi.fn(),
+      stampOutgoingReference: vi.fn(),
+      getMailboxActionVerification: vi.fn()
     },
     logger: {
       child() {

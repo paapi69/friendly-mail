@@ -399,6 +399,76 @@ export function createGraphConnector(options: CreateGraphConnectorOptions) {
       return mapMessageDetail(payload);
     },
 
+    async updateMessage(input: {
+      messageId: string;
+      userId?: string;
+      categories?: string[];
+      isRead?: boolean;
+      subject?: string;
+      bodyText?: string;
+    }) {
+      const payload = await requestJson<Record<string, unknown>>({
+        method: "PATCH",
+        path: `${getUserRoot(input.userId)}/messages/${encodeURIComponent(input.messageId)}`,
+        body: {
+          ...(input.categories ? { categories: input.categories } : {}),
+          ...(typeof input.isRead === "boolean" ? { isRead: input.isRead } : {}),
+          ...(input.subject ? { subject: input.subject } : {}),
+          ...(input.bodyText
+            ? {
+                body: {
+                  contentType: "text",
+                  content: input.bodyText
+                }
+              }
+            : {})
+        },
+        immutableId: true,
+        bodyContentType: "text"
+      });
+
+      return mapMessageDetail(payload);
+    },
+
+    async moveMessage(input: {
+      messageId: string;
+      destinationId: string;
+      userId?: string;
+    }) {
+      const payload = await requestJson<Record<string, unknown>>({
+        method: "POST",
+        path: `${getUserRoot(input.userId)}/messages/${encodeURIComponent(input.messageId)}/move`,
+        body: {
+          destinationId: input.destinationId
+        },
+        immutableId: true
+      });
+
+      return mapMessage(payload);
+    },
+
+    async forwardMessage(input: {
+      messageId: string;
+      toRecipients: Array<{ address: string; name?: string }>;
+      comment?: string;
+      userId?: string;
+    }) {
+      await performRequest({
+        method: "POST",
+        path: `${getUserRoot(input.userId)}/messages/${encodeURIComponent(input.messageId)}/forward`,
+        body: {
+          comment: input.comment ?? "",
+          toRecipients: input.toRecipients.map((recipient) => ({
+            emailAddress: {
+              address: recipient.address,
+              ...(recipient.name ? { name: recipient.name } : {})
+            }
+          }))
+        },
+        immutableId: true
+      });
+    },
+
     listMessageAttachments(input: {
       messageId: string;
       userId?: string;

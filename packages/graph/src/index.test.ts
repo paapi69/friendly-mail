@@ -369,6 +369,151 @@ describe("graph connector", () => {
     ]);
   });
 
+  it("updates messages with categories, read state, and draft text using immutable ids", async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      jsonResponse({
+        id: "graph_message_123",
+        parentFolderId: "graph_folder_inbox",
+        changeKey: "change_key_789",
+        conversationId: "conversation_123",
+        internetMessageId: "<message_123@example.com>",
+        subject: "FM-2026-0042 Invoice review",
+        from: {
+          emailAddress: {
+            name: "Finance",
+            address: "finance@example.com"
+          }
+        },
+        sender: {
+          emailAddress: {
+            name: "Finance",
+            address: "finance@example.com"
+          }
+        },
+        replyTo: [],
+        toRecipients: [],
+        ccRecipients: [],
+        bccRecipients: [],
+        receivedDateTime: "2026-04-05T12:00:00Z",
+        lastModifiedDateTime: "2026-04-05T12:10:00Z",
+        isRead: true,
+        isDraft: true,
+        categories: ["FriendlyMail/Invoice", "FriendlyMail/Filed"],
+        importance: "normal",
+        inferenceClassification: "focused",
+        bodyPreview: "Updated draft body",
+        body: {
+          contentType: "text",
+          content: "Updated draft body"
+        },
+        uniqueBody: {
+          contentType: "text",
+          content: "Updated draft body"
+        },
+        hasAttachments: false
+      })
+    );
+
+    const connector = createGraphConnector({
+      tokenProvider: async () => "token_123",
+      fetch
+    });
+
+    const message = await connector.updateMessage({
+      messageId: "graph_message_123",
+      categories: ["FriendlyMail/Invoice", "FriendlyMail/Filed"],
+      isRead: true,
+      subject: "FM-2026-0042 Invoice review",
+      bodyText: "Updated draft body"
+    });
+
+    expect(String(fetch.mock.calls[0][0])).toContain("/me/messages/graph_message_123");
+    const headers = getHeaders(fetch.mock.calls[0][1]);
+    expect(headers.get("Prefer")).toBe('IdType="ImmutableId", outlook.body-content-type="text"');
+    expect(parseBody(fetch.mock.calls[0][1])).toEqual({
+      categories: ["FriendlyMail/Invoice", "FriendlyMail/Filed"],
+      isRead: true,
+      subject: "FM-2026-0042 Invoice review",
+      body: {
+        contentType: "text",
+        content: "Updated draft body"
+      }
+    });
+    expect(message.subject).toBe("FM-2026-0042 Invoice review");
+    expect(message.categories).toEqual(["FriendlyMail/Invoice", "FriendlyMail/Filed"]);
+    expect(message.isDraft).toBe(true);
+  });
+
+  it("moves messages with immutable-id support and returns the moved message", async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      jsonResponse({
+        id: "graph_message_123",
+        parentFolderId: "graph_folder_archive",
+        changeKey: "change_key_999",
+        subject: "Filed invoice",
+        isRead: true,
+        hasAttachments: false,
+        categories: ["FriendlyMail/Filed"]
+      })
+    );
+
+    const connector = createGraphConnector({
+      tokenProvider: async () => "token_123",
+      fetch
+    });
+
+    const message = await connector.moveMessage({
+      messageId: "graph_message_123",
+      destinationId: "archive"
+    });
+
+    expect(String(fetch.mock.calls[0][0])).toContain("/me/messages/graph_message_123/move");
+    const headers = getHeaders(fetch.mock.calls[0][1]);
+    expect(headers.get("Prefer")).toBe('IdType="ImmutableId"');
+    expect(parseBody(fetch.mock.calls[0][1])).toEqual({
+      destinationId: "archive"
+    });
+    expect(message.parentFolderId).toBe("graph_folder_archive");
+    expect(message.categories).toEqual(["FriendlyMail/Filed"]);
+  });
+
+  it("forwards messages with JSON recipients and accepts 202 responses", async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      new Response(null, {
+        status: 202
+      })
+    );
+
+    const connector = createGraphConnector({
+      tokenProvider: async () => "token_123",
+      fetch
+    });
+
+    await connector.forwardMessage({
+      messageId: "graph_message_123",
+      comment: "Please process this invoice.",
+      toRecipients: [
+        {
+          name: "Accounts Payable",
+          address: "ap@example.com"
+        }
+      ]
+    });
+
+    expect(String(fetch.mock.calls[0][0])).toContain("/me/messages/graph_message_123/forward");
+    expect(parseBody(fetch.mock.calls[0][1])).toEqual({
+      comment: "Please process this invoice.",
+      toRecipients: [
+        {
+          emailAddress: {
+            name: "Accounts Payable",
+            address: "ap@example.com"
+          }
+        }
+      ]
+    });
+  });
+
   it("downloads raw attachment content with immutable-id support", async () => {
     const fetch = vi.fn().mockResolvedValue(
       new Response(new Uint8Array([37, 80, 68, 70, 45, 49, 46, 55]), {

@@ -1,15 +1,24 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   AttachmentKind,
+  allocateOutgoingSequenceNumber,
+  createMailboxActionAttempt,
   ExtractionArtifactKind,
   ExtractionStatus,
   createLocalUser,
+  createTaskLifecycleEvent,
   databaseTables,
   markMailboxMessageRemoved,
+  upsertFilingDecision,
+  MessageWorkflowStatus,
   MessageActionability,
   MessagePriority,
   MessageType,
   recordAuditEvent,
+  TaskSourceKind,
+  TaskStatus,
+  TaskStatusReason,
+  upsertMessageWorkflowState,
   upsertMessageClassification,
   upsertAttachmentExtractionArtifact,
   upsertMailboxMessageContent,
@@ -19,6 +28,8 @@ import {
   upsertFolderSyncState,
   upsertGraphSubscription,
   upsertMailboxConnection,
+  upsertTaskRecord,
+  upsertTaskSourceLink,
   UserRole,
   WorkflowCriticalityLevel
 } from "./index";
@@ -40,6 +51,12 @@ describe("database baseline", () => {
       "ExtractionArtifact",
       "MessageClassification",
       "Task",
+      "TaskSourceLink",
+      "TaskLifecycleEvent",
+      "MessageWorkflowState",
+      "FilingDecision",
+      "MailboxActionAttempt",
+      "OutgoingSequence",
       "AuditEvent"
     ]);
   });
@@ -1020,5 +1037,499 @@ describe("database baseline", () => {
     expect(call.update.sourceArtifactIds).toEqual([]);
     expect(call.create.sourceAttachmentIds).toEqual([]);
     expect(call.create.sourceArtifactIds).toEqual([]);
+  });
+
+  it("upserts Epic 5 task records with ownership, criticality, and resolution metadata", async () => {
+    const upsert = vi.fn().mockResolvedValue({
+      id: "task_123"
+    });
+    const createdAt = new Date("2026-04-05T12:00:00.000Z");
+    const updatedAt = new Date("2026-04-05T12:05:00.000Z");
+    const dueAt = new Date("2026-04-12T00:00:00.000Z");
+    const snoozedUntil = new Date("2026-04-08T09:00:00.000Z");
+
+    await upsertTaskRecord(
+      {
+        task: {
+          upsert: upsert as never
+        }
+      },
+      {
+        taskKey: "task:mailbox_123:message_123:task_candidate_123",
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        sourceTaskCandidateId: "task_candidate_123",
+        title: "Pay invoice INV-2026-0042",
+        description: "Review and pay the attached invoice before the due date.",
+        status: TaskStatus.OPEN,
+        priority: MessagePriority.HIGH,
+        criticality: WorkflowCriticalityLevel.ELEVATED,
+        ownerUserId: "user_owner",
+        assignedUserId: "user_assignee",
+        delegatedByUserId: "user_delegate",
+        snoozedUntil,
+        dueAt,
+        createdAt,
+        updatedAt,
+        resolvedAt: null,
+        resolutionReason: null,
+        resolutionNote: null
+      }
+    );
+
+    expect(upsert).toHaveBeenCalledWith({
+      where: {
+        taskKey: "task:mailbox_123:message_123:task_candidate_123"
+      },
+      update: {
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        sourceTaskCandidateId: "task_candidate_123",
+        title: "Pay invoice INV-2026-0042",
+        description: "Review and pay the attached invoice before the due date.",
+        status: TaskStatus.OPEN,
+        priority: MessagePriority.HIGH,
+        criticality: WorkflowCriticalityLevel.ELEVATED,
+        ownerUserId: "user_owner",
+        assignedUserId: "user_assignee",
+        delegatedByUserId: "user_delegate",
+        snoozedUntil,
+        dueAt,
+        createdAt,
+        updatedAt,
+        resolvedAt: null,
+        resolutionReason: null,
+        resolutionNote: null
+      },
+      create: {
+        taskKey: "task:mailbox_123:message_123:task_candidate_123",
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        sourceTaskCandidateId: "task_candidate_123",
+        title: "Pay invoice INV-2026-0042",
+        description: "Review and pay the attached invoice before the due date.",
+        status: TaskStatus.OPEN,
+        priority: MessagePriority.HIGH,
+        criticality: WorkflowCriticalityLevel.ELEVATED,
+        ownerUserId: "user_owner",
+        assignedUserId: "user_assignee",
+        delegatedByUserId: "user_delegate",
+        snoozedUntil,
+        dueAt,
+        createdAt,
+        updatedAt,
+        resolvedAt: null,
+        resolutionReason: null,
+        resolutionNote: null
+      }
+    });
+  });
+
+  it("upserts task source links with classifier lineage and signal linkage", async () => {
+    const upsert = vi.fn().mockResolvedValue({
+      id: "task_source_link_123"
+    });
+    const createdAt = new Date("2026-04-05T12:10:00.000Z");
+
+    await upsertTaskSourceLink(
+      {
+        taskSourceLink: {
+          upsert: upsert as never
+        }
+      },
+      {
+        taskId: "task_123",
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        sourceKind: TaskSourceKind.CLASSIFICATION_TASK_CANDIDATE,
+        classificationIngestionVersionKey: "mailbox_123:graph_message_123:change_key_123",
+        classifierVersion: "rules-classifier:v1",
+        taskCandidateId: "task_candidate_123",
+        dueDateSignalIds: ["due_date_123"],
+        entitySignalIds: ["entity_123", "entity_124"],
+        provenance: [
+          {
+            sourceKind: "BODY_TEXT",
+            field: "bodyText"
+          },
+          {
+            sourceKind: "ATTACHMENT_TEXT",
+            attachmentId: "attachment_123",
+            artifactId: "artifact_123",
+            field: "textLength"
+          }
+        ],
+        createdAt
+      }
+    );
+
+    expect(upsert).toHaveBeenCalledWith({
+      where: {
+        taskId_sourceKind_messageId_taskCandidateId: {
+          taskId: "task_123",
+          sourceKind: TaskSourceKind.CLASSIFICATION_TASK_CANDIDATE,
+          messageId: "message_123",
+          taskCandidateId: "task_candidate_123"
+        }
+      },
+      update: {
+        mailboxId: "mailbox_123",
+        classificationIngestionVersionKey: "mailbox_123:graph_message_123:change_key_123",
+        classifierVersion: "rules-classifier:v1",
+        dueDateSignalIds: ["due_date_123"],
+        entitySignalIds: ["entity_123", "entity_124"],
+        provenanceJson: [
+          {
+            sourceKind: "BODY_TEXT",
+            field: "bodyText"
+          },
+          {
+            sourceKind: "ATTACHMENT_TEXT",
+            attachmentId: "attachment_123",
+            artifactId: "artifact_123",
+            field: "textLength"
+          }
+        ],
+        createdAt
+      },
+      create: {
+        taskId: "task_123",
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        sourceKind: TaskSourceKind.CLASSIFICATION_TASK_CANDIDATE,
+        classificationIngestionVersionKey: "mailbox_123:graph_message_123:change_key_123",
+        classifierVersion: "rules-classifier:v1",
+        taskCandidateId: "task_candidate_123",
+        dueDateSignalIds: ["due_date_123"],
+        entitySignalIds: ["entity_123", "entity_124"],
+        provenanceJson: [
+          {
+            sourceKind: "BODY_TEXT",
+            field: "bodyText"
+          },
+          {
+            sourceKind: "ATTACHMENT_TEXT",
+            attachmentId: "attachment_123",
+            artifactId: "artifact_123",
+            field: "textLength"
+          }
+        ],
+        createdAt
+      }
+    });
+  });
+
+  it("creates lifecycle events for auditable task transitions", async () => {
+    const create = vi.fn().mockResolvedValue({
+      id: "task_event_123"
+    });
+    const occurredAt = new Date("2026-04-05T12:20:00.000Z");
+
+    await createTaskLifecycleEvent(
+      {
+        taskLifecycleEvent: {
+          create: create as never
+        }
+      },
+      {
+        mailboxId: "mailbox_123",
+        taskId: "task_123",
+        fromStatus: TaskStatus.OPEN,
+        toStatus: TaskStatus.DELEGATED,
+        reason: TaskStatusReason.DELEGATED,
+        actorUserId: "user_owner",
+        delegatedToUserId: "user_delegate",
+        note: "Finance team will handle this invoice.",
+        occurredAt
+      }
+    );
+
+    expect(create).toHaveBeenCalledWith({
+      data: {
+        mailboxId: "mailbox_123",
+        taskId: "task_123",
+        fromStatus: TaskStatus.OPEN,
+        toStatus: TaskStatus.DELEGATED,
+        reason: TaskStatusReason.DELEGATED,
+        actorUserId: "user_owner",
+        delegatedToUserId: "user_delegate",
+        note: "Finance team will handle this invoice.",
+        occurredAt
+      }
+    });
+  });
+
+  it("upserts message workflow state with blocker arrays and task counts", async () => {
+    const upsert = vi.fn().mockResolvedValue({
+      id: "workflow_state_123"
+    });
+    const lastEvaluatedAt = new Date("2026-04-05T12:30:00.000Z");
+
+    await upsertMessageWorkflowState(
+      {
+        messageWorkflowState: {
+          upsert: upsert as never
+        }
+      },
+      {
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        actionability: MessageActionability.ACTIONABLE,
+        status: MessageWorkflowStatus.FILING_BLOCKED,
+        filingState: "FILING_BLOCKED",
+        priority: MessagePriority.HIGH,
+        criticality: WorkflowCriticalityLevel.ELEVATED,
+        isEligibleToFile: false,
+        requirements: ["ALL_REQUIRED_TASKS_RESOLVED", "CRITICAL_WORK_CLEARED"],
+        blockedBy: ["CRITICAL_WORK_REMAINING", "OPEN_TASK"],
+        blockingTaskIds: ["task_123"],
+        unresolvedTaskCount: 1,
+        openTaskCount: 1,
+        snoozedTaskCount: 0,
+        delegatedTaskCount: 0,
+        informationalReadRequired: false,
+        messageIsRead: true,
+        lastEvaluatedAt
+      }
+    );
+
+    expect(upsert).toHaveBeenCalledWith({
+      where: {
+        messageId: "message_123"
+      },
+      update: {
+        mailboxId: "mailbox_123",
+        actionability: MessageActionability.ACTIONABLE,
+        status: MessageWorkflowStatus.FILING_BLOCKED,
+        filingState: "FILING_BLOCKED",
+        priority: MessagePriority.HIGH,
+        criticality: WorkflowCriticalityLevel.ELEVATED,
+        isEligibleToFile: false,
+        requirements: ["ALL_REQUIRED_TASKS_RESOLVED", "CRITICAL_WORK_CLEARED"],
+        blockedBy: ["CRITICAL_WORK_REMAINING", "OPEN_TASK"],
+        blockingTaskIds: ["task_123"],
+        unresolvedTaskCount: 1,
+        openTaskCount: 1,
+        snoozedTaskCount: 0,
+        delegatedTaskCount: 0,
+        informationalReadRequired: false,
+        messageIsRead: true,
+        lastEvaluatedAt
+      },
+      create: {
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        actionability: MessageActionability.ACTIONABLE,
+        status: MessageWorkflowStatus.FILING_BLOCKED,
+        filingState: "FILING_BLOCKED",
+        priority: MessagePriority.HIGH,
+        criticality: WorkflowCriticalityLevel.ELEVATED,
+        isEligibleToFile: false,
+        requirements: ["ALL_REQUIRED_TASKS_RESOLVED", "CRITICAL_WORK_CLEARED"],
+        blockedBy: ["CRITICAL_WORK_REMAINING", "OPEN_TASK"],
+        blockingTaskIds: ["task_123"],
+        unresolvedTaskCount: 1,
+        openTaskCount: 1,
+        snoozedTaskCount: 0,
+        delegatedTaskCount: 0,
+        informationalReadRequired: false,
+        messageIsRead: true,
+        lastEvaluatedAt
+      }
+    });
+  });
+
+  it("upserts filing decisions with folder targets and action readiness metadata", async () => {
+    const upsert = vi.fn().mockResolvedValue({
+      id: "filing_decision_123"
+    });
+    const decidedAt = new Date("2026-04-05T14:00:00.000Z");
+
+    await upsertFilingDecision(
+      {
+        filingDecision: {
+          upsert: upsert as never
+        }
+      },
+      {
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        workflowStateId: "workflow_state_123",
+        actionability: "ACTIONABLE",
+        status: "ELIGIBLE",
+        mode: "SUGGESTION_ONLY",
+        targetFolderId: "folder_123",
+        targetFolderGraphId: "graph_folder_archive",
+        targetFolderName: "Archive",
+        suggestedCategories: ["FriendlyMail/Actionable", "FriendlyMail/Invoice"],
+        requirements: ["ALL_REQUIRED_TASKS_RESOLVED"],
+        blockedBy: [],
+        summary: "The message is ready to file.",
+        rationale: "No unresolved blockers remain.",
+        sourceMessageIsRead: true,
+        decidedAt
+      }
+    );
+
+    expect(upsert).toHaveBeenCalledWith({
+      where: {
+        messageId: "message_123"
+      },
+      update: {
+        mailboxId: "mailbox_123",
+        workflowStateId: "workflow_state_123",
+        actionability: "ACTIONABLE",
+        status: "ELIGIBLE",
+        mode: "SUGGESTION_ONLY",
+        targetFolderId: "folder_123",
+        targetFolderGraphId: "graph_folder_archive",
+        targetFolderName: "Archive",
+        suggestedCategories: ["FriendlyMail/Actionable", "FriendlyMail/Invoice"],
+        requirements: ["ALL_REQUIRED_TASKS_RESOLVED"],
+        blockedBy: [],
+        summary: "The message is ready to file.",
+        rationale: "No unresolved blockers remain.",
+        sourceMessageIsRead: true,
+        approvedByUserId: null,
+        decidedAt,
+        executedAt: null,
+        lastErrorCode: null,
+        lastErrorMessage: null
+      },
+      create: {
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        workflowStateId: "workflow_state_123",
+        actionability: "ACTIONABLE",
+        status: "ELIGIBLE",
+        mode: "SUGGESTION_ONLY",
+        targetFolderId: "folder_123",
+        targetFolderGraphId: "graph_folder_archive",
+        targetFolderName: "Archive",
+        suggestedCategories: ["FriendlyMail/Actionable", "FriendlyMail/Invoice"],
+        requirements: ["ALL_REQUIRED_TASKS_RESOLVED"],
+        blockedBy: [],
+        summary: "The message is ready to file.",
+        rationale: "No unresolved blockers remain.",
+        sourceMessageIsRead: true,
+        approvedByUserId: null,
+        decidedAt,
+        executedAt: null,
+        lastErrorCode: null,
+        lastErrorMessage: null
+      }
+    });
+  });
+
+  it("creates mailbox action attempts with auditable action outcome fields", async () => {
+    const create = vi.fn().mockResolvedValue({
+      id: "attempt_123"
+    });
+    const attemptedAt = new Date("2026-04-05T14:10:00.000Z");
+    const completedAt = new Date("2026-04-05T14:10:05.000Z");
+
+    await createMailboxActionAttempt(
+      {
+        mailboxActionAttempt: {
+          create: create as never
+        }
+      },
+      {
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        filingDecisionId: "filing_decision_123",
+        actionType: "MOVE_MESSAGE",
+        mode: "AUTO_APPLY",
+        status: "SUCCEEDED",
+        actorUserId: "user_123",
+        targetFolderId: "folder_123",
+        targetFolderGraphId: "graph_folder_archive",
+        targetFolderName: "Archive",
+        graphMessageId: "graph_message_123",
+        graphRequestId: "request_123",
+        attemptedAt,
+        completedAt
+      }
+    );
+
+    expect(create).toHaveBeenCalledWith({
+      data: {
+        mailboxId: "mailbox_123",
+        messageId: "message_123",
+        filingDecisionId: "filing_decision_123",
+        actionType: "MOVE_MESSAGE",
+        mode: "AUTO_APPLY",
+        status: "SUCCEEDED",
+        actorUserId: "user_123",
+        targetFolderId: "folder_123",
+        targetFolderGraphId: "graph_folder_archive",
+        targetFolderName: "Archive",
+        categoryName: null,
+        forwardedTo: null,
+        referenceNumber: null,
+        graphMessageId: "graph_message_123",
+        graphRequestId: "request_123",
+        errorCode: null,
+        errorMessage: null,
+        attemptedAt,
+        completedAt
+      }
+    });
+  });
+
+  it("allocates outgoing reference numbers from a durable mailbox sequence", async () => {
+    const findUnique = vi.fn().mockResolvedValue({
+      lastAllocatedValue: 41
+    });
+    const upsert = vi.fn().mockResolvedValue({
+      id: "sequence_123"
+    });
+
+    const result = await allocateOutgoingSequenceNumber(
+      {
+        outgoingSequence: {
+          findUnique: findUnique as never,
+          upsert: upsert as never
+        }
+      },
+      {
+        mailboxId: "mailbox_123",
+        sequenceKey: "default",
+        prefix: "FM-2026"
+      }
+    );
+
+    expect(findUnique).toHaveBeenCalledWith({
+      where: {
+        mailboxId_sequenceKey: {
+          mailboxId: "mailbox_123",
+          sequenceKey: "default"
+        }
+      }
+    });
+    expect(upsert).toHaveBeenCalledWith({
+      where: {
+        mailboxId_sequenceKey: {
+          mailboxId: "mailbox_123",
+          sequenceKey: "default"
+        }
+      },
+      update: {
+        prefix: "FM-2026",
+        lastAllocatedValue: 42
+      },
+      create: {
+        mailboxId: "mailbox_123",
+        sequenceKey: "default",
+        prefix: "FM-2026",
+        lastAllocatedValue: 42
+      }
+    });
+    expect(result).toEqual({
+      sequenceKey: "default",
+      prefix: "FM-2026",
+      value: 42,
+      referenceNumber: "FM-2026-0042"
+    });
   });
 });

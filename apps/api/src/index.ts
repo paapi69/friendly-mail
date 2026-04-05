@@ -10,9 +10,13 @@ import { createPrismaMailboxFolderSyncService } from "./mailbox-folder-sync-serv
 import { createPrismaMailboxMessageSyncService } from "./mailbox-message-sync-service";
 import { createPrismaMailboxIngestionService } from "./mailbox-ingestion-service";
 import { createPrismaMailboxAttachmentMetadataService } from "./mailbox-attachment-metadata-service";
+import { createPrismaMailboxClassificationService } from "./mailbox-classification-service";
+import { createPrismaMailboxClassificationVerificationService } from "./mailbox-classification-verification-service";
+import { createPrismaMailboxActionService } from "./mailbox-action-service";
 import { createPrismaMailboxMessageProcessingService } from "./mailbox-message-processing-service";
 import { createPrismaMailboxProcessingVerificationService } from "./mailbox-processing-verification-service";
 import { createPrismaMailboxPdfExtractionService } from "./mailbox-pdf-extraction-service";
+import { createPrismaMailboxTaskWorkflowService } from "./mailbox-task-workflow-service";
 import { createPrismaMailboxOnboardingService } from "./mailbox-onboarding-service";
 import { createPrismaMailboxReadinessService } from "./mailbox-readiness-service";
 import { createPrismaMailboxSubscriptionService } from "./mailbox-subscription-service";
@@ -72,10 +76,31 @@ const mailboxMessageProcessingService = createPrismaMailboxMessageProcessingServ
   mailboxAttachmentMetadataService,
   mailboxPdfExtractionService
 });
+const mailboxClassificationService = createPrismaMailboxClassificationService({
+  prisma,
+  logger: logger as Logger,
+  mailboxMessageProcessingService
+});
+const mailboxTaskWorkflowService = createPrismaMailboxTaskWorkflowService({
+  prisma,
+  logger: logger as Logger,
+  mailboxClassificationService
+});
+const mailboxActionService = createPrismaMailboxActionService({
+  prisma,
+  env,
+  logger: logger as Logger,
+  mailboxTaskWorkflowService
+});
 const mailboxProcessingVerificationService = createPrismaMailboxProcessingVerificationService({
   prisma,
   logger: logger as Logger
 });
+const mailboxClassificationVerificationService =
+  createPrismaMailboxClassificationVerificationService({
+    prisma,
+    logger: logger as Logger
+  });
 const mailboxSubscriptionService = createPrismaMailboxSubscriptionService({
   prisma,
   env,
@@ -93,7 +118,11 @@ const server = createServer({
   mailboxAttachmentMetadataService,
   mailboxPdfExtractionService,
   mailboxMessageProcessingService,
+  mailboxClassificationService,
+  mailboxTaskWorkflowService,
+  mailboxActionService,
   mailboxProcessingVerificationService,
+  mailboxClassificationVerificationService,
   mailboxSubscriptionService,
   logger: logger as Logger
 });
