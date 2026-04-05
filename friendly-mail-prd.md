@@ -4,9 +4,9 @@
 
 - Product: Friendly Mail
 - Document type: Product Requirements Document
-- Version: v0.1
+- Version: v0.2
 - Status: Draft
-- Date: 2026-03-25
+- Date: 2026-04-05
 - Author: Codex PM draft
 
 ## 1. Background
@@ -167,6 +167,7 @@ The system will:
 - Classify the message type and likely filing destination
 - Detect whether action is required
 - Extract due dates, tasks, entities, and urgency indicators
+- Surface confidence and explanation for workflow intelligence decisions, especially when the system is uncertain
 - Create or update a structured action record
 - Surface critical items through a dashboard and digests
 - Apply mailbox actions such as categories, forwarding, and draft preparation immediately where appropriate, while deferring folder moves until the email is safe to archive for later retrieval
@@ -228,6 +229,8 @@ The system will:
 - The system must extract structured entities including due dates, counterparties, event names, and committee names
 - The system must determine whether an email is informational or actionable
 - The system must generate a confidence score and rationale for automated suggestions
+- The system must expose a downstream-friendly explanation and confidence read model for user-facing and operational surfaces
+- The system must surface ambiguous or low-confidence results explicitly instead of silently behaving as high confidence
 
 ### 13.3 Task Management
 
@@ -287,6 +290,7 @@ The system will:
 
 - Given an email that matches critical criteria, the system marks it as critical and surfaces it in the action list
 - When a new critical email arrives, the system updates the user's pending priorities without requiring manual re-entry
+- Given a low-confidence or ambiguous classification, the system surfaces the uncertainty and explanation so the user can review it safely
 
 ### 15.4 Reminder
 

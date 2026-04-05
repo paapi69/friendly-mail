@@ -4,9 +4,9 @@
 
 - Product: Friendly Mail
 - Document type: Technical Design Document
-- Version: v0.1
-- Status: Draft
-- Date: 2026-03-30
+- Version: v0.2
+- Status: Draft with implemented Epic 5 baseline
+- Date: 2026-04-05
 - Author: Codex technical draft
 - Related documents:
   - `C:\Users\Sahil\OneDrive\Desktop\Friendly Mail\friendly-mail-prd.md`
@@ -230,6 +230,12 @@ Output:
 - Confidence scores
 - Human-readable explanation for important decisions
 
+Current implemented baseline through Epic 4:
+
+- The service classifies one normalized message ingestion version at a time using the current message body plus extracted attachment or OCR text.
+- Classification results are persisted separately from `Message` and `Task` state, including workflow signals, provenance, explanation snapshots, urgency, and criticality.
+- The current MVP baseline intentionally stops at task candidates and read models; first-class task creation starts in Epic 5.
+
 ### 7.8 Rules and Priority Engine
 
 Responsibilities:
@@ -245,6 +251,12 @@ Examples:
 - Invoice with due date in 2 days -> mark critical and route
 - Committee-related message -> route to committee bucketing logic
 - Known low-risk informational mail -> category suggestion only
+
+Current implemented baseline through Epic 4:
+
+- Urgency and criticality are scored from deterministic rules over message type, due-date proximity, and high-risk language cues.
+- Downstream consumers can read confidence bands, compact reasoning summaries, and workflow-signal summaries through dedicated classification read models.
+- Mailbox-wide operational verification now checks classification coverage, message-type presence, due-date visibility, criticality presence, and low-confidence visibility before later workflow-state automation depends on these outputs.
 
 ### 7.9 Task and Workflow Service
 
@@ -262,26 +274,42 @@ This service is the system of record for:
 - reminder eligibility
 - criticality status
 
+Current implemented baseline through Epic 6:
+
+- The shared task contract now includes first-class task records, task-source linkage, lifecycle-event history, message workflow-state projections, and blocker-aware filing eligibility.
+- The database schema stores task records with idempotent task keys, ownership fields, criticality, resolution metadata, task-source links, lifecycle events, and durable message workflow-state snapshots.
+- The task service now materializes repeat-safe tasks from Epic 4 task candidates, writes auditable lifecycle transitions, and refreshes workflow-state plus filing blockers after each state change.
+- The mailbox-action layer now persists filing decisions, mailbox-action attempts, and outgoing numbering sequences without collapsing workflow state back into mailbox state.
+- The API now exposes filing-decision reads, delayed-filing execution, invoice routing, outgoing numbering, and mailbox-action verification through dedicated internal routes.
+- The detailed Epic 5 and Epic 6 contracts live in `docs/task-workflow-state-contract.md` and `docs/delayed-filing-mailbox-actions-contract.md`.
+
 ### 7.10 Mailbox Action Service
 
 Responsibilities:
 
-- Apply Graph mailbox actions
-- Manage folder suggestions and folder moves
-- Apply categories
-- create drafts
-- send or forward messages where authorized
-- stamp outgoing reference numbers
+- Evaluate delayed-filing decisions from Epic 5 workflow state
+- Manage folder suggestions and delayed mailbox moves
+- Apply mailbox categories independently from folder moves
+- Forward invoice messages where authorized
+- Stamp outgoing reference numbers on drafts
+- Verify mailbox-action readiness and failure visibility
 
 Actions split into two classes:
 
 - Immediate actions:
   - apply categories
-  - create task link metadata
   - forward invoice email
-  - create outgoing draft
+  - stamp outgoing draft references
 - Deferred actions:
   - move email into retrieval folder
+
+Current implemented Epic 6 baseline:
+
+- Filing decisions are stored per message with actionability, blocker context, suggested categories, suggested target folder, execution mode, and optional failure state.
+- Suggestion-first handling is explicit through `suggestion_only`, while approved execution uses `approved_apply`.
+- Mailbox moves update local message filing state and keep workflow-state truth separate from folder location.
+- Specialized mailbox actions now cover invoice forwarding and outgoing numbering without weakening delayed-filing safety.
+- Mailbox-action verification reports coverage gaps, failed specialized actions, and filed-message audit gaps before user-facing surfaces depend on live mutations.
 
 ### 7.11 Digest and Reminder Service
 
@@ -644,6 +672,12 @@ Output:
 - confidence scores
 - explanation
 
+Implemented MVP-facing endpoints aligned with this design baseline:
+
+- `POST /mailboxes/:mailboxId/messages/:messageId/classify`
+- `GET /mailboxes/:mailboxId/messages/:messageId/classification`
+- `GET /mailboxes/:mailboxId/classification-verification`
+
 ### 12.2 Task Resolution API
 
 `POST /internal/tasks/{taskId}/resolve`
@@ -658,6 +692,13 @@ Output:
 
 - updated task
 - filing eligibility decision for linked messages
+
+Implemented MVP-facing endpoints aligned with this design baseline:
+
+- `POST /mailboxes/:mailboxId/messages/:messageId/tasks/materialize`
+- `PATCH /mailboxes/:mailboxId/tasks/:taskId`
+- `GET /mailboxes/:mailboxId/messages/:messageId/workflow`
+- `GET /mailboxes/:mailboxId/task-workflow-verification`
 
 ### 12.3 Filing Decision API
 
@@ -703,7 +744,9 @@ Minimum recommended tables:
 - `attachments`
 - `message_classifications`
 - `tasks`
-- `task_message_links`
+- `task_source_links`
+- `task_lifecycle_events`
+- `message_workflow_states`
 - `routing_rules`
 - `filing_rules`
 - `digests`
