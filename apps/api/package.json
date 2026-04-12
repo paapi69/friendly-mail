@@ -1,0 +1,24 @@
+{
+  "name": "@friendly-mail/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx watch src/index.ts",
+    "dev:worker": "tsx watch src/mailbox-notification-worker.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@friendly-mail/auth": "0.1.0",
+    "@friendly-mail/config": "0.1.0",
+    "@friendly-mail/contracts": "0.1.0",
+    "@friendly-mail/database": "0.1.0",
+    "@friendly-mail/graph": "0.1.0",
+    "@friendly-mail/observability": "0.1.0",
+    "@friendly-mail/queue": "0.1.0",
+    "@napi-rs/canvas": "^0.1.97",
+    "pdfjs-dist": "^5.6.205",
+    "tesseract.js": "^7.0.0"
+  }
+}

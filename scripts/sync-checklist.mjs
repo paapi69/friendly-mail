@@ -10,30 +10,58 @@ function readStatus() {
   return JSON.parse(raw);
 }
 
+function getDerivedEpicStatus(epic) {
+  if (!epic.tickets || epic.tickets.length === 0) {
+    return epic.status;
+  }
+
+  return epic.tickets.every((ticket) => ticket.status === "done")
+    ? "done"
+    : "pending";
+}
+
 function buildChecklist(data) {
-  const completed = data.epics.filter((epic) => epic.status === "done").length;
-  const total = data.epics.length;
+  const completedEpics = data.epics.filter(
+    (epic) => getDerivedEpicStatus(epic) === "done"
+  ).length;
+  const totalEpics = data.epics.length;
 
   const lines = [
     "# Friendly Mail MVP Checklist",
     "",
-    `Generated from \`.planning/epic-status.json\`.`,
+    "Generated from `.planning/epic-status.json`.",
     "",
-    `Progress: ${completed}/${total} epics complete`,
+    `Progress: ${completedEpics}/${totalEpics} epics complete`,
     "",
     "## Epics",
     ""
   ];
 
   for (const epic of data.epics) {
-    const checked = epic.status === "done" ? "x" : " ";
+    const checked = getDerivedEpicStatus(epic) === "done" ? "x" : " ";
     lines.push(`- [${checked}] ${epic.id}: ${epic.title}`);
+  }
+
+  const epicsWithTickets = data.epics.filter(
+    (epic) => epic.tickets && epic.tickets.length > 0
+  );
+
+  for (const epic of epicsWithTickets) {
+    lines.push("");
+    lines.push(`## ${epic.id} Tickets`);
+    lines.push("");
+
+    for (const ticket of epic.tickets) {
+      const checked = ticket.status === "done" ? "x" : " ";
+      lines.push(`- [${checked}] ${ticket.id}: ${ticket.title}`);
+    }
   }
 
   lines.push("");
   lines.push("## Notes");
   lines.push("");
-  lines.push("- Update epic status with `node scripts/set-epic-status.mjs <E#> <pending|done>`.");
+  lines.push("- Update high-level epics with `node scripts/set-epic-status.mjs <E#> <pending|done>`.");
+  lines.push("- Update detailed tickets with `node scripts/set-ticket-status.mjs <ticket-id> <pending|done>`.");
   lines.push("- Rebuild this file with `node scripts/sync-checklist.mjs`.");
   lines.push(`- Last status update: ${data.lastUpdated}`);
   lines.push("");

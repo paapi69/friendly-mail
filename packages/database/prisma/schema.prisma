@@ -1,0 +1,710 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MailboxKind {
+  USER
+  SHARED
+}
+
+enum MailboxConnectionStatus {
+  PENDING_CONSENT
+  ACTIVE
+  NEEDS_REAUTH
+  FAILED
+  DISCONNECTED
+}
+
+enum AuthProvider {
+  LOCAL_PASSWORD
+  MICROSOFT_ENTRA
+}
+
+enum UserRole {
+  ADMIN
+  MEMBER
+}
+
+enum AppSurface {
+  DASHBOARD
+  OUTLOOK_ADDIN
+}
+
+enum MessageActionability {
+  ACTIONABLE
+  INFORMATIONAL
+}
+
+enum MessageType {
+  CONTRACT
+  NOTICE
+  LETTER
+  POLICY
+  COMMITTEE
+  EVENT
+  INVOICE
+  INTERNAL
+  FYI
+}
+
+enum MessagePriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum FilingState {
+  PENDING_CLASSIFICATION
+  ACTIVE_ACTIONABLE
+  ACTIVE_INFORMATIONAL_UNREAD
+  ELIGIBLE_TO_FILE
+  FILED
+  FILING_BLOCKED
+}
+
+enum TaskStatus {
+  OPEN
+  SNOOZED
+  DELEGATED
+  DONE
+  DISMISSED
+}
+
+enum TaskStatusReason {
+  USER_COMPLETED
+  USER_DISMISSED
+  RESOLVED_BY_WORKFLOW
+  DELEGATED
+  SNOOZED
+}
+
+enum TaskSourceKind {
+  CLASSIFICATION_TASK_CANDIDATE
+  MANUAL
+  WORKFLOW_RULE
+}
+
+enum MessageWorkflowStatus {
+  PENDING_TASK_MATERIALIZATION
+  ACTIVE_ACTIONABLE
+  ACTIVE_INFORMATIONAL_UNREAD
+  ACTIVE_INFORMATIONAL_REVIEWED
+  FILING_BLOCKED
+  ELIGIBLE_TO_FILE
+}
+
+enum FolderSyncStatus {
+  PENDING
+  ACTIVE
+  IDLE
+  FAILED
+}
+
+enum GraphSubscriptionStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  REMOVED
+  REAUTH_REQUIRED
+  FAILED
+}
+
+enum MessageBodyContentType {
+  TEXT
+}
+
+enum AttachmentKind {
+  FILE
+  ITEM
+  REFERENCE
+}
+
+enum ExtractionStatus {
+  NOT_ATTEMPTED
+  PENDING
+  COMPLETED
+  COMPLETED_WITH_OCR
+  UNSUPPORTED
+  FAILED
+}
+
+enum ExtractionArtifactKind {
+  ATTACHMENT_TEXT
+  ATTACHMENT_OCR
+}
+
+enum WorkflowCriticalityLevel {
+  NORMAL
+  ELEVATED
+  CRITICAL
+}
+
+enum FilingBlockedBy {
+  CLASSIFICATION_PENDING
+  TASK_MATERIALIZATION_PENDING
+  MESSAGE_UNREAD
+  OPEN_TASK
+  SNOOZED_TASK
+  DELEGATED_TASK
+  CRITICAL_WORK_REMAINING
+  AWAITING_REVIEW
+  POLICY_HOLD
+}
+
+enum FilingEligibilityRequirement {
+  MESSAGE_READ
+  ALL_REQUIRED_TASKS_RESOLVED
+  CRITICAL_WORK_CLEARED
+  MANUAL_REVIEW_COMPLETED
+  POLICY_CLEARANCE
+}
+
+enum FilingDecisionStatus {
+  BLOCKED
+  ELIGIBLE
+  EXECUTED
+  FAILED
+}
+
+enum MailboxActionType {
+  MOVE_MESSAGE
+  APPLY_CATEGORY
+  FORWARD_MESSAGE
+  STAMP_OUTGOING_REFERENCE
+}
+
+enum MailboxActionMode {
+  SUGGESTION_ONLY
+  AUTO_APPLY
+  APPROVED_APPLY
+}
+
+enum MailboxActionStatus {
+  SUGGESTED
+  PENDING_APPROVAL
+  SUCCEEDED
+  FAILED
+  SKIPPED
+}
+
+model Tenant {
+  id                 String              @id @default(cuid())
+  name               String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  memberships        TenantMembership[]
+  mailboxes          Mailbox[]
+  mailboxConnections MailboxConnection[]
+  sessions           Session[]
+  auditEvents        AuditEvent[]
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  displayName        String
+  authProvider       AuthProvider
+  passwordHash       String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  memberships        TenantMembership[]
+  mailboxConnections MailboxConnection[]
+  sessions           Session[]
+}
+
+model TenantMembership {
+  id        String    @id @default(cuid())
+  tenantId  String
+  userId    String
+  role      UserRole
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([userId])
+}
+
+model Session {
+  id           String       @id @default(cuid())
+  userId       String
+  tenantId     String
+  tokenHash    String       @unique
+  authProvider AuthProvider
+  role         UserRole
+  surface      AppSurface
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  lastSeenAt   DateTime?
+  revokedAt    DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Mailbox {
+  id                 String              @id @default(cuid())
+  tenantId           String
+  displayName        String
+  emailAddress       String              @unique
+  graphMailboxId     String?             @unique
+  kind               MailboxKind
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connection         MailboxConnection?
+  folders            Folder[]
+  folderSyncStates   FolderSyncState[]
+  graphSubscriptions GraphSubscription[]
+  messages           Message[]
+  attachments        MessageAttachment[]
+  extractionArtifacts ExtractionArtifact[]
+  messageClassifications MessageClassification[]
+  tasks              Task[]
+  taskSourceLinks    TaskSourceLink[]
+  taskLifecycleEvents TaskLifecycleEvent[]
+  messageWorkflowStates MessageWorkflowState[]
+  filingDecisions    FilingDecision[]
+  mailboxActionAttempts MailboxActionAttempt[]
+  outgoingSequences  OutgoingSequence[]
+
+  @@index([tenantId])
+}
+
+model MailboxConnection {
+  id                     String                  @id @default(cuid())
+  mailboxId              String                  @unique
+  tenantId               String
+  userId                 String
+  graphTenantId          String
+  graphUserId            String
+  status                 MailboxConnectionStatus @default(PENDING_CONSENT)
+  grantedScopes          String[]                @default([])
+  accessTokenCiphertext  String?
+  refreshTokenCiphertext String?
+  accessTokenExpiresAt   DateTime?
+  refreshTokenExpiresAt  DateTime?
+  connectedAt            DateTime?
+  lastValidatedAt        DateTime?
+  lastReauthorizedAt     DateTime?
+  lastErrorCode          String?
+  lastErrorAt            DateTime?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  mailbox                Mailbox                 @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  tenant                 Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Folder {
+  id                  String           @id @default(cuid())
+  mailboxId           String
+  graphFolderId       String           @unique
+  displayName         String
+  parentGraphFolderId String?
+  isSyncEnabled       Boolean          @default(true)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  mailbox             Mailbox          @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  syncState           FolderSyncState?
+  messages            Message[]
+  targetedFilingDecisions FilingDecision[]
+  mailboxActionAttempts MailboxActionAttempt[]
+
+  @@index([mailboxId])
+}
+
+model FolderSyncState {
+  id                  String           @id @default(cuid())
+  mailboxId           String
+  folderId            String           @unique
+  deltaLink           String?
+  syncStatus          FolderSyncStatus @default(PENDING)
+  lastSyncedAt        DateTime?
+  lastCursorUpdatedAt DateTime?
+  lastErrorCode       String?
+  lastErrorAt         DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  mailbox             Mailbox          @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  folder              Folder           @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@index([mailboxId])
+  @@index([syncStatus])
+}
+
+model GraphSubscription {
+  id                       String                  @id @default(cuid())
+  mailboxId                String
+  graphSubscriptionId      String                  @unique
+  resource                 String
+  changeTypes              String[]                @default([])
+  notificationUrl          String
+  lifecycleNotificationUrl String?
+  clientStateHash          String?
+  status                   GraphSubscriptionStatus @default(PENDING)
+  expiresAt                DateTime
+  lastValidatedAt          DateTime?
+  lastNotificationAt       DateTime?
+  lastLifecycleEventAt     DateTime?
+  lastReauthorizedAt       DateTime?
+  lastErrorCode            String?
+  lastErrorAt              DateTime?
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+  mailbox                  Mailbox                 @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+
+  @@index([mailboxId])
+  @@index([status, expiresAt])
+}
+
+model Message {
+  id                 String               @id @default(cuid())
+  mailboxId          String
+  folderId           String?
+  graphMessageId     String               @unique
+  graphParentFolderId String?
+  graphChangeKey     String?
+  internetMessageId  String?              @unique
+  conversationId     String?
+  subject            String
+  fromAddress        String?
+  receivedAt         DateTime?
+  lastGraphModifiedAt DateTime?
+  graphRemovedAt     DateTime?
+  graphRemovalReason String?
+  isRead             Boolean              @default(false)
+  bodyPreview        String?
+  bodyContentType    MessageBodyContentType?
+  bodyText           String?
+  uniqueBodyText     String?
+  webLink            String?
+  hasAttachments     Boolean              @default(false)
+  ingestionVersionKey String?
+  ingestedAt         DateTime?
+  lastIngestedAt     DateTime?
+  actionability      MessageActionability?
+  filingState        FilingState          @default(PENDING_CLASSIFICATION)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  mailbox            Mailbox              @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  folder             Folder?              @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  attachments        MessageAttachment[]
+  extractionArtifacts ExtractionArtifact[]
+  messageClassifications MessageClassification[]
+  tasks              Task[]
+  taskSourceLinks    TaskSourceLink[]
+  messageWorkflowState MessageWorkflowState?
+  filingDecision     FilingDecision?
+  mailboxActionAttempts MailboxActionAttempt[]
+  auditEvents        AuditEvent[]
+
+  @@index([mailboxId])
+  @@index([folderId])
+  @@index([conversationId])
+}
+
+model MessageAttachment {
+  id                      String           @id @default(cuid())
+  mailboxId               String
+  messageId               String
+  graphMessageId          String
+  graphAttachmentId       String
+  name                    String
+  contentType             String?
+  sizeInBytes             Int
+  isInline                Boolean          @default(false)
+  attachmentKind          AttachmentKind
+  lastGraphModifiedAt     DateTime?
+  isExtractionCandidate   Boolean          @default(false)
+  extractionDecisionReason String?
+  extractionStatus        ExtractionStatus @default(NOT_ATTEMPTED)
+  extractionAttempts      Int              @default(0)
+  lastExtractionAt        DateTime?
+  lastExtractionErrorCode String?
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+  mailbox                 Mailbox          @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  message                 Message          @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  extractionArtifacts     ExtractionArtifact[]
+
+  @@unique([mailboxId, graphAttachmentId])
+  @@index([messageId])
+  @@index([graphMessageId])
+  @@index([extractionStatus])
+}
+
+model ExtractionArtifact {
+  id              String                 @id @default(cuid())
+  mailboxId       String
+  messageId       String
+  attachmentId    String
+  artifactKind    ExtractionArtifactKind
+  storageKey      String
+  textLength      Int?
+  contentHash     String?
+  confidenceScore Float?
+  sourceVersionKey String
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  mailbox         Mailbox                @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  message         Message                @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  attachment      MessageAttachment      @relation(fields: [attachmentId], references: [id], onDelete: Cascade)
+
+  @@unique([attachmentId, artifactKind])
+  @@index([mailboxId])
+  @@index([messageId])
+}
+
+model MessageClassification {
+  id                         String                    @id @default(cuid())
+  mailboxId                  String
+  messageId                  String
+  ingestionVersionKey        String
+  classifierVersion          String
+  actionability              MessageActionability
+  messageType                MessageType
+  confidenceScore            Float
+  explanationSummary         String
+  explanationLowConfidence   Boolean                   @default(false)
+  explanationJson            Json
+  dueDatesJson               Json
+  entitiesJson               Json
+  taskCandidatesJson         Json
+  urgencyLevel               MessagePriority
+  urgencyConfidenceScore     Float
+  urgencyRationale           String
+  urgencyReasonsJson         Json
+  criticalityLevel           WorkflowCriticalityLevel
+  criticalityConfidenceScore Float
+  criticalityRationale       String
+  criticalityReasonsJson     Json
+  sourceAttachmentIds        String[]                  @default([])
+  sourceArtifactIds          String[]                  @default([])
+  classifiedAt               DateTime
+  createdAt                  DateTime                  @default(now())
+  updatedAt                  DateTime                  @updatedAt
+  mailbox                    Mailbox                   @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  message                    Message                   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, ingestionVersionKey, classifierVersion])
+  @@index([mailboxId, messageId])
+  @@index([mailboxId, classifiedAt])
+}
+
+model Task {
+  id                  String                  @id @default(cuid())
+  taskKey             String                  @unique
+  mailboxId           String
+  messageId           String?
+  sourceTaskCandidateId String?
+  title               String
+  description         String?
+  status              TaskStatus              @default(OPEN)
+  priority            MessagePriority         @default(NORMAL)
+  criticality         WorkflowCriticalityLevel @default(NORMAL)
+  ownerUserId         String?
+  assignedUserId      String?
+  delegatedByUserId   String?
+  snoozedUntil        DateTime?
+  dueAt               DateTime?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  resolvedAt          DateTime?
+  resolutionReason    TaskStatusReason?
+  resolutionNote      String?
+  mailbox             Mailbox                 @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  message             Message?                @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  sourceLinks         TaskSourceLink[]
+  lifecycleEvents     TaskLifecycleEvent[]
+
+  @@index([mailboxId])
+  @@index([messageId])
+  @@index([status])
+}
+
+model TaskSourceLink {
+  id                               String        @id @default(cuid())
+  mailboxId                        String
+  taskId                           String
+  messageId                        String
+  sourceKind                       TaskSourceKind
+  classificationIngestionVersionKey String?
+  classifierVersion                String?
+  taskCandidateId                  String
+  dueDateSignalIds                 String[]      @default([])
+  entitySignalIds                  String[]      @default([])
+  provenanceJson                   Json
+  createdAt                        DateTime      @default(now())
+  updatedAt                        DateTime      @updatedAt
+  mailbox                          Mailbox       @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  task                             Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  message                          Message       @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, sourceKind, messageId, taskCandidateId])
+  @@index([mailboxId])
+  @@index([messageId])
+}
+
+model TaskLifecycleEvent {
+  id               String           @id @default(cuid())
+  mailboxId        String
+  taskId           String
+  fromStatus       TaskStatus?
+  toStatus         TaskStatus
+  reason           TaskStatusReason
+  actorUserId      String?
+  delegatedToUserId String?
+  note             String?
+  occurredAt       DateTime
+  createdAt        DateTime         @default(now())
+  mailbox          Mailbox          @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  task             Task             @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([mailboxId])
+  @@index([taskId, occurredAt])
+}
+
+model MessageWorkflowState {
+  id                      String                       @id @default(cuid())
+  mailboxId               String
+  messageId               String                       @unique
+  actionability           MessageActionability
+  status                  MessageWorkflowStatus
+  filingState             FilingState
+  priority                MessagePriority              @default(NORMAL)
+  criticality             WorkflowCriticalityLevel     @default(NORMAL)
+  isEligibleToFile        Boolean                      @default(false)
+  requirements            FilingEligibilityRequirement[] @default([])
+  blockedBy               FilingBlockedBy[]            @default([])
+  blockingTaskIds         String[]                     @default([])
+  unresolvedTaskCount     Int                          @default(0)
+  openTaskCount           Int                          @default(0)
+  snoozedTaskCount        Int                          @default(0)
+  delegatedTaskCount      Int                          @default(0)
+  informationalReadRequired Boolean                    @default(false)
+  messageIsRead           Boolean                      @default(false)
+  lastEvaluatedAt         DateTime
+  createdAt               DateTime                     @default(now())
+  updatedAt               DateTime                     @updatedAt
+  mailbox                 Mailbox                      @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  message                 Message                      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([mailboxId])
+  @@index([status])
+}
+
+model FilingDecision {
+  id                 String                       @id @default(cuid())
+  mailboxId          String
+  messageId          String                       @unique
+  workflowStateId    String?
+  actionability      MessageActionability
+  status             FilingDecisionStatus
+  mode               MailboxActionMode
+  targetFolderId     String?
+  targetFolderGraphId String?
+  targetFolderName   String?
+  suggestedCategories String[]                    @default([])
+  requirements       FilingEligibilityRequirement[] @default([])
+  blockedBy          FilingBlockedBy[]            @default([])
+  summary            String
+  rationale          String?
+  sourceMessageIsRead Boolean                     @default(false)
+  approvedByUserId   String?
+  decidedAt          DateTime
+  executedAt         DateTime?
+  lastErrorCode      String?
+  lastErrorMessage   String?
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
+  mailbox            Mailbox                      @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  message            Message                      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  targetFolder       Folder?                      @relation(fields: [targetFolderId], references: [id], onDelete: SetNull)
+  actionAttempts     MailboxActionAttempt[]
+
+  @@index([mailboxId])
+  @@index([status, decidedAt])
+}
+
+model MailboxActionAttempt {
+  id                 String             @id @default(cuid())
+  mailboxId          String
+  messageId          String
+  filingDecisionId   String?
+  actionType         MailboxActionType
+  mode               MailboxActionMode
+  status             MailboxActionStatus
+  actorUserId        String?
+  targetFolderId     String?
+  targetFolderGraphId String?
+  targetFolderName   String?
+  categoryName       String?
+  forwardedTo        String?
+  referenceNumber    String?
+  graphMessageId     String?
+  graphRequestId     String?
+  errorCode          String?
+  errorMessage       String?
+  attemptedAt        DateTime
+  completedAt        DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  mailbox            Mailbox            @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  message            Message            @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  filingDecision     FilingDecision?    @relation(fields: [filingDecisionId], references: [id], onDelete: SetNull)
+  targetFolder       Folder?            @relation(fields: [targetFolderId], references: [id], onDelete: SetNull)
+
+  @@index([mailboxId, attemptedAt])
+  @@index([messageId, attemptedAt])
+  @@index([filingDecisionId])
+}
+
+model OutgoingSequence {
+  id                 String             @id @default(cuid())
+  mailboxId          String
+  sequenceKey        String
+  prefix             String
+  lastAllocatedValue Int                @default(0)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  mailbox            Mailbox            @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+
+  @@unique([mailboxId, sequenceKey])
+  @@index([mailboxId])
+}
+
+model AuditEvent {
+  id           String    @id @default(cuid())
+  tenantId     String
+  messageId    String?
+  actor        String?
+  action       String
+  entityType   String
+  entityId     String
+  payloadJson  String?
+  createdAt    DateTime  @default(now())
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  message      Message?  @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([messageId])
+  @@index([entityType, entityId])
+}

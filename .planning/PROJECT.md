@@ -14,18 +14,26 @@ Never let important email-driven work disappear before it is safely handled.
 
 ### Validated
 
-(None yet - draft project state)
+- [x] Separate mailbox state from task and workflow state
+- [x] Delay filing until a message reaches a safe workflow state
+- [x] Use Microsoft Graph as the mailbox source of truth
+- [x] Identify whether an incoming email is actionable or informational
+- [x] Classify emails into business-relevant categories such as contract, notice, policy, committee, event, internal, and invoice
+- [x] Extract due dates, task candidates, and relevant workflow entities from email bodies and attachments
+- [x] Generate explainable confidence-aware workflow intelligence before task-state creation
+- [x] Verify mailbox processing and classification readiness operationally before downstream workflow automation depends on it
+- [x] Persist first-class task state, ownership, lifecycle history, workflow blockers, and filing eligibility independently from Epic 4 task candidates
 
 ### Active
 
-- [ ] Identify whether an incoming email is actionable or informational
 - [ ] Keep actionable work visible until it is completed, delegated, dismissed, or snoozed
 - [ ] Move actionable emails into retrieval folders only after the related action is completed
 - [ ] Move informational emails into retrieval folders only after the user has read them
-- [ ] Classify emails into business-relevant categories such as contract, notice, policy, committee, event, internal, and invoice
-- [ ] Extract tasks, due dates, and relevant entities from email bodies and attachments
+- [ ] Deliver the primary Outlook add-in surface for read-mode-first workflow review, compact `Today` triage, task actions, and filing approval on Outlook on the web and new Outlook on Windows, then layer in compose numbering and rollout verification
+- [ ] Deliver a mobile-first companion dashboard that shows mailbox-wide triage buckets, deeper queue review, and mobile detail so users do not need to open every message to understand the day
 - [ ] Surface critical items through digests and alerts
 - [ ] Support routing workflows such as invoice forwarding and outgoing numbering
+- [ ] Complete operator-side Microsoft tenant registration, consent, secret provisioning, and webhook setup before pilot validation
 
 ### Out of Scope
 
@@ -53,9 +61,10 @@ Never let important email-driven work disappear before it is safely handled.
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Separate task state from mailbox state | Filing cannot be the same as work completion | - Pending |
-| Delay filing until safe state | Prevent important emails from disappearing before handling | - Pending |
-| Use Microsoft Graph for mailbox integration | Align implementation with Outlook-native APIs | - Pending |
+| Separate task state from mailbox state | Filing cannot be the same as work completion | Adopted in architecture and persistence baselines |
+| Delay filing until safe state | Prevent important emails from disappearing before handling | Locked in the PRD, technical design, and filing model |
+| Use Microsoft Graph for mailbox integration | Align implementation with Outlook-native APIs | Adopted as the mailbox source of truth with immutable-ID handling |
+| Split discovery and drill-down across two surfaces | High-volume users should not open every message just to find important work | Locked as compact Outlook add-in triage on desktop or web plus dashboard deep triage and mobile detail |
 
 ---
-*Last updated: 2026-03-30 after reviewing the global GSD install and local PRD*
+*Last updated: 2026-04-11 after the add-in `Today` IA and dashboard mobile or deep-triage split were locked*

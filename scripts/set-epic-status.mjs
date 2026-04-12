@@ -29,6 +29,13 @@ if (!epic) {
 }
 
 epic.status = normalizedStatus;
+if (epic.tickets?.length) {
+  const nextTicketStatus = normalizedStatus === "done" ? "done" : "pending";
+  for (const ticket of epic.tickets) {
+    ticket.status = nextTicketStatus;
+  }
+}
+
 data.lastUpdated = new Date().toISOString().slice(0, 10);
 
 fs.writeFileSync(statusPath, `${JSON.stringify(data, null, 2)}\n`);

@@ -4,3 +4,4 @@ dist/
 build/
 .DS_Store
 Thumbs.db
+apps/dashboard/dashboard-dev.log

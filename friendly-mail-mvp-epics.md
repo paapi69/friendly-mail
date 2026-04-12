@@ -4,9 +4,9 @@
 
 - Product: Friendly Mail
 - Document type: MVP Epic Breakdown
-- Version: v0.1
+- Version: v0.2
 - Status: Draft
-- Date: 2026-03-30
+- Date: 2026-04-06
 - Related documents:
   - `friendly-mail-prd.md`
   - `friendly-mail-technical-design.md`
@@ -23,6 +23,25 @@ The epics are sequenced to support the core product promise:
 - unresolved work remains visible
 - filing happens only when a message is safe to move
 - Outlook remains the primary system of engagement
+
+## Current Status
+
+- Epics 1 through 6 are complete in the implementation baseline.
+- Epic 6 now provides the delayed-filing and mailbox-action backend baseline, including filing decisions, mailbox-action execution, specialized invoice and numbering paths, and mailbox-action verification.
+- Epic 7 now has a defined ticket breakdown and locked design baseline for the Outlook add-in experience.
+- `E7-T1` is now complete through `docs/outlook-addin-design-brief.md`, which locks the first-slice interaction flow, supported clients, fallback states, and pinned task-pane behavior.
+- `E7-T2` is now complete through the Outlook add-in host adapter, manifest and command-surface baseline, pinned item-change handling, and live browser-preview lane at `https://localhost:4173`.
+- `E7-T3` is now complete through the real mailbox connect and sync-status entry view, with live operational-verification wiring and explicit entry states.
+- `E7-T4` is now complete through the real message workflow summary and explanation panel, including confidence, explanation, blocker visibility, and immutable Graph message binding for selected Outlook items.
+- `E7-T5` is now complete through the Outlook task-action panel, inline lifecycle controls, and preview/live mutation handling for done, snooze, delegate, dismiss, and reopen flows.
+- `E7-T6` is now complete through the Outlook filing-decision panel, delayed-filing guidance, suggested target folders and categories, and explicit approval UX.
+- The Outlook add-in IA is now additionally locked around `Today`, `This Email`, and `Review` so the add-in can become the primary desktop or web daily workflow surface instead of acting only as a selected-message detail pane.
+- The companion dashboard remains locked as mobile-first and as the deeper mailbox-level triage surface, especially for mobile detail, long review lists, and heavier batch handling that do not fit the Outlook task pane well.
+- The next implementation move is `E7-T7`, which should add compose and draft numbering inside the add-in.
+- Epic 8 is now locked as a mobile-first companion dashboard and mailbox-triage queue, not as a generic admin-only prototype surface.
+- The dashboard is now explicitly the mailbox-level and mobile discovery layer for high-volume users, with Needs Attention, FYI or CC, Junk Candidates, and Ready To File as the first queue buckets.
+- Epic 11 is now defined as the final operator-side setup epic for Microsoft tenant registration, environment provisioning, webhook reachability, and handoff.
+- `E11-T1` is now complete through `docs/microsoft-tenant-setup-guide.md`, which explains what must come from the tenant or admin side and what engineering can generate locally.
 
 ## Epic 1: Platform Foundation
 
@@ -229,8 +248,9 @@ Deliver the primary user-facing workflow inside Outlook.
 
 **Includes**
 
-- add-in shell and authentication integration
-- message detail view for classification and criticality
+- add-in shell, manifest, and host integration for supported Outlook clients
+- mailbox readiness and sync-status entry view
+- message workflow summary for classification, confidence, urgency, and explanation
 - task panel for extracted actions and due dates
 - filing status and folder suggestion view
 - user actions such as mark done, delegate, snooze, dismiss, and approve filing
@@ -244,8 +264,8 @@ Deliver the primary user-facing workflow inside Outlook.
 
 **Definition of Done**
 
-- a pilot user can review and act on messages from inside Outlook
-- the add-in shows classification, task, urgency, and filing state clearly
+- a pilot user can review and act on messages from inside Outlook on the supported MVP clients
+- the add-in shows mailbox readiness, classification, task, urgency, explanation, and filing state clearly
 - the add-in supports the core task and filing actions required for MVP
 
 **Dependencies**
@@ -253,36 +273,45 @@ Deliver the primary user-facing workflow inside Outlook.
 - Epic 5
 - Epic 6
 
-## Epic 8: Companion Web Dashboard and Admin
+## Epic 8: Mobile-First Companion Dashboard and Triage Queue
 
 **Goal**
-Deliver the secondary product surface for monitoring, administration, and operational management.
+Deliver the mailbox-level and mobile product surface that helps high-volume users understand the day without opening every message one by one while complementing the compact Outlook add-in queue.
 
 **Includes**
 
-- task dashboard
-- critical items view
-- due-soon and overdue views
-- audit history
-- mailbox and routing configuration
-- admin controls for pilot setups
+- mobile-first dashboard information architecture
+- mailbox-wide Today queue and priority buckets
+- Needs Attention, FYI or CC, Junk Candidate, and Ready To File views
+- batch review flows for low-noise mail
+- mobile message and task detail that mirrors the Outlook add-in drill-down concepts when the user is not in the task pane
+- mailbox-wide filters, search, and drill-down into message or task detail
+- mailbox health and queue summary visibility
+- lightweight admin and mailbox configuration after the triage baseline is in place
 
 **Key Outputs**
 
-- web dashboard MVP
-- admin and routing interface
-- operational visibility layer
+- mobile-first dashboard MVP
+- mailbox-wide triage queue
+- daily work visibility outside the Outlook task pane
+- ready-to-file and low-noise review surfaces
+- mobile-friendly detail and deep-review flows that complement the Outlook add-in's narrow task pane
 
 **Definition of Done**
 
-- users can review outstanding work outside Outlook
-- admins can configure core routing and mailbox settings
-- audit and workflow state can be inspected from the dashboard
+- users can understand what needs attention today without opening every message in Outlook
+- the dashboard surfaces tasks created from email at the mailbox level
+- lower-noise FYI or CC work and junk candidates can be reviewed separately from the main action queue
+- ready-to-file work can be inspected outside the add-in before or after mailbox actions
+- the dashboard works well on mobile-sized screens without depending on a native mobile app
+- the dashboard complements, rather than duplicates, the Outlook add-in `Today`, `This Email`, and `Review` model
 
 **Dependencies**
 
+- Epic 4
 - Epic 5
 - Epic 6
+- Epic 7
 
 ## Epic 9: Digests, Alerts, and Reminder Operations
 
@@ -347,6 +376,40 @@ Prepare Friendly Mail for a controlled MVP pilot with measurable quality and ope
 
 - all prior epics at least functionally complete for the pilot slice
 
+## Epic 11: Microsoft Tenant Registration and Deployment Setup
+
+**Goal**
+Turn the Microsoft-side prerequisites into a repeatable setup workflow so Friendly Mail can be connected to a real tenant without ad hoc engineering help.
+
+**Includes**
+
+- Microsoft Entra app registration
+- redirect URI and supported-account-type setup
+- delegated Graph permission and consent decisions
+- local and staging secret provisioning
+- public webhook URL setup
+- operator verification and handoff
+
+**Key Outputs**
+
+- operator setup guide
+- validated environment and secret inventory
+- real-tenant setup checklist
+
+**Definition of Done**
+
+- the Microsoft-side values needed by the repo are known and mapped
+- local or staging setup can be completed without ambiguity
+- webhook reachability is solved for the chosen validation environment
+- operator handoff no longer depends on ad hoc engineering memory
+
+**Dependencies**
+
+- Epic 2
+- Epic 6
+- Epic 7
+- Epic 10
+
 ## Recommended Epic Sequence
 
 1. Platform Foundation
@@ -356,9 +419,10 @@ Prepare Friendly Mail for a controlled MVP pilot with measurable quality and ope
 5. Task and Workflow State Engine
 6. Delayed Filing and Mailbox Actions
 7. Outlook Add-in Experience
-8. Companion Web Dashboard and Admin
+8. Mobile-First Companion Dashboard and Triage Queue
 9. Digests, Alerts, and Reminder Operations
 10. Quality, Evaluation, and Pilot Readiness
+11. Microsoft Tenant Registration and Deployment Setup
 
 ## Suggested First Build Slice
 
@@ -383,3 +447,4 @@ This slice proves the core product truth before broader automation and richer ad
 | User Surfaces | Epic 7, Epic 8 |
 | Reminder and Workflow Automation | Epic 6, Epic 9 |
 | Pilot Readiness | Epic 10 |
+| Tenant and Operator Setup | Epic 11 |

@@ -1,45 +1,391 @@
 {
-  "lastUpdated": "2026-03-31",
+  "lastUpdated": "2026-04-11",
   "epics": [
     {
       "id": "E1",
       "title": "Platform Foundation",
-      "status": "pending"
+      "status": "done",
+      "tickets": [
+        {
+          "id": "E1-T1",
+          "title": "Choose and Scaffold the Repository Architecture",
+          "status": "done"
+        },
+        {
+          "id": "E1-T2",
+          "title": "Establish Environment and Secrets Management",
+          "status": "done"
+        },
+        {
+          "id": "E1-T3",
+          "title": "Set Up the Database and Migration Baseline",
+          "status": "done"
+        },
+        {
+          "id": "E1-T4",
+          "title": "Set Up Queue and Background Job Infrastructure",
+          "status": "done"
+        },
+        {
+          "id": "E1-T5",
+          "title": "Create Shared Domain Contracts and Package Boundaries",
+          "status": "done"
+        },
+        {
+          "id": "E1-T6",
+          "title": "Implement Logging, Error Handling, and Audit Foundations",
+          "status": "done"
+        },
+        {
+          "id": "E1-T7",
+          "title": "Establish Authentication and Session Baseline",
+          "status": "done"
+        },
+        {
+          "id": "E1-T8",
+          "title": "Configure CI, Code Quality, and Verification Defaults",
+          "status": "done"
+        },
+        {
+          "id": "E1-T9",
+          "title": "Create Developer Onboarding and Local Runbook",
+          "status": "done"
+        }
+      ]
     },
     {
       "id": "E2",
       "title": "Microsoft Graph and Mailbox Connectivity",
-      "status": "pending"
+      "status": "done",
+      "tickets": [
+        {
+          "id": "E2-T1",
+          "title": "Define Microsoft Entra and Graph Connectivity Contract",
+          "status": "done"
+        },
+        {
+          "id": "E2-T2",
+          "title": "Extend Persistence for Mailbox Connectivity and Sync State",
+          "status": "done"
+        },
+        {
+          "id": "E2-T3",
+          "title": "Implement the Core Microsoft Graph Connector",
+          "status": "done"
+        },
+        {
+          "id": "E2-T4",
+          "title": "Build Delegated Mailbox Onboarding",
+          "status": "done"
+        },
+        {
+          "id": "E2-T5",
+          "title": "Implement Folder Discovery and Initial Folder Sync",
+          "status": "done"
+        },
+        {
+          "id": "E2-T6",
+          "title": "Implement Message Metadata Sync with Delta Links",
+          "status": "done"
+        },
+        {
+          "id": "E2-T7",
+          "title": "Implement Graph Subscription and Webhook Lifecycle",
+          "status": "done"
+        },
+        {
+          "id": "E2-T8",
+          "title": "Implement Reconciliation Between Webhooks and Delta Sync",
+          "status": "done"
+        },
+        {
+          "id": "E2-T9",
+          "title": "Add Shared-Mailbox Readiness and Operational Verification",
+          "status": "done"
+        }
+      ]
     },
     {
       "id": "E3",
       "title": "Message Ingestion and Attachment Extraction",
-      "status": "pending"
+      "status": "done",
+      "tickets": [
+        {
+          "id": "E3-T1",
+          "title": "Define Message Ingestion and Extraction Contract",
+          "status": "done"
+        },
+        {
+          "id": "E3-T2",
+          "title": "Extend Persistence for Message Bodies, Attachments, and Extraction State",
+          "status": "done"
+        },
+        {
+          "id": "E3-T3",
+          "title": "Implement the Message Ingestion Service",
+          "status": "done"
+        },
+        {
+          "id": "E3-T4",
+          "title": "Implement Attachment Metadata Retrieval and Durable Linking",
+          "status": "done"
+        },
+        {
+          "id": "E3-T5",
+          "title": "Implement PDF-First Attachment Text Extraction",
+          "status": "done"
+        },
+        {
+          "id": "E3-T6",
+          "title": "Add OCR Fallback and Extraction Confidence Handling",
+          "status": "done"
+        },
+        {
+          "id": "E3-T7",
+          "title": "Orchestrate Idempotent Ingestion and Attachment Processing",
+          "status": "done"
+        },
+        {
+          "id": "E3-T8",
+          "title": "Add Operational Verification for Ingestion and Extraction",
+          "status": "done"
+        }
+      ]
     },
     {
       "id": "E4",
       "title": "Classification and Workflow Intelligence",
-      "status": "pending"
+      "status": "done",
+      "tickets": [
+        {
+          "id": "E4-T1",
+          "title": "Define the Classification and Workflow Intelligence Contract",
+          "status": "done"
+        },
+        {
+          "id": "E4-T2",
+          "title": "Extend Persistence for Classification Results and Workflow Signals",
+          "status": "done"
+        },
+        {
+          "id": "E4-T3",
+          "title": "Implement the Classification Orchestration Service",
+          "status": "done"
+        },
+        {
+          "id": "E4-T4",
+          "title": "Implement Actionability and Message-Type Classification",
+          "status": "done"
+        },
+        {
+          "id": "E4-T5",
+          "title": "Implement Due Date, Entity, and Task-Candidate Extraction",
+          "status": "done"
+        },
+        {
+          "id": "E4-T6",
+          "title": "Implement Urgency and Criticality Signal Scoring",
+          "status": "done"
+        },
+        {
+          "id": "E4-T7",
+          "title": "Add Confidence and Explanation Read Models for Downstream Surfaces",
+          "status": "done"
+        },
+        {
+          "id": "E4-T8",
+          "title": "Add Operational Verification for Classification Quality and Readiness",
+          "status": "done"
+        }
+      ]
     },
     {
       "id": "E5",
       "title": "Task and Workflow State Engine",
-      "status": "pending"
+      "status": "done",
+      "tickets": [
+        {
+          "id": "E5-T1",
+          "title": "Define the Task and Workflow State Contract",
+          "status": "done"
+        },
+        {
+          "id": "E5-T2",
+          "title": "Extend Persistence for Tasks, Source Links, and Message Workflow State",
+          "status": "done"
+        },
+        {
+          "id": "E5-T3",
+          "title": "Implement Task Materialization from Classification Output",
+          "status": "done"
+        },
+        {
+          "id": "E5-T4",
+          "title": "Implement Task Lifecycle Transitions and Resolution Semantics",
+          "status": "done"
+        },
+        {
+          "id": "E5-T5",
+          "title": "Implement Message Workflow State Projection and Filing Blockers",
+          "status": "done"
+        },
+        {
+          "id": "E5-T6",
+          "title": "Implement Task Ownership, Delegation, and Criticality Persistence",
+          "status": "done"
+        },
+        {
+          "id": "E5-T7",
+          "title": "Add Workflow Read Models and Internal APIs for Downstream Surfaces",
+          "status": "done"
+        },
+        {
+          "id": "E5-T8",
+          "title": "Add Operational Verification for Task and Workflow Readiness",
+          "status": "done"
+        }
+      ]
     },
     {
       "id": "E6",
       "title": "Delayed Filing and Mailbox Actions",
-      "status": "pending"
+      "status": "done",
+      "tickets": [
+        {
+          "id": "E6-T1",
+          "title": "Define the Delayed Filing and Mailbox Action Contract",
+          "status": "done"
+        },
+        {
+          "id": "E6-T2",
+          "title": "Extend Persistence for Filing Decisions, Target Folders, and Mailbox Action Audit",
+          "status": "done"
+        },
+        {
+          "id": "E6-T3",
+          "title": "Implement Filing Decision Orchestration from Workflow State",
+          "status": "done"
+        },
+        {
+          "id": "E6-T4",
+          "title": "Implement Informational Filing Execution for Read or Reviewed Messages",
+          "status": "done"
+        },
+        {
+          "id": "E6-T5",
+          "title": "Implement Actionable Filing Execution for Resolved Workflow State",
+          "status": "done"
+        },
+        {
+          "id": "E6-T6",
+          "title": "Implement Folder Suggestion and Category Application Flow",
+          "status": "done"
+        },
+        {
+          "id": "E6-T7",
+          "title": "Implement Invoice Routing and Outgoing Numbering Mailbox Actions",
+          "status": "done"
+        },
+        {
+          "id": "E6-T8",
+          "title": "Add Operational Verification for Delayed Filing and Mailbox Action Readiness",
+          "status": "done"
+        }
+      ]
     },
     {
       "id": "E7",
       "title": "Outlook Add-in Experience",
-      "status": "pending"
+      "status": "pending",
+      "tickets": [
+        {
+          "id": "E7-T1",
+          "title": "Define the Outlook Add-in Surface Contract and Interaction Flow",
+          "status": "done"
+        },
+        {
+          "id": "E7-T2",
+          "title": "Extend the Add-in Shell, Manifest, and Host Integration Baseline",
+          "status": "done"
+        },
+        {
+          "id": "E7-T3",
+          "title": "Implement Mailbox Connect and Sync-Status Entry View",
+          "status": "done"
+        },
+        {
+          "id": "E7-T4",
+          "title": "Implement the Message Workflow Summary and Explanation Panel",
+          "status": "done"
+        },
+        {
+          "id": "E7-T5",
+          "title": "Implement the Task Action Panel and Lifecycle Mutations",
+          "status": "done"
+        },
+        {
+          "id": "E7-T6",
+          "title": "Implement Filing Decision, Folder Suggestion, and Approval UX",
+          "status": "done"
+        },
+        {
+          "id": "E7-T7",
+          "title": "Implement Compose and Draft Numbering Experience",
+          "status": "pending"
+        },
+        {
+          "id": "E7-T8",
+          "title": "Add Outlook Add-in Verification and Rollout Readiness",
+          "status": "pending"
+        }
+      ]
     },
     {
       "id": "E8",
-      "title": "Companion Web Dashboard and Admin",
-      "status": "pending"
+      "title": "Mobile-First Companion Dashboard and Triage Queue",
+      "status": "pending",
+      "tickets": [
+        {
+          "id": "E8-T1",
+          "title": "Define the Mobile-First Dashboard Triage Information Architecture",
+          "status": "pending"
+        },
+        {
+          "id": "E8-T2",
+          "title": "Add Mailbox-Wide Dashboard Aggregation APIs and Bucket Read Models",
+          "status": "pending"
+        },
+        {
+          "id": "E8-T3",
+          "title": "Implement the Mobile-First Today Queue and Priority Buckets",
+          "status": "pending"
+        },
+        {
+          "id": "E8-T4",
+          "title": "Implement FYI and CC Batch-Review Surfaces",
+          "status": "pending"
+        },
+        {
+          "id": "E8-T5",
+          "title": "Implement Junk-Candidate Review and Safe Handling Controls",
+          "status": "pending"
+        },
+        {
+          "id": "E8-T6",
+          "title": "Implement the Ready-to-File Queue and Post-Action Filing Overview",
+          "status": "pending"
+        },
+        {
+          "id": "E8-T7",
+          "title": "Implement Dashboard Filters, Search, and Mobile Drill-Down Flows",
+          "status": "pending"
+        },
+        {
+          "id": "E8-T8",
+          "title": "Add Dashboard Verification and Rollout Readiness",
+          "status": "pending"
+        }
+      ]
     },
     {
       "id": "E9",
@@ -50,6 +396,43 @@
       "id": "E10",
       "title": "Quality, Evaluation, and Pilot Readiness",
       "status": "pending"
+    },
+    {
+      "id": "E11",
+      "title": "Microsoft Tenant Registration and Deployment Setup",
+      "status": "pending",
+      "tickets": [
+        {
+          "id": "E11-T1",
+          "title": "Define the Microsoft Tenant Setup Contract and Operator Guide",
+          "status": "done"
+        },
+        {
+          "id": "E11-T2",
+          "title": "Register the Microsoft Entra App and Baseline Redirect URIs",
+          "status": "pending"
+        },
+        {
+          "id": "E11-T3",
+          "title": "Configure Delegated Graph Permissions and Consent Strategy",
+          "status": "pending"
+        },
+        {
+          "id": "E11-T4",
+          "title": "Provision Secrets and Environment Configuration for Local and Staging",
+          "status": "pending"
+        },
+        {
+          "id": "E11-T5",
+          "title": "Expose a Public Webhook Endpoint and Validate Graph Callback Reachability",
+          "status": "pending"
+        },
+        {
+          "id": "E11-T6",
+          "title": "Run End-to-End Tenant Setup Verification and Operator Handoff",
+          "status": "pending"
+        }
+      ]
     }
   ]
 }

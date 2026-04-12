@@ -59,7 +59,15 @@ When relevant, use the installed ECC skills in `~/.codex/skills`, especially:
 - Treat filing eligibility as an explicit workflow decision, not a side effect of message arrival.
 - Design for legal, executive, finance, and shared-mailbox workflows with clear auditability.
 - Do not silently move or hide important emails before they are safe to archive.
-- Keep `checklist.md` aligned with `.planning/epic-status.json` when epic status changes.
+- Keep `checklist.md` aligned with `.planning/epic-status.json` when epic or ticket status changes.
+- Keep the kanban board representations aligned with ticket reality when status changes:
+  - update the dashboard board in `apps/dashboard/src/App.tsx`
+  - update the planning board in `docs/prototype-kanban-board.md`
+  - reflect completed tickets on the board in the same session as the implementation when practical
+- Before moving into a new epic, define the epic-level subtask breakdown first:
+  - add the new `E#-T#` tickets to `friendly-mail-epic-tickets.md`
+  - sync `.planning/epic-status.json` and `checklist.md`
+  - add the new tickets to the board views in `apps/dashboard/src/App.tsx` and `docs/prototype-kanban-board.md`
 
 ## Quality Bar
 

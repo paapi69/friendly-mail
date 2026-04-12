@@ -4,9 +4,9 @@
 
 - Product: Friendly Mail
 - Document type: Product Requirements Document
-- Version: v0.1
+- Version: v0.2
 - Status: Draft
-- Date: 2026-03-25
+- Date: 2026-04-05
 - Author: Codex PM draft
 
 ## 1. Background
@@ -152,7 +152,7 @@ Certain email types require workflow actions, such as redirecting invoice emails
 ### 10.2 Out of Scope for MVP
 
 - Broad workflow orchestration across third-party systems
-- Mobile-first native apps
+- Native mobile apps, even though the companion dashboard is a mobile-first responsive web surface
 - Full collaboration features such as comments, chat, or live co-editing
 - Deep document lifecycle management outside mail-centric tasks
 - Autonomous irreversible actions without human review thresholds
@@ -167,8 +167,10 @@ The system will:
 - Classify the message type and likely filing destination
 - Detect whether action is required
 - Extract due dates, tasks, entities, and urgency indicators
+- Surface confidence and explanation for workflow intelligence decisions, especially when the system is uncertain
 - Create or update a structured action record
-- Surface critical items through a dashboard and digests
+- Surface mailbox-wide work through a mobile-first companion dashboard with buckets such as Needs Attention, FYI or CC, Junk Candidates, and Ready To File
+- Use Outlook-native inbox signals and a compact Outlook add-in command center for desktop or web triage instead of replacing Outlook's inbox experience
 - Apply mailbox actions such as categories, forwarding, and draft preparation immediately where appropriate, while deferring folder moves until the email is safe to archive for later retrieval
 
 ## 12. Key Features
@@ -208,7 +210,27 @@ The system will:
 - Defer inbox filing actions until completion state for actionable emails or read state for informational emails
 - Support organization-level conventions while preserving personal filing structure
 
-### 12.6 Feedback and Learning
+### 12.6 Mailbox Triage Dashboard
+
+- Provide a mobile-first responsive dashboard for mailbox-wide triage and daily work review
+- Show a Today queue that groups work into Needs Attention, FYI or CC, Junk Candidates, and Ready To File buckets
+- Surface tasks created from email at the mailbox level so users do not need to open every message to understand their day
+- Let users batch-review lower-noise mail separately from high-priority work
+- Preserve drill-down links back to Outlook message and workflow detail when a user needs context
+- Act as the mobile detail and deep-triage surface, while the Outlook add-in remains the primary desktop or web in-context workflow surface
+
+### 12.7 Outlook Add-in Daily Command Center
+
+- Use the Outlook add-in as the primary desktop or web workflow surface for supported MVP clients
+- Land users in a `Today` view that answers what needs attention right now without forcing them to open every message first
+- Organize the add-in IA around three clear sections:
+  - `Today` for bucket counts, ranked work, and quick entry into queues
+  - `This Email` for the currently selected message's classification, tasks, blockers, and filing state
+  - `Review` for compact FYI or CC and junk-review flows
+- Treat bucket clicks as filtered queue views and ranked-item clicks as in-panel detail, not as a promise that Outlook will focus the inbox row automatically
+- Keep high-volume triage compact enough for the Outlook task pane while reserving deep filters, long lists, and mobile use for the companion dashboard
+
+### 12.8 Feedback and Learning
 
 - Let users approve, correct, snooze, delegate, or dismiss system suggestions
 - Learn from corrections to improve filing, extraction, and urgency prediction over time
@@ -228,6 +250,8 @@ The system will:
 - The system must extract structured entities including due dates, counterparties, event names, and committee names
 - The system must determine whether an email is informational or actionable
 - The system must generate a confidence score and rationale for automated suggestions
+- The system must expose a downstream-friendly explanation and confidence read model for user-facing and operational surfaces
+- The system must surface ambiguous or low-confidence results explicitly instead of silently behaving as high confidence
 
 ### 13.3 Task Management
 
@@ -235,6 +259,8 @@ The system will:
 - The system must link every task back to its originating email and attachment context
 - The system must support status transitions including open, snoozed, delegated, done, and dismissed
 - The system must preserve critical status until a user action or configured business rule resolves it
+- The system must expose mailbox-wide task queues derived from classification and workflow state so users can review today's work without opening every message
+- The system must expose a compact Outlook add-in Today view for supported desktop or web clients that summarizes urgent work, due-today work, ready-to-file work, and top-ranked actions in narrow task-pane real estate
 
 ### 13.4 Mailbox Actions
 
@@ -243,14 +269,24 @@ The system will:
 - The system must support applying categories
 - The system must support forwarding or routing designated email types
 - The system must support draft preparation for outgoing numbered emails
+- The system must support Outlook-native row-level triage signals through supported mailbox metadata such as categories, while keeping the add-in as the selected-message detail surface
+- The system must support an Outlook add-in interaction model where bucket clicks open filtered queue views inside the task pane and ranked-item clicks open in-panel item detail
 
-### 13.5 Reminder and Digest
+### 13.5 User Surfaces
+
+- The system must provide an Outlook add-in for selected-message review, explanation, task actions, and filing approval
+- The system must provide an Outlook add-in daily command center for supported desktop or web clients with `Today`, `This Email`, and `Review` sections
+- The system must provide a mobile-first responsive companion dashboard for mailbox-wide triage, deep review, and mobile task or email detail
+- The system must group mailbox work into at least Needs Attention, FYI or CC, Junk Candidates, and Ready To File views
+- The system must treat the Outlook add-in as the primary desktop or web in-context workflow surface and the dashboard as the companion mailbox-level and mobile triage surface
+
+### 13.6 Reminder and Digest
 
 - The system must generate a morning digest of unresolved critical and near-due items
 - The system must notify users when a new critical item arrives
 - The system must generate an end-of-day summary with completed and rolled-over items
 
-### 13.6 Admin and Configuration
+### 13.7 Admin and Configuration
 
 - Admins must be able to configure organization-wide rules and mailbox routing policies
 - Users must be able to configure personal filing preferences and notification preferences
@@ -264,6 +300,9 @@ The system will:
 - As a finance coordinator, I want invoice emails routed automatically so they are not missed until the last minute.
 - As a user, I want tasks extracted automatically from emails and attachments so I do not maintain a separate manual list.
 - As a user, I want critical emails to remain visible in my action list even after filing.
+- As a high-volume user, I want a mobile-friendly Today queue so I can see what deserves attention without opening every email in Outlook.
+- As a high-volume user, I want FYI and CC mail grouped separately from action-heavy mail so I can batch-review it later.
+- As a high-volume user, I want junk candidates separated from my main work queue so the dashboard stays focused on real work.
 - As a user, I want to understand why the system marked an email urgent before I trust it.
 - As an admin, I want shared mailbox policies enforced consistently without removing personal flexibility.
 
@@ -287,13 +326,22 @@ The system will:
 
 - Given an email that matches critical criteria, the system marks it as critical and surfaces it in the action list
 - When a new critical email arrives, the system updates the user's pending priorities without requiring manual re-entry
+- Given a low-confidence or ambiguous classification, the system surfaces the uncertainty and explanation so the user can review it safely
 
-### 15.4 Reminder
+### 15.4 Dashboard Triage
+
+- Given a mailbox with mixed actionable, FYI, CC, and junk-like mail, the dashboard groups messages into mailbox-wide buckets without requiring the user to open each message first
+- Given actionable mail that produced tasks, the dashboard surfaces those tasks in a Today queue ordered for real daily review
+- Given low-noise FYI or CC messages, the dashboard separates them from Needs Attention work and supports later batch review
+- Given messages that are safe to move after review or task completion, the dashboard can surface them in a Ready To File view
+- Given ambiguous or low-confidence mailbox triage, the dashboard makes the uncertainty visible instead of presenting it as settled truth
+
+### 15.5 Reminder
 
 - At the start of the day, the system generates a pending critical-items summary
 - At the end of the day, incomplete items are carried forward to the next day's list
 
-### 15.5 Workflow Automation
+### 15.6 Workflow Automation
 
 - Given an invoice email, the system can route or suggest routing to the configured processor
 - Given an outgoing email that requires a reference number, the system can allocate and attach the correct number before send

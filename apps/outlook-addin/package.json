@@ -1,0 +1,17 @@
+{
+  "name": "@friendly-mail/outlook-addin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite --port 4173",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@friendly-mail/contracts": "0.1.0",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  }
+}

@@ -2,12 +2,12 @@
 
 ## Overview
 
-Friendly Mail will move from product definition to a trustworthy v1 that organizes Outlook-based work without hiding unresolved email. The roadmap prioritizes product clarity, safe workflow design, and a strong initial architecture before broader automation.
+Friendly Mail is now moving from implemented workflow-state delivery into delayed filing and user-surface execution. The roadmap still prioritizes product clarity, safe workflow design, and a strong initial architecture before broader automation, but the project has already completed the first five engineering epics and should use that reality as the baseline for next-phase planning.
 
 ## Phases
 
-- [ ] **Phase 1: Product Foundation** - Finalize core product definition, user workflows, and success boundaries
-- [ ] **Phase 2: System Design** - Define technical architecture, data model, and integration constraints
+- [x] **Phase 1: Product Foundation** - Finalize core product definition, user workflows, and success boundaries
+- [x] **Phase 2: System Design** - Define technical architecture, data model, and integration constraints
 - [ ] **Phase 3: Workflow UX** - Specify user flows for triage, task tracking, delayed filing, and reminders
 - [ ] **Phase 4: MVP Execution Plan** - Convert the spec into engineering epics, acceptance scope, and launch sequencing
 
@@ -24,7 +24,7 @@ Friendly Mail will move from product definition to a trustworthy v1 that organiz
 **Plans**: 1 plan
 
 Plans:
-- [ ] 01-01: Finalize PRD and confirm product principles
+- [x] 01-01: Finalize PRD and confirm product principles
 
 ### Phase 2: System Design
 **Goal**: Produce an implementation-ready technical architecture aligned with Microsoft Graph capabilities.
@@ -37,8 +37,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: Define service architecture and event flow
-- [ ] 02-02: Define data model and Graph integration boundaries
+- [x] 02-01: Define service architecture and event flow
+- [x] 02-02: Define data model and Graph integration boundaries
 
 ### Phase 3: Workflow UX
 **Goal**: Define how users experience triage, action tracking, and delayed filing inside the product.
@@ -65,14 +65,34 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: Break MVP into epics and milestones
+- [x] 04-01: Break MVP into epics and milestones
 - [ ] 04-02: Define pilot rollout and validation metrics
+
+## Current Implementation Baseline
+
+- Epics 1 through 6 are complete in the codebase: platform foundation, Microsoft Graph connectivity, message ingestion and attachment extraction, classification plus workflow intelligence, the task plus workflow-state engine, and the delayed-filing plus mailbox-action layer.
+- The mailbox-action baseline now includes filing decisions, auditable mailbox-action attempts, folder suggestions, category application, invoice routing, outgoing numbering, and mailbox-action verification.
+- Epic 7 now has a defined ticket breakdown and locked design baseline for the Outlook add-in experience.
+- `E7-T1` is now complete through `docs/outlook-addin-design-brief.md`, which defines the first-slice interaction flow, supported clients, unsupported-state rules, and pinnable task-pane assumptions.
+- `E7-T2` is now complete through the host adapter, manifest upgrade, read and compose command surfaces, pinned item-change handling, and the live browser-preview dev lane at `https://localhost:4173`.
+- `E7-T3` is now complete through the real mailbox readiness entry view, live operational-verification wiring, and explicit connect, syncing, degraded, unsupported, and ready states.
+- `E7-T4` is now complete through the real message workflow summary and explanation panel, backed by immutable Graph message ID bridge routes and browser-preview states for low-confidence and failed-read cases.
+- `E7-T5` is now complete through the Outlook task-action panel, inline lifecycle controls, preview/live mutation handling, and workflow-consistent reopen support.
+- `E7-T6` is now complete through the Outlook filing-decision panel, target-folder and category guidance, and explicit approval UX for delayed filing.
+- The Epic 7 MVP add-in scope is explicitly read-mode-first, targets Outlook on the web plus new Outlook on Windows, and assumes a pinnable task pane with explicit fallback handling.
+- The Outlook add-in IA is now additionally locked around `Today`, `This Email`, and `Review` so the add-in can act as the primary desktop or web daily workflow surface instead of only as a message-detail pane.
+- The next implementation move is `E7-T7`, which should add compose and draft numbering inside the same Outlook add-in shell.
+- Epic 8 is now locked as a mobile-first companion dashboard and mailbox-triage queue, not just a generic admin surface.
+- The dashboard is now explicitly the mailbox-level and mobile discovery layer for Needs Attention, FYI or CC, Junk Candidate, and Ready To File buckets, while the Outlook add-in owns compact desktop or web triage and selected-message drill-down.
+- Epic 11 is now defined as the final operator-side setup epic so Microsoft tenant registration, consent, secrets, and webhook reachability can be completed without ad hoc setup knowledge.
+- `E11-T1` is now complete through `docs/microsoft-tenant-setup-guide.md`, which provides the first operator-side step-by-step guide for Microsoft setup.
+- Dashboard implementation remains a later-phase build after Epic 7 advances, but the product direction for the dashboard is now locked.
 
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Product Foundation | 1/1 | Complete | 2026-03-30 |
-| 2. System Design | 1/2 | In progress | - |
-| 3. Workflow UX | 0/2 | Not started | - |
-| 4. MVP Execution Plan | 0/2 | Not started | - |
+| 2. System Design | 2/2 | Complete | 2026-04-05 |
+| 3. Workflow UX | 0/2 | In progress | - |
+| 4. MVP Execution Plan | 1/2 | In progress | - |
