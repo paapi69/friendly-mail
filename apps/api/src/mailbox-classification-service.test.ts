@@ -594,6 +594,102 @@ describe("mailbox classification service", () => {
       }
     });
   });
+
+  it("resolves the classification read model from an immutable Graph message ID", async () => {
+    const messageFindFirst = vi.fn().mockImplementation(async ({ where }: { where: Record<string, unknown> }) => {
+      if (where.id === "message_123" && where.mailboxId === "mailbox_123") {
+        return {
+          id: "message_123",
+          mailboxId: "mailbox_123",
+          graphMessageId: "graph_message_123",
+          ingestionVersionKey: "mailbox_123:graph_message_123:change_key_456"
+        };
+      }
+
+      if (
+        where.graphMessageId === "graph_message_123" &&
+        where.mailboxId === "mailbox_123"
+      ) {
+        return {
+          id: "message_123",
+          mailboxId: "mailbox_123",
+          graphMessageId: "graph_message_123",
+          ingestionVersionKey: "mailbox_123:graph_message_123:change_key_456"
+        };
+      }
+
+      return null;
+    });
+
+    const service = createPrismaMailboxClassificationService({
+      prisma: {
+        mailbox: {
+          findFirst: vi.fn().mockResolvedValue({
+            id: "mailbox_123",
+            tenantId: "tenant_123",
+            connection: {
+              userId: "user_123"
+            }
+          })
+        },
+        message: {
+          findFirst: messageFindFirst
+        },
+        messageAttachment: {
+          findMany: vi.fn()
+        },
+        extractionArtifact: {
+          findMany: vi.fn()
+        },
+        messageClassification: {
+          findFirst: vi.fn().mockResolvedValue({
+            mailboxId: "mailbox_123",
+            messageId: "message_123",
+            ingestionVersionKey: "mailbox_123:graph_message_123:change_key_456",
+            classifierVersion: "rules-classifier:v1",
+            actionability: "ACTIONABLE",
+            messageType: "INVOICE",
+            confidenceScore: 0.92,
+            explanationJson: {
+              summary: "The message is actionable because it requests invoice payment by a stated due date.",
+              lowConfidence: false,
+              reasons: []
+            },
+            dueDatesJson: [],
+            entitiesJson: [],
+            taskCandidatesJson: [],
+            urgencyLevel: "HIGH",
+            urgencyConfidenceScore: 0.84,
+            urgencyRationale: "The message includes a near-term due date.",
+            urgencyReasonsJson: [],
+            criticalityLevel: "ELEVATED",
+            criticalityConfidenceScore: 0.82,
+            criticalityRationale: "Invoices have finance consequences if missed.",
+            criticalityReasonsJson: [],
+            classifiedAt: new Date("2026-04-05T09:30:00.000Z")
+          })
+        }
+      } as never,
+      logger: silentLogger(),
+      mailboxMessageProcessingService: {
+        processMessage: vi.fn()
+      }
+    });
+
+    const result = await service.getMessageClassificationReadModelByGraphMessageId({
+      session: exampleSession,
+      mailboxId: "mailbox_123",
+      graphMessageId: "graph_message_123"
+    });
+
+    expect(result.messageId).toBe("message_123");
+    expect(messageFindFirst).toHaveBeenCalledWith({
+      where: {
+        mailboxId: "mailbox_123",
+        graphMessageId: "graph_message_123"
+      }
+    });
+  });
 });
 
 describe("rules-based mailbox classification path", () => {

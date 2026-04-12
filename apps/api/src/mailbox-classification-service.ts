@@ -34,6 +34,12 @@ type GetMessageClassificationReadModelInput = {
   messageId: string;
 };
 
+type GetMessageClassificationReadModelByGraphMessageIdInput = {
+  session: SessionView;
+  mailboxId: string;
+  graphMessageId: string;
+};
+
 type ClassificationProcessingStatus = "processed" | "already_current";
 type ClassificationStatus = "classified" | "already_current";
 
@@ -101,6 +107,9 @@ export type MailboxClassificationService = {
   classifyMessage(input: ClassifyMessageInput): Promise<ClassifyMessageResult>;
   getMessageClassificationReadModel(
     input: GetMessageClassificationReadModelInput
+  ): Promise<MessageClassificationReadModel>;
+  getMessageClassificationReadModelByGraphMessageId(
+    input: GetMessageClassificationReadModelByGraphMessageIdInput
   ): Promise<MessageClassificationReadModel>;
 };
 
@@ -566,62 +575,18 @@ export function createPrismaMailboxClassificationService(
 
     async getMessageClassificationReadModel(readModelInput) {
       await getOwnedMailbox(input.prisma, readModelInput);
+      return loadMessageClassificationReadModel(input.prisma, input.logger, readModelInput);
+    },
 
-      const message = (await input.prisma.message.findFirst({
-        where: {
-          id: readModelInput.messageId,
-          mailboxId: readModelInput.mailboxId
-        }
-      })) as MessageRecord | null;
+    async getMessageClassificationReadModelByGraphMessageId(readModelInput) {
+      await getOwnedMailbox(input.prisma, readModelInput);
 
-      if (!message) {
-        throw new AppError("MAILBOX_MESSAGE_NOT_FOUND", "Tracked mailbox message not found.", {
-          statusCode: 404
-        });
-      }
+      const message = await getMessageRecordByGraphMessageId(input.prisma, readModelInput);
 
-      if (!message.ingestionVersionKey) {
-        throw new AppError(
-          "MAILBOX_CLASSIFICATION_NOT_FOUND",
-          "Classification is not available until the message has been ingested and classified.",
-          {
-            statusCode: 404
-          }
-        );
-      }
-
-      const classification = (await input.prisma.messageClassification.findFirst({
-        where: {
-          mailboxId: readModelInput.mailboxId,
-          messageId: readModelInput.messageId,
-          ingestionVersionKey: message.ingestionVersionKey
-        },
-        orderBy: {
-          classifiedAt: "desc"
-        }
-      })) as ExistingClassificationRecord | null;
-
-      if (!classification) {
-        throw new AppError(
-          "MAILBOX_CLASSIFICATION_NOT_FOUND",
-          "Stored classification output was not found for this message.",
-          {
-            statusCode: 404
-          }
-        );
-      }
-
-      const result = mapStoredClassificationRecord(classification);
-      const readModel = buildMessageClassificationReadModel(result);
-
-      input.logger.info("Loaded mailbox classification read model", {
-        mailboxId: readModel.mailboxId,
-        messageId: readModel.messageId,
-        classifierVersion: readModel.classifierVersion,
-        ingestionVersionKey: readModel.ingestionVersionKey
+      return loadMessageClassificationReadModel(input.prisma, input.logger, {
+        mailboxId: readModelInput.mailboxId,
+        messageId: message.id
       });
-
-      return readModel;
     }
   };
 }
@@ -2182,6 +2147,106 @@ async function getOwnedMailbox(
   }
 
   return mailbox;
+}
+
+async function loadMessageClassificationReadModel(
+  prisma: PrismaClient,
+  logger: Logger,
+  input: {
+    mailboxId: string;
+    messageId: string;
+  }
+) {
+  const message = await getMessageRecordById(prisma, input);
+
+  if (!message.ingestionVersionKey) {
+    throw new AppError(
+      "MAILBOX_CLASSIFICATION_NOT_FOUND",
+      "Classification is not available until the message has been ingested and classified.",
+      {
+        statusCode: 404
+      }
+    );
+  }
+
+  const classification = (await prisma.messageClassification.findFirst({
+    where: {
+      mailboxId: input.mailboxId,
+      messageId: input.messageId,
+      ingestionVersionKey: message.ingestionVersionKey
+    },
+    orderBy: {
+      classifiedAt: "desc"
+    }
+  })) as ExistingClassificationRecord | null;
+
+  if (!classification) {
+    throw new AppError(
+      "MAILBOX_CLASSIFICATION_NOT_FOUND",
+      "Stored classification output was not found for this message.",
+      {
+        statusCode: 404
+      }
+    );
+  }
+
+  const result = mapStoredClassificationRecord(classification);
+  const readModel = buildMessageClassificationReadModel(result);
+
+  logger.info("Loaded mailbox classification read model", {
+    mailboxId: readModel.mailboxId,
+    messageId: readModel.messageId,
+    classifierVersion: readModel.classifierVersion,
+    ingestionVersionKey: readModel.ingestionVersionKey
+  });
+
+  return readModel;
+}
+
+async function getMessageRecordById(
+  prisma: PrismaClient,
+  input: {
+    mailboxId: string;
+    messageId: string;
+  }
+) {
+  const message = (await prisma.message.findFirst({
+    where: {
+      id: input.messageId,
+      mailboxId: input.mailboxId
+    }
+  })) as MessageRecord | null;
+
+  if (!message) {
+    throw new AppError("MAILBOX_MESSAGE_NOT_FOUND", "Tracked mailbox message not found.", {
+      statusCode: 404
+    });
+  }
+
+  return message;
+}
+
+async function getMessageRecordByGraphMessageId(
+  prisma: PrismaClient,
+  input: {
+    mailboxId: string;
+    graphMessageId: string;
+  }
+) {
+  const message = (await prisma.message.findFirst({
+    where: {
+      mailboxId: input.mailboxId,
+      graphMessageId: input.graphMessageId
+    }
+  })) as MessageRecord | null;
+
+  if (!message) {
+    throw new AppError("MAILBOX_MESSAGE_NOT_FOUND", "Tracked mailbox message not found.", {
+      statusCode: 404
+    });
+  }
+
+  return message;
 }
 
 function toDatabaseReasonCode(value: ClassificationReasonCode) {

@@ -53,6 +53,12 @@ type GetMessageWorkflowReadModelInput = {
   messageId: string;
 };
 
+type GetMessageWorkflowReadModelByGraphMessageIdInput = {
+  session: SessionView;
+  mailboxId: string;
+  graphMessageId: string;
+};
+
 type GetMailboxTaskWorkflowVerificationInput = {
   session: SessionView;
   mailboxId: string;
@@ -63,6 +69,9 @@ export type MailboxTaskWorkflowService = {
   transitionTask(input: TransitionTaskInput): Promise<TaskTransitionResult>;
   getMessageWorkflowReadModel(
     input: GetMessageWorkflowReadModelInput
+  ): Promise<MessageWorkflowReadModel>;
+  getMessageWorkflowReadModelByGraphMessageId(
+    input: GetMessageWorkflowReadModelByGraphMessageIdInput
   ): Promise<MessageWorkflowReadModel>;
   getMailboxTaskWorkflowVerification(
     input: GetMailboxTaskWorkflowVerificationInput
@@ -416,34 +425,21 @@ export function createPrismaMailboxTaskWorkflowService(
 
     async getMessageWorkflowReadModel(readModelInput) {
       await getOwnedMailbox(input.prisma, readModelInput);
+      return loadMessageWorkflowReadModel(input.prisma, readModelInput, now());
+    },
 
-      const message = await getMessageRecord(input.prisma, readModelInput);
-      const classification = await getStoredCurrentClassification(input.prisma, message);
+    async getMessageWorkflowReadModelByGraphMessageId(readModelInput) {
+      await getOwnedMailbox(input.prisma, readModelInput);
 
-      if (!classification) {
-        throw new AppError(
-          "MESSAGE_WORKFLOW_NOT_READY",
-          "Workflow state is not available until the message has been classified.",
-          {
-            statusCode: 404
-          }
-        );
-      }
+      const message = await getMessageRecordByGraphMessageId(input.prisma, readModelInput);
 
-      const tasks = await loadTasksForMessage(input.prisma, readModelInput);
-      const workflowState = await ensureWorkflowState({
-        prisma: input.prisma,
-        message,
-        classification,
-        tasks,
-        timestamp: now()
-      });
-
-      return buildMessageWorkflowReadModel(
-        workflowState,
-        buildFilingEligibility(workflowState),
-        classification,
-        await buildTaskReadModels(input.prisma, tasks, [message], classification)
+      return loadMessageWorkflowReadModel(
+        input.prisma,
+        {
+          mailboxId: readModelInput.mailboxId,
+          messageId: message.id
+        },
+        now()
       );
     },
 
@@ -763,6 +759,67 @@ async function getMessageRecord(
   return message;
 }
 
+async function getMessageRecordByGraphMessageId(
+  prisma: PrismaClient,
+  input: {
+    mailboxId: string;
+    graphMessageId: string;
+  }
+) {
+  const message = (await prisma.message.findFirst({
+    where: {
+      mailboxId: input.mailboxId,
+      graphMessageId: input.graphMessageId
+    }
+  })) as MessageRecord | null;
+
+  if (!message) {
+    throw new AppError("MAILBOX_MESSAGE_NOT_FOUND", "Tracked mailbox message not found.", {
+      statusCode: 404
+    });
+  }
+
+  return message;
+}
+
+async function loadMessageWorkflowReadModel(
+  prisma: PrismaClient,
+  input: {
+    mailboxId: string;
+    messageId: string;
+  },
+  timestamp: Date
+) {
+  const message = await getMessageRecord(prisma, input);
+  const classification = await getStoredCurrentClassification(prisma, message);
+
+  if (!classification) {
+    throw new AppError(
+      "MESSAGE_WORKFLOW_NOT_READY",
+      "Workflow state is not available until the message has been classified.",
+      {
+        statusCode: 404
+      }
+    );
+  }
+
+  const tasks = await loadTasksForMessage(prisma, input);
+  const workflowState = await ensureWorkflowState({
+    prisma,
+    message,
+    classification,
+    tasks,
+    timestamp
+  });
+
+  return buildMessageWorkflowReadModel(
+    workflowState,
+    buildFilingEligibility(workflowState),
+    classification,
+    await buildTaskReadModels(prisma, tasks, [message], classification)
+  );
+}
+
 async function loadTasksForMessage(
   prisma: PrismaClient,
   input: {
@@ -1004,8 +1061,8 @@ function validateTaskTransition(task: TaskRecordRow, input: TransitionTaskInput)
     [TaskStatus.Open]: [TaskStatus.Snoozed, TaskStatus.Delegated, TaskStatus.Done, TaskStatus.Dismissed],
     [TaskStatus.Snoozed]: [TaskStatus.Open, TaskStatus.Delegated, TaskStatus.Done, TaskStatus.Dismissed],
     [TaskStatus.Delegated]: [TaskStatus.Open, TaskStatus.Done, TaskStatus.Dismissed],
-    [TaskStatus.Done]: [],
-    [TaskStatus.Dismissed]: []
+    [TaskStatus.Done]: [TaskStatus.Open],
+    [TaskStatus.Dismissed]: [TaskStatus.Open]
   };
   const currentStatus = fromDatabaseTaskStatus(task.status);
 

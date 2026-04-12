@@ -79,11 +79,17 @@ export type ApiMailboxMessageProcessingService = Pick<
 >;
 export type ApiMailboxClassificationService = Pick<
   MailboxClassificationService,
-  "classifyMessage" | "getMessageClassificationReadModel"
+  | "classifyMessage"
+  | "getMessageClassificationReadModel"
+  | "getMessageClassificationReadModelByGraphMessageId"
 >;
 export type ApiMailboxTaskWorkflowService = Pick<
   MailboxTaskWorkflowService,
-  "materializeTasks" | "transitionTask" | "getMessageWorkflowReadModel" | "getMailboxTaskWorkflowVerification"
+  | "materializeTasks"
+  | "transitionTask"
+  | "getMessageWorkflowReadModel"
+  | "getMessageWorkflowReadModelByGraphMessageId"
+  | "getMailboxTaskWorkflowVerification"
 >;
 export type ApiMailboxActionService = Pick<
   MailboxActionService,
@@ -609,6 +615,43 @@ export function createServer(input: CreateServerInput) {
         return;
       }
 
+      const mailboxGraphMessageClassificationReadModelMatch =
+        request.method === "GET"
+          ? requestUrl.pathname.match(
+              /^\/mailboxes\/([^/]+)\/graph-messages\/([^/]+)\/classification$/
+            )
+          : null;
+
+      if (mailboxGraphMessageClassificationReadModelMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxGraphMessageClassificationReadModelMatch[1]);
+        const graphMessageId = decodeURIComponent(
+          mailboxGraphMessageClassificationReadModelMatch[2]
+        );
+        const result =
+          await input.mailboxClassificationService.getMessageClassificationReadModelByGraphMessageId(
+            {
+              session,
+              mailboxId,
+              graphMessageId
+            }
+          );
+
+        writeJson(response, 200, result);
+        requestLogger.info("Loaded mailbox classification read model by Graph message ID", {
+          statusCode: 200,
+          mailboxId,
+          graphMessageId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId
+        });
+        return;
+      }
+
       const mailboxMessageClassificationMatch =
         request.method === "POST"
           ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/messages\/([^/]+)\/classify$/)
@@ -701,6 +744,37 @@ export function createServer(input: CreateServerInput) {
           statusCode: 200,
           mailboxId,
           messageId,
+          userId: session.principal.userId,
+          tenantId: session.principal.tenantId
+        });
+        return;
+      }
+
+      const mailboxGraphMessageWorkflowReadModelMatch =
+        request.method === "GET"
+          ? requestUrl.pathname.match(/^\/mailboxes\/([^/]+)\/graph-messages\/([^/]+)\/workflow$/)
+          : null;
+
+      if (mailboxGraphMessageWorkflowReadModelMatch) {
+        const session = await requireSession(
+          input.authService,
+          request,
+          input.env.SESSION_COOKIE_NAME
+        );
+        const mailboxId = decodeURIComponent(mailboxGraphMessageWorkflowReadModelMatch[1]);
+        const graphMessageId = decodeURIComponent(mailboxGraphMessageWorkflowReadModelMatch[2]);
+        const result =
+          await input.mailboxTaskWorkflowService.getMessageWorkflowReadModelByGraphMessageId({
+            session,
+            mailboxId,
+            graphMessageId
+          });
+
+        writeJson(response, 200, result);
+        requestLogger.info("Loaded mailbox workflow read model by Graph message ID", {
+          statusCode: 200,
+          mailboxId,
+          graphMessageId,
           userId: session.principal.userId,
           tenantId: session.principal.tenantId
         });
@@ -1055,6 +1129,14 @@ export function createServer(input: CreateServerInput) {
       });
     } catch (error) {
       const errorResponse = toErrorResponse(error, correlationId);
+
+      if (response.headersSent || response.writableEnded) {
+        requestLogger.error("Request failed after the response was already sent", {
+          statusCode: errorResponse.statusCode
+        });
+        return;
+      }
+
       response.writeHead(errorResponse.statusCode, {
         "content-type": "application/json"
       });

@@ -155,6 +155,18 @@ describe("mailbox task workflow service", () => {
     ).rejects.toMatchObject({
       code: "TASK_TRANSITION_INVALID"
     });
+
+    const reopened = await service.transitionTask({
+      session: exampleSession,
+      mailboxId: "mailbox_123",
+      taskId: taskId!,
+      status: TaskStatus.Open
+    });
+
+    expect(reopened.task.task.status).toBe(TaskStatus.Open);
+    expect(reopened.task.task.resolutionReason).toBeUndefined();
+    expect(reopened.workflowState?.blockedBy).toEqual(["open_task"]);
+    expect(reopened.filingEligibility?.isEligible).toBe(false);
   });
 
   it("builds a workflow read model with linked tasks, classification context, and filing-blocker explanations", async () => {
@@ -195,6 +207,33 @@ describe("mailbox task workflow service", () => {
     );
     expect(readModel.filingEligibility.blockedBy).toEqual(["open_task"]);
     expect(readModel.filingEligibility.summary).toContain("unresolved");
+  });
+
+  it("resolves the workflow read model from an immutable Graph message ID", async () => {
+    const prisma = createWorkflowTestPrisma();
+    const service = createPrismaMailboxTaskWorkflowService({
+      prisma: prisma.client as never,
+      logger: silentLogger(),
+      mailboxClassificationService: {
+        classifyMessage: vi.fn().mockResolvedValue(createClassificationResult())
+      },
+      now: () => new Date("2026-04-05T11:00:00.000Z")
+    });
+
+    await service.materializeTasks({
+      session: exampleSession,
+      mailboxId: "mailbox_123",
+      messageId: "message_123"
+    });
+
+    const readModel = await service.getMessageWorkflowReadModelByGraphMessageId({
+      session: exampleSession,
+      mailboxId: "mailbox_123",
+      graphMessageId: "graph_message_123"
+    });
+
+    expect(readModel.messageId).toBe("message_123");
+    expect(readModel.workflowState.messageId).toBe("message_123");
   });
 
   it("reports task-workflow verification coverage and integrity gaps before delayed filing depends on the state engine", async () => {
@@ -485,8 +524,9 @@ function createWorkflowTestPrisma(input?: {
         return (
           messages.find(
             (message) =>
-              message.id === where.id &&
-              message.mailboxId === where.mailboxId
+              message.mailboxId === where.mailboxId &&
+              ((where.id && message.id === where.id) ||
+                (where.graphMessageId && message.graphMessageId === where.graphMessageId))
           ) ?? null
         );
       }),

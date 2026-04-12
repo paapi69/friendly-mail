@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xsi:type="MailApp" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0" xsi:type="MailApp">
   <Id>00000000-0000-0000-0000-000000000001</Id>
   <Version>0.1.0.0</Version>
   <ProviderName>Friendly Mail</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Friendly Mail" />
   <Description DefaultValue="Outlook-native workflow layer for email triage and delayed filing." />
+  <Requirements>
+    <Sets DefaultMinVersion="1.5">
+      <Set Name="Mailbox" />
+    </Sets>
+  </Requirements>
   <Hosts>
     <Host Name="Mailbox" />
   </Hosts>
@@ -16,9 +21,100 @@
         <RequestedHeight>450</RequestedHeight>
       </DesktopSettings>
     </Form>
+    <Form xsi:type="ItemEdit">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://localhost:4173?scenario=compose" />
+        <RequestedHeight>450</RequestedHeight>
+      </DesktopSettings>
+    </Form>
   </FormSettings>
   <Permissions>ReadWriteItem</Permissions>
   <Rule xsi:type="RuleCollection" Mode="Or">
     <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read" />
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Edit" />
   </Rule>
+  <DisableEntityHighlighting>false</DisableEntityHighlighting>
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides/1.1" xsi:type="VersionOverridesV1_1">
+      <Requirements>
+        <bt:Sets DefaultMinVersion="1.5">
+          <bt:Set Name="Mailbox" />
+        </bt:Sets>
+      </Requirements>
+      <Hosts>
+        <Host xsi:type="MailHost">
+          <DesktopFormFactor>
+            <FunctionFile resid="Commands.Url" />
+            <ExtensionPoint xsi:type="MessageReadCommandSurface">
+              <OfficeTab id="TabDefault">
+                <Group id="ReadGroup">
+                  <Label resid="ReadGroup.Label" />
+                  <Control xsi:type="Button" id="ReadOpenPaneButton">
+                    <Label resid="ReadOpenPaneButton.Label" />
+                    <Supertip>
+                      <Title resid="ReadOpenPaneButton.Label" />
+                      <Description resid="ReadOpenPaneButton.Description" />
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="Icon.16" />
+                      <bt:Image size="32" resid="Icon.32" />
+                      <bt:Image size="80" resid="Icon.80" />
+                    </Icon>
+                    <Action xsi:type="ShowTaskpane">
+                      <SourceLocation resid="Taskpane.Url" />
+                      <SupportsPinning>true</SupportsPinning>
+                    </Action>
+                  </Control>
+                </Group>
+              </OfficeTab>
+            </ExtensionPoint>
+            <ExtensionPoint xsi:type="MessageComposeCommandSurface">
+              <OfficeTab id="TabDefault">
+                <Group id="ComposeGroup">
+                  <Label resid="ComposeGroup.Label" />
+                  <Control xsi:type="Button" id="ComposeOpenPaneButton">
+                    <Label resid="ComposeOpenPaneButton.Label" />
+                    <Supertip>
+                      <Title resid="ComposeOpenPaneButton.Label" />
+                      <Description resid="ComposeOpenPaneButton.Description" />
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="Icon.16" />
+                      <bt:Image size="32" resid="Icon.32" />
+                      <bt:Image size="80" resid="Icon.80" />
+                    </Icon>
+                    <Action xsi:type="ShowTaskpane">
+                      <SourceLocation resid="ComposeTaskpane.Url" />
+                    </Action>
+                  </Control>
+                </Group>
+              </OfficeTab>
+            </ExtensionPoint>
+          </DesktopFormFactor>
+        </Host>
+      </Hosts>
+      <Resources>
+        <bt:Images>
+          <bt:Image id="Icon.16" DefaultValue="https://localhost:4173/icons/icon-16.svg" />
+          <bt:Image id="Icon.32" DefaultValue="https://localhost:4173/icons/icon-32.svg" />
+          <bt:Image id="Icon.80" DefaultValue="https://localhost:4173/icons/icon-80.svg" />
+        </bt:Images>
+        <bt:Urls>
+          <bt:Url id="Commands.Url" DefaultValue="https://localhost:4173/commands.html" />
+          <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:4173" />
+          <bt:Url id="ComposeTaskpane.Url" DefaultValue="https://localhost:4173?scenario=compose" />
+        </bt:Urls>
+        <bt:ShortStrings>
+          <bt:String id="ReadGroup.Label" DefaultValue="Friendly Mail" />
+          <bt:String id="ReadOpenPaneButton.Label" DefaultValue="Workflow panel" />
+          <bt:String id="ComposeGroup.Label" DefaultValue="Friendly Mail" />
+          <bt:String id="ComposeOpenPaneButton.Label" DefaultValue="Draft tools" />
+        </bt:ShortStrings>
+        <bt:LongStrings>
+          <bt:String id="ReadOpenPaneButton.Description" DefaultValue="Open the Friendly Mail workflow panel for the selected Outlook message." />
+          <bt:String id="ComposeOpenPaneButton.Description" DefaultValue="Open the Friendly Mail compose shell and future numbering tools." />
+        </bt:LongStrings>
+      </Resources>
+    </VersionOverrides>
+  </VersionOverrides>
 </OfficeApp>
