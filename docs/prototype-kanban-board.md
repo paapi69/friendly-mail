@@ -6,20 +6,20 @@ This board is for the first user-meaningful Friendly Mail prototype.
 
 Prototype target:
 
-- backend workflow-state delivery works through Epic 5 operational verification
-- Outlook add-in has a minimal workflow surface to show what Friendly Mail knows about a message
+- backend delivery works through Epic 6 mailbox-action verification
+- Outlook add-in moves from a minimal shell to the first live workflow surface inside Outlook
 
 ## Accuracy Notes
 
 The board below uses:
 
-- **Actual completed engineering work** for `E1` through `E4`
-- **Planned prototype tickets** for design and frontend work that have not yet been tracked in `.planning/epic-status.json`
+- **Actual completed engineering work** for `E1` through `E6`
+- **Planned Epic 7 and Epic 8 surface tickets** derived from the current roadmap, frontend strategy, and implementation baseline
 
 So:
 
-- `Done` items in the current backend implementation are factual
-- new role-split prototype tickets below are planning tickets created from the current roadmap and frontend strategy
+- `Done` items in the current implementation are factual
+- new add-in and dashboard tickets below are planning tickets created from the current roadmap and frontend strategy
 - when an implementation ticket changes status, this document and `apps/dashboard/src/features/dashboard/dashboard.data.ts` should be updated in the same session when practical
 - the dashboard preview also shows a one-line stakeholder summary for each ticket so non-engineering viewers can scan the board quickly
 - tracked engineering ticket status in the preview should be derived from `.planning/epic-status.json`
@@ -27,33 +27,45 @@ So:
 
 ## Prototype Milestone
 
-- **Prototype checkpoint**: backend through `E5-T8` plus a thin add-in UI slice
+- **Prototype checkpoint**: backend through `E6-T8` plus the first live Outlook add-in workflow slice
 
 ## Swimlane: Design
 
-### Ready
+### Done
 
 | Ticket | Title | Stakeholder Summary | Owner | Epic | Points | Size | Labels |
 |---|---|---|---|---|---:|---|---|
-| `E7-T1` | Define Outlook add-in prototype flow for mailbox connect, sync state, and message work panel | Clarifies the first Outlook add-in experience so the prototype tells a coherent product story. | `Tom` | `E7` | `3` | `S` | `design`, `epic:E7`, `surface:addin`, `type:design`, `priority:P0`, `size:S`, `status:ready`, `milestone:prototype-v1`, `integration:outlook-addin` |
-| `E7-T2` | Create low-fidelity wireframes for message summary, task area, and filing-state explanation | Shows how users will understand what Friendly Mail knows about an email and why it suggests action. | `Tom` | `E7` | `5` | `M` | `design`, `epic:E7`, `surface:addin`, `type:design`, `priority:P0`, `size:M`, `status:ready`, `milestone:prototype-v1`, `integration:outlook-addin`, `risk:workflow-safety` |
+| `E7-T1` | Define the Outlook add-in surface contract and interaction flow | Clarifies the first real Outlook add-in experience, including supported clients, pinned task-pane behavior, and trust-first fallback rules for the workflow surface. | `Tom` | `E7` | `3` | `S` | `design`, `epic:E7`, `surface:addin`, `type:design`, `priority:P0`, `size:S`, `status:done`, `milestone:prototype-v1`, `integration:outlook-addin`, `risk:workflow-safety` |
+| `E11-T1` | Define the Microsoft tenant setup contract and operator guide | Turns the Microsoft-side setup into a clear operator checklist so tenant registration stops depending on ad hoc engineering memory. | `Tom` | `E11` | `3` | `S` | `design`, `epic:E11`, `surface:ops`, `type:design`, `priority:P1`, `size:S`, `status:done`, `milestone:prototype-v1`, `integration:microsoft-graph`, `risk:operational-readiness` |
 
 ### Backlog
 
 | Ticket | Title | Stakeholder Summary | Owner | Epic | Points | Size | Labels |
 |---|---|---|---|---|---:|---|---|
-| `E8-T1` | Define dashboard prototype information architecture for critical items and unresolved work | Organizes the dashboard so leaders can quickly see critical work, status, and unresolved items. | `Tom` | `E8` | `5` | `M` | `design`, `epic:E8`, `surface:dashboard`, `type:design`, `priority:P2`, `size:M`, `status:backlog`, `milestone:prototype-v1` |
+| `E8-T1` | Define the mobile-first dashboard triage information architecture | Locks the mailbox-level dashboard structure so high-volume users can understand the day without opening every message. | `Tom` | `E8` | `5` | `M` | `design`, `epic:E8`, `surface:dashboard`, `type:design`, `priority:P1`, `size:M`, `status:backlog`, `milestone:prototype-v1`, `risk:workflow-safety` |
 
 ## Swimlane: Frontend
+
+### Done
+
+| Ticket | Title | Stakeholder Summary | Owner | Epic | Points | Size | Depends On | Labels |
+|---|---|---|---|---|---:|---|---|---|
+| `E7-T2` | Extend the add-in shell, manifest, and host integration baseline | Turns the current shell into a compliant Outlook add-in baseline with manifest, command-surface, pinned-host behavior, and a live preview lane ready for the first slice. | `Dick` | `E7` | `5` | `M` | `E7-T1` | `frontend`, `epic:E7`, `surface:addin`, `type:integration`, `priority:P0`, `size:M`, `status:done`, `milestone:prototype-v1`, `integration:outlook-addin`, `integration:microsoft-graph` |
+| `E7-T3` | Implement mailbox connect and sync-status entry view | Gives users a trustworthy first screen inside Outlook that shows connection state, sync health, and connect or retry paths clearly. | `Dick` | `E7` | `5` | `M` | `E7-T1`, `E7-T2` | `frontend`, `epic:E7`, `surface:addin`, `type:feature`, `priority:P0`, `size:M`, `status:done`, `milestone:prototype-v1`, `integration:outlook-addin`, `integration:microsoft-graph` |
+| `E7-T4` | Implement the message workflow summary and explanation panel | Creates the core in-context Outlook panel for classification, urgency, explanation, blockers, and filing-state context. | `Dick` | `E7` | `8` | `L` | `E7-T1`, `E7-T2`, `E7-T3` | `frontend`, `epic:E7`, `surface:addin`, `type:feature`, `priority:P0`, `size:L`, `status:done`, `milestone:prototype-v1`, `integration:outlook-addin`, `risk:workflow-safety` |
+| `E7-T5` | Implement the task action panel and lifecycle mutations | Lets users complete, snooze, delegate, dismiss, and reopen work from inside Outlook without losing workflow integrity. | `Dick` | `E7` | `8` | `L` | `E7-T4`, `E5-T7` | `frontend`, `epic:E7`, `surface:addin`, `type:feature`, `priority:P0`, `size:L`, `status:done`, `milestone:prototype-v1`, `integration:outlook-addin`, `risk:workflow-safety` |
+| `E7-T6` | Implement filing decision, folder suggestion, and approval UX | Exposes delayed-filing decisions and mailbox-action approval in a suggestion-first Outlook workflow. | `Dick` | `E7` | `8` | `L` | `E7-T4`, `E6-T8` | `frontend`, `epic:E7`, `surface:addin`, `type:feature`, `priority:P0`, `size:L`, `status:done`, `milestone:prototype-v1`, `integration:outlook-addin`, `risk:workflow-safety` |
 
 ### Backlog
 
 | Ticket | Title | Stakeholder Summary | Owner | Epic | Points | Size | Depends On | Labels |
 |---|---|---|---|---|---:|---|---|---|
-| `E7-T3` | Add Outlook add-in mailbox connect and sync-status entry view | Gives users a simple entry point to connect Outlook and see whether Friendly Mail is actively syncing. | `Dick` | `E7` | `5` | `M` | `E7-T1` | `frontend`, `epic:E7`, `surface:addin`, `type:feature`, `priority:P0`, `size:M`, `status:backlog`, `milestone:prototype-v1`, `integration:outlook-addin`, `integration:microsoft-graph` |
-| `E7-T4` | Build add-in message work panel showing classification placeholder, tasks placeholder, and filing-state placeholder | Creates the core in-context email panel where Friendly Mail will explain work, urgency, and filing state. | `Dick` | `E7` | `8` | `L` | `E7-T2` | `frontend`, `epic:E7`, `surface:addin`, `type:feature`, `priority:P0`, `size:L`, `status:backlog`, `milestone:prototype-v1`, `integration:outlook-addin`, `risk:workflow-safety` |
-| `E7-T5` | Bind add-in prototype views to live mailbox-connect and sync APIs | Turns the add-in from a static demo into a live experience backed by real mailbox status and sync data. | `Dick` | `E7` | `5` | `M` | `E7-T3`, `E7-T4`, `E2-T8` | `frontend`, `epic:E7`, `surface:addin`, `type:integration`, `priority:P0`, `size:M`, `status:backlog`, `milestone:prototype-v1`, `integration:outlook-addin`, `integration:microsoft-graph` |
-| `E8-T2` | Add companion dashboard prototype page for mailbox status and critical-work summary | Gives leaders and users a simple web view of mailbox health and the most important unresolved work. | `Dick` | `E8` | `5` | `M` | `E8-T1` | `frontend`, `epic:E8`, `surface:dashboard`, `type:feature`, `priority:P2`, `size:M`, `status:backlog`, `milestone:prototype-v1` |
+| `E7-T7` | Implement compose and draft numbering experience | Brings the outgoing numbering workflow into Outlook compose and draft flows for supported MVP cases. | `Dick` | `E7` | `5` | `M` | `E7-T2`, `E6-T7` | `frontend`, `epic:E7`, `surface:addin`, `type:feature`, `priority:P1`, `size:M`, `status:backlog`, `milestone:prototype-v1`, `integration:outlook-addin`, `integration:microsoft-graph` |
+| `E8-T3` | Implement the mobile-first Today queue and priority buckets | Creates the mailbox-wide dashboard home for Needs Attention work, urgent tasks, and due-soon review. | `Dick` | `E8` | `8` | `L` | `E8-T1`, `E8-T2` | `frontend`, `epic:E8`, `surface:dashboard`, `type:feature`, `priority:P1`, `size:L`, `status:backlog`, `milestone:prototype-v1` |
+| `E8-T4` | Implement FYI and CC batch-review surfaces | Gives users a calmer place to review low-noise mail without mixing it into the main action queue. | `Dick` | `E8` | `5` | `M` | `E8-T1`, `E8-T2`, `E8-T3` | `frontend`, `epic:E8`, `surface:dashboard`, `type:feature`, `priority:P2`, `size:M`, `status:backlog`, `milestone:prototype-v1` |
+| `E8-T5` | Implement junk-candidate review and safe handling controls | Separates low-value mail from real work while keeping junk treatment reversible and trust-first. | `Dick` | `E8` | `5` | `M` | `E8-T1`, `E8-T2`, `E8-T3` | `frontend`, `epic:E8`, `surface:dashboard`, `type:feature`, `priority:P2`, `size:M`, `status:backlog`, `milestone:prototype-v1`, `risk:workflow-safety` |
+| `E8-T6` | Implement the ready-to-file queue and post-action filing overview | Shows which messages are now safe to move without forcing users back into Outlook message-by-message. | `Dick` | `E8` | `5` | `M` | `E8-T2`, `E8-T3`, `E6-T8` | `frontend`, `epic:E8`, `surface:dashboard`, `type:feature`, `priority:P2`, `size:M`, `status:backlog`, `milestone:prototype-v1`, `risk:workflow-safety` |
+| `E8-T7` | Implement dashboard filters, search, and mobile drill-down flows | Makes the dashboard usable at real mailbox volume on mobile-sized screens and larger layouts. | `Dick` | `E8` | `5` | `M` | `E8-T3`, `E8-T4`, `E8-T6` | `frontend`, `epic:E8`, `surface:dashboard`, `type:feature`, `priority:P2`, `size:M`, `status:backlog`, `milestone:prototype-v1` |
 
 ## Swimlane: Backend
 
@@ -107,7 +119,14 @@ So:
 
 | Ticket | Title | Stakeholder Summary | Owner | Epic | Points | Size | Depends On | Labels |
 |---|---|---|---|---|---:|---|---|---|
-| `E7-T6` | Expose a prototype mailbox status endpoint for the add-in UI | Gives the add-in a simple backend signal for showing mailbox health and sync readiness inside Outlook. | `Harry` | `E7` | `3` | `S` | `E2-T8` | `backend`, `epic:E7`, `surface:api`, `type:feature`, `priority:P1`, `size:S`, `status:backlog`, `milestone:prototype-v1`, `integration:outlook-addin` |
+| `E7-T8` | Add Outlook add-in verification and rollout readiness | Proves the add-in is safe enough for pilot-facing use by covering host states, workflow actions, and failure handling. | `Harry` | `E7` | `5` | `M` | `E7-T3`, `E7-T4`, `E7-T5`, `E7-T6`, `E7-T7` | `backend`, `epic:E7`, `surface:addin`, `type:verification`, `priority:P1`, `size:M`, `status:backlog`, `milestone:prototype-v1`, `integration:outlook-addin`, `risk:operational-readiness` |
+| `E8-T2` | Add mailbox-wide dashboard aggregation APIs and bucket read models | Gives the dashboard one stable backend contract for Today queue counts, bucket summaries, and mailbox-wide workflow signals. | `Harry` | `E8` | `5` | `M` | `E5-T7`, `E6-T8`, `E8-T1` | `backend`, `epic:E8`, `surface:dashboard`, `type:integration`, `priority:P1`, `size:M`, `status:backlog`, `milestone:prototype-v1` |
+| `E8-T8` | Add dashboard verification and rollout readiness | Proves the mobile-first dashboard is trustworthy for mailbox-level triage before pilot-facing use expands. | `Harry` | `E8` | `5` | `M` | `E8-T2`, `E8-T3`, `E8-T4`, `E8-T5`, `E8-T6`, `E8-T7` | `backend`, `epic:E8`, `surface:dashboard`, `type:verification`, `priority:P1`, `size:M`, `status:backlog`, `milestone:prototype-v1`, `risk:operational-readiness` |
+| `E11-T2` | Register the Microsoft Entra app and baseline redirect URIs | Captures the real tenant, app, and callback values so local and pilot onboarding stop depending on placeholders. | `Harry` | `E11` | `3` | `S` | `E11-T1` | `backend`, `epic:E11`, `surface:ops`, `type:integration`, `priority:P1`, `size:S`, `status:backlog`, `milestone:prototype-v1`, `integration:microsoft-graph`, `risk:operational-readiness` |
+| `E11-T3` | Configure delegated Graph permissions and consent strategy | Makes the required Graph scopes and consent path explicit before real-tenant testing broadens. | `Harry` | `E11` | `3` | `S` | `E11-T1`, `E11-T2` | `backend`, `epic:E11`, `surface:ops`, `type:spec`, `priority:P1`, `size:S`, `status:backlog`, `milestone:prototype-v1`, `integration:microsoft-graph`, `risk:operational-readiness` |
+| `E11-T4` | Provision secrets and environment configuration for local and staging | Turns the Microsoft registration values into working local and staging environment configuration. | `Harry` | `E11` | `5` | `M` | `E11-T2`, `E11-T3` | `backend`, `epic:E11`, `surface:ops`, `type:feature`, `priority:P1`, `size:M`, `status:backlog`, `milestone:prototype-v1`, `integration:microsoft-graph`, `risk:operational-readiness` |
+| `E11-T5` | Expose a public webhook endpoint and validate Graph callback reachability | Solves the public HTTPS callback requirement so subscriptions and webhooks can be verified end to end. | `Harry` | `E11` | `5` | `M` | `E11-T4` | `backend`, `epic:E11`, `surface:ops`, `type:integration`, `priority:P1`, `size:M`, `status:backlog`, `milestone:prototype-v1`, `integration:microsoft-graph`, `risk:operational-readiness` |
+| `E11-T6` | Run end-to-end tenant setup verification and operator handoff | Produces the final setup proof and handoff so the tenant path no longer depends on informal knowledge. | `Harry` | `E11` | `5` | `M` | `E11-T4`, `E11-T5` | `backend`, `epic:E11`, `surface:ops`, `type:verification`, `priority:P1`, `size:M`, `status:backlog`, `milestone:prototype-v1`, `integration:microsoft-graph`, `risk:operational-readiness` |
 
 ## Suggested Sprint Framing
 
@@ -115,25 +134,22 @@ So:
 
 Focus:
 
-- `E3-T1`
 - `E7-T1`
 - `E7-T2`
+- `E7-T3`
 
 ### Sprint B
 
 Focus:
 
-- `E3-T2`
-- `E3-T3`
-- `E7-T3`
+- `E7-T6`
 
 ### Sprint C
 
 Focus:
 
-- `E3-T5`
-- `E3-T7`
-- optional `E8-T2`
+- `E7-T7`
+- `E7-T8`
 
 ## Recommended Labels To Use First
 
@@ -145,10 +161,12 @@ If you want a lean label set to start with, use these first:
 - `epic:E2`
 - `epic:E7`
 - `epic:E8`
+- `epic:E11`
 - `surface:addin`
 - `surface:dashboard`
 - `surface:api`
 - `surface:graph`
+- `surface:ops`
 - `type:feature`
 - `type:design`
 - `type:integration`

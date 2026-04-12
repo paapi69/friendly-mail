@@ -35,75 +35,198 @@ export const views: BoardView[] = ["Master", "Tom", "Dick", "Harry"];
 const boardCardMetadata: BoardCardMetadata[] = [
   {
     id: "E7-T1",
-    title: "Define add-in prototype flow",
+    title: "Define the Outlook add-in surface contract and interaction flow",
     stakeholderSummary:
-      "Clarifies the first Outlook add-in experience so the prototype tells a coherent product story.",
+      "Clarifies the first real Outlook add-in experience, including supported clients, pinned task-pane behavior, and trust-first fallback rules for the workflow surface.",
     owner: "Tom",
     lane: "Design",
     plannedColumn: "Ready",
     points: 3,
     size: "S",
-    labels: ["design", "epic:E7", "surface:addin", "type:design", "priority:P0"]
+    labels: ["design", "epic:E7", "surface:addin", "type:design", "priority:P0", "risk:workflow-safety"],
+    syncWithPlanning: true
   },
   {
-    id: "E7-T2",
-    title: "Wireframe the work panel and filing explanation",
+    id: "E11-T1",
+    title: "Define the Microsoft tenant setup contract and operator guide",
     stakeholderSummary:
-      "Shows how users will understand what Friendly Mail knows about an email and why it suggests action.",
+      "Turns the Microsoft-side setup into a clear operator checklist so tenant registration stops depending on ad hoc engineering memory.",
     owner: "Tom",
     lane: "Design",
     plannedColumn: "Ready",
-    points: 5,
-    size: "M",
-    labels: ["design", "epic:E7", "surface:addin", "risk:workflow-safety"]
+    points: 3,
+    size: "S",
+    labels: ["design", "epic:E11", "surface:ops", "type:design", "priority:P1", "risk:operational-readiness"],
+    syncWithPlanning: true
   },
   {
-    id: "E8-T1",
-    title: "Define dashboard prototype information architecture",
+    id: "E7-T2",
+    title: "Extend the add-in shell, manifest, and host integration baseline",
     stakeholderSummary:
-      "Organizes the dashboard so leaders can quickly see critical work, status, and unresolved items.",
-    owner: "Tom",
-    lane: "Design",
-    plannedColumn: "Backlog",
-    points: 5,
-    size: "M",
-    labels: ["design", "epic:E8", "surface:dashboard", "priority:P2"]
-  },
-  {
-    id: "E7-T3",
-    title: "Add mailbox connect and sync-status screen",
-    stakeholderSummary:
-      "Gives users a simple entry point to connect Outlook and see whether Friendly Mail is actively syncing.",
+      "Turns the current shell into a compliant Outlook add-in baseline with manifest, command-surface, pinned-host behavior, and a live preview lane ready for the first slice.",
     owner: "Dick",
     lane: "Frontend",
     plannedColumn: "Backlog",
     points: 5,
     size: "M",
-    labels: ["frontend", "epic:E7", "surface:addin", "type:feature", "priority:P0"]
+    labels: ["frontend", "epic:E7", "surface:addin", "type:integration", "priority:P0"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E8-T1",
+    title: "Define the mobile-first dashboard triage information architecture",
+    stakeholderSummary:
+      "Locks the mailbox-level dashboard structure so high-volume users can understand the day without opening every message.",
+    owner: "Tom",
+    lane: "Design",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["design", "epic:E8", "surface:dashboard", "type:design", "priority:P1", "risk:workflow-safety"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E8-T2",
+    title: "Add mailbox-wide dashboard aggregation APIs and bucket read models",
+    stakeholderSummary:
+      "Gives the dashboard one stable backend contract for Today queue counts, bucket summaries, and mailbox-wide workflow signals.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E8", "surface:dashboard", "type:integration", "priority:P1"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E7-T3",
+    title: "Implement mailbox connect and sync-status entry view",
+    stakeholderSummary:
+      "Gives users a trustworthy first screen inside Outlook that shows connection state, sync health, and connect or retry paths clearly.",
+    owner: "Dick",
+    lane: "Frontend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["frontend", "epic:E7", "surface:addin", "type:feature", "priority:P0"],
+    syncWithPlanning: true
   },
   {
     id: "E7-T4",
-    title: "Build the add-in message work panel",
+    title: "Implement the message workflow summary and explanation panel",
     stakeholderSummary:
-      "Creates the core in-context email panel where Friendly Mail will explain work, urgency, and filing state.",
+      "Creates the core in-context Outlook panel for classification, urgency, explanation, blockers, and filing-state context.",
     owner: "Dick",
     lane: "Frontend",
     plannedColumn: "Backlog",
     points: 8,
     size: "L",
-    labels: ["frontend", "epic:E7", "surface:addin", "type:feature", "priority:P0"]
+    labels: ["frontend", "epic:E7", "surface:addin", "type:feature", "priority:P0", "risk:workflow-safety"],
+    syncWithPlanning: true
   },
   {
     id: "E7-T5",
-    title: "Bind add-in views to live mailbox sync APIs",
+    title: "Implement the task action panel and lifecycle mutations",
     stakeholderSummary:
-      "Turns the add-in from a static demo into a live experience backed by real mailbox status and sync data.",
+      "Lets users complete, snooze, delegate, dismiss, and reopen work from inside Outlook without losing workflow integrity.",
     owner: "Dick",
     lane: "Frontend",
-    plannedColumn: "Blocked",
+    plannedColumn: "Backlog",
+    points: 8,
+    size: "L",
+    labels: ["frontend", "epic:E7", "surface:addin", "type:feature", "priority:P0", "risk:workflow-safety"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E7-T6",
+    title: "Implement filing decision, folder suggestion, and approval UX",
+    stakeholderSummary:
+      "Exposes delayed-filing decisions and mailbox-action approval in a suggestion-first Outlook workflow.",
+    owner: "Dick",
+    lane: "Frontend",
+    plannedColumn: "Backlog",
+    points: 8,
+    size: "L",
+    labels: ["frontend", "epic:E7", "surface:addin", "type:feature", "priority:P0", "risk:workflow-safety"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E7-T7",
+    title: "Implement compose and draft numbering experience",
+    stakeholderSummary:
+      "Brings the outgoing numbering workflow into Outlook compose and draft flows for supported MVP cases.",
+    owner: "Dick",
+    lane: "Frontend",
+    plannedColumn: "Backlog",
     points: 5,
     size: "M",
-    labels: ["frontend", "epic:E7", "surface:addin", "type:integration", "priority:P0"]
+    labels: ["frontend", "epic:E7", "surface:addin", "type:feature", "priority:P1", "integration:microsoft-graph"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E8-T3",
+    title: "Implement the mobile-first Today queue and priority buckets",
+    stakeholderSummary:
+      "Creates the mailbox-wide dashboard home for Needs Attention work, urgent tasks, and due-soon review.",
+    owner: "Dick",
+    lane: "Frontend",
+    plannedColumn: "Backlog",
+    points: 8,
+    size: "L",
+    labels: ["frontend", "epic:E8", "surface:dashboard", "type:feature", "priority:P1"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E8-T4",
+    title: "Implement FYI and CC batch-review surfaces",
+    stakeholderSummary:
+      "Gives users a calmer place to review low-noise mail without mixing it into the main action queue.",
+    owner: "Dick",
+    lane: "Frontend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["frontend", "epic:E8", "surface:dashboard", "type:feature", "priority:P2"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E8-T5",
+    title: "Implement junk-candidate review and safe handling controls",
+    stakeholderSummary:
+      "Separates low-value mail from real work while keeping junk treatment reversible and trust-first.",
+    owner: "Dick",
+    lane: "Frontend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["frontend", "epic:E8", "surface:dashboard", "type:feature", "priority:P2", "risk:workflow-safety"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E8-T6",
+    title: "Implement the ready-to-file queue and post-action filing overview",
+    stakeholderSummary:
+      "Shows which messages are now safe to move without forcing users back into Outlook message-by-message.",
+    owner: "Dick",
+    lane: "Frontend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["frontend", "epic:E8", "surface:dashboard", "type:feature", "priority:P2", "risk:workflow-safety"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E8-T7",
+    title: "Implement dashboard filters, search, and mobile drill-down flows",
+    stakeholderSummary:
+      "Makes the dashboard usable at real mailbox volume on mobile-sized screens and larger layouts.",
+    owner: "Dick",
+    lane: "Frontend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["frontend", "epic:E8", "surface:dashboard", "type:feature", "priority:P2"],
+    syncWithPlanning: true
   },
   {
     id: "E2-T1",
@@ -655,16 +778,95 @@ const boardCardMetadata: BoardCardMetadata[] = [
     syncWithPlanning: true
   },
   {
-    id: "E7-T6",
-    title: "Expose prototype mailbox status endpoint for add-in",
+    id: "E7-T8",
+    title: "Add Outlook add-in verification and rollout readiness",
     stakeholderSummary:
-      "Gives the add-in a simple backend signal for showing mailbox health and sync readiness inside Outlook.",
+      "Proves the add-in is safe enough for pilot-facing use by covering host states, workflow actions, and failure handling.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E7", "surface:addin", "type:verification", "priority:P1", "risk:operational-readiness"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E8-T8",
+    title: "Add dashboard verification and rollout readiness",
+    stakeholderSummary:
+      "Proves the mobile-first dashboard is trustworthy for mailbox-level triage before pilot-facing use expands.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E8", "surface:dashboard", "type:verification", "priority:P1", "risk:operational-readiness"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E11-T2",
+    title: "Register the Microsoft Entra app and baseline redirect URIs",
+    stakeholderSummary:
+      "Captures the real tenant, app, and callback values so local and pilot onboarding stop depending on placeholders.",
     owner: "Harry",
     lane: "Backend",
     plannedColumn: "Backlog",
     points: 3,
     size: "S",
-    labels: ["backend", "epic:E7", "surface:api", "type:feature", "priority:P1"]
+    labels: ["backend", "epic:E11", "surface:ops", "type:integration", "priority:P1", "risk:operational-readiness"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E11-T3",
+    title: "Configure delegated Graph permissions and consent strategy",
+    stakeholderSummary:
+      "Makes the required Graph scopes and consent path explicit before real-tenant testing broadens.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 3,
+    size: "S",
+    labels: ["backend", "epic:E11", "surface:ops", "type:spec", "priority:P1", "risk:operational-readiness"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E11-T4",
+    title: "Provision secrets and environment configuration for local and staging",
+    stakeholderSummary:
+      "Turns the Microsoft registration values into working local and staging environment configuration.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E11", "surface:ops", "type:feature", "priority:P1", "risk:operational-readiness"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E11-T5",
+    title: "Expose a public webhook endpoint and validate Graph callback reachability",
+    stakeholderSummary:
+      "Solves the public HTTPS callback requirement so subscriptions and webhooks can be verified end to end.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E11", "surface:ops", "type:integration", "priority:P1", "risk:operational-readiness"],
+    syncWithPlanning: true
+  },
+  {
+    id: "E11-T6",
+    title: "Run end-to-end tenant setup verification and operator handoff",
+    stakeholderSummary:
+      "Produces the final setup proof and handoff so the tenant path no longer depends on informal knowledge.",
+    owner: "Harry",
+    lane: "Backend",
+    plannedColumn: "Backlog",
+    points: 5,
+    size: "M",
+    labels: ["backend", "epic:E11", "surface:ops", "type:verification", "priority:P1", "risk:operational-readiness"],
+    syncWithPlanning: true
   }
 ];
 

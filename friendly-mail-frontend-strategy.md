@@ -27,10 +27,20 @@ Sources:
 
 ### Primary Surface: Outlook Add-in
 
-The Outlook add-in is the primary product surface. It is where users will interact with Friendly Mail while reading and composing email.
+The Outlook add-in is the primary desktop and web product surface. It is where users should understand today's work, review a selected message, and take core workflow actions without leaving Outlook on the supported MVP clients.
+
+The add-in IA is now locked around three simple sections:
+
+- `Today`
+  - compact command center for Needs Attention, Due Today, Ready To File, Waiting, and top-ranked actions
+- `This Email`
+  - selected-message detail for classification, task state, blockers, and filing decision
+- `Review`
+  - compact low-noise batch handling for FYI or CC and junk-review flows
 
 The add-in will present:
 
+- bucket counts and ranked work for the day
 - actionability: actionable vs informational
 - extracted tasks and deadlines
 - criticality explanation
@@ -40,9 +50,14 @@ The add-in will present:
 
 ### Secondary Surface: Companion Web App
 
-The companion web app is the management layer for the product. It will support:
+The companion web app is the mobile-first companion and deeper triage layer for the product. It will support:
 
-- full task dashboard
+- a mobile-first mailbox triage dashboard
+- a mailbox-wide Today queue for tasks created from email
+- Needs Attention, FYI or CC, Junk Candidate, and Ready To File buckets
+- mailbox-level drill-down before the user opens a specific message in Outlook
+- mobile message or task detail when the Outlook add-in is not the active surface
+- deeper filtering, longer review lists, and broader mailbox oversight than the Outlook task pane can comfortably carry
 - morning and evening digests
 - unresolved critical items
 - shared mailbox workflows
@@ -130,8 +145,8 @@ Friendly Mail is an AI workflow layer for Outlook, not a replacement email clien
 
 That positioning determines the front-end strategy:
 
-- the Outlook add-in is the primary user surface
-- the companion web app is the management and operations surface
+- the Outlook add-in is the primary desktop and web user surface
+- the companion web app is the mobile-first and mailbox-level management surface for deeper triage and review
 - the embedded agent is the interaction model across both
 
 ## Conclusion

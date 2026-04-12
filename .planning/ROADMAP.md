@@ -72,8 +72,21 @@ Plans:
 
 - Epics 1 through 6 are complete in the codebase: platform foundation, Microsoft Graph connectivity, message ingestion and attachment extraction, classification plus workflow intelligence, the task plus workflow-state engine, and the delayed-filing plus mailbox-action layer.
 - The mailbox-action baseline now includes filing decisions, auditable mailbox-action attempts, folder suggestions, category application, invoice routing, outgoing numbering, and mailbox-action verification.
-- The next implementation move is to start Epic 7 surface work from the Outlook add-in side, beginning with the first `E7-T#` slice that consumes the now-stable workflow and mailbox-action contracts.
-- Dashboard and digest work remain later-phase work after the Outlook add-in baseline advances.
+- Epic 7 now has a defined ticket breakdown and locked design baseline for the Outlook add-in experience.
+- `E7-T1` is now complete through `docs/outlook-addin-design-brief.md`, which defines the first-slice interaction flow, supported clients, unsupported-state rules, and pinnable task-pane assumptions.
+- `E7-T2` is now complete through the host adapter, manifest upgrade, read and compose command surfaces, pinned item-change handling, and the live browser-preview dev lane at `https://localhost:4173`.
+- `E7-T3` is now complete through the real mailbox readiness entry view, live operational-verification wiring, and explicit connect, syncing, degraded, unsupported, and ready states.
+- `E7-T4` is now complete through the real message workflow summary and explanation panel, backed by immutable Graph message ID bridge routes and browser-preview states for low-confidence and failed-read cases.
+- `E7-T5` is now complete through the Outlook task-action panel, inline lifecycle controls, preview/live mutation handling, and workflow-consistent reopen support.
+- `E7-T6` is now complete through the Outlook filing-decision panel, target-folder and category guidance, and explicit approval UX for delayed filing.
+- The Epic 7 MVP add-in scope is explicitly read-mode-first, targets Outlook on the web plus new Outlook on Windows, and assumes a pinnable task pane with explicit fallback handling.
+- The Outlook add-in IA is now additionally locked around `Today`, `This Email`, and `Review` so the add-in can act as the primary desktop or web daily workflow surface instead of only as a message-detail pane.
+- The next implementation move is `E7-T7`, which should add compose and draft numbering inside the same Outlook add-in shell.
+- Epic 8 is now locked as a mobile-first companion dashboard and mailbox-triage queue, not just a generic admin surface.
+- The dashboard is now explicitly the mailbox-level and mobile discovery layer for Needs Attention, FYI or CC, Junk Candidate, and Ready To File buckets, while the Outlook add-in owns compact desktop or web triage and selected-message drill-down.
+- Epic 11 is now defined as the final operator-side setup epic so Microsoft tenant registration, consent, secrets, and webhook reachability can be completed without ad hoc setup knowledge.
+- `E11-T1` is now complete through `docs/microsoft-tenant-setup-guide.md`, which provides the first operator-side step-by-step guide for Microsoft setup.
+- Dashboard implementation remains a later-phase build after Epic 7 advances, but the product direction for the dashboard is now locked.
 
 ## Progress
 

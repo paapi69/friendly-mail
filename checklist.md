@@ -2,7 +2,7 @@
 
 Generated from `.planning/epic-status.json`.
 
-Progress: 6/10 epics complete
+Progress: 6/11 epics complete
 
 ## Epics
 
@@ -13,9 +13,10 @@ Progress: 6/10 epics complete
 - [x] E5: Task and Workflow State Engine
 - [x] E6: Delayed Filing and Mailbox Actions
 - [ ] E7: Outlook Add-in Experience
-- [ ] E8: Companion Web Dashboard and Admin
+- [ ] E8: Mobile-First Companion Dashboard and Triage Queue
 - [ ] E9: Digests, Alerts, and Reminder Operations
 - [ ] E10: Quality, Evaluation, and Pilot Readiness
+- [ ] E11: Microsoft Tenant Registration and Deployment Setup
 
 ## E1 Tickets
 
@@ -85,9 +86,40 @@ Progress: 6/10 epics complete
 - [x] E6-T7: Implement Invoice Routing and Outgoing Numbering Mailbox Actions
 - [x] E6-T8: Add Operational Verification for Delayed Filing and Mailbox Action Readiness
 
+## E7 Tickets
+
+- [x] E7-T1: Define the Outlook Add-in Surface Contract and Interaction Flow
+- [x] E7-T2: Extend the Add-in Shell, Manifest, and Host Integration Baseline
+- [x] E7-T3: Implement Mailbox Connect and Sync-Status Entry View
+- [x] E7-T4: Implement the Message Workflow Summary and Explanation Panel
+- [x] E7-T5: Implement the Task Action Panel and Lifecycle Mutations
+- [x] E7-T6: Implement Filing Decision, Folder Suggestion, and Approval UX
+- [ ] E7-T7: Implement Compose and Draft Numbering Experience
+- [ ] E7-T8: Add Outlook Add-in Verification and Rollout Readiness
+
+## E8 Tickets
+
+- [ ] E8-T1: Define the Mobile-First Dashboard Triage Information Architecture
+- [ ] E8-T2: Add Mailbox-Wide Dashboard Aggregation APIs and Bucket Read Models
+- [ ] E8-T3: Implement the Mobile-First Today Queue and Priority Buckets
+- [ ] E8-T4: Implement FYI and CC Batch-Review Surfaces
+- [ ] E8-T5: Implement Junk-Candidate Review and Safe Handling Controls
+- [ ] E8-T6: Implement the Ready-to-File Queue and Post-Action Filing Overview
+- [ ] E8-T7: Implement Dashboard Filters, Search, and Mobile Drill-Down Flows
+- [ ] E8-T8: Add Dashboard Verification and Rollout Readiness
+
+## E11 Tickets
+
+- [x] E11-T1: Define the Microsoft Tenant Setup Contract and Operator Guide
+- [ ] E11-T2: Register the Microsoft Entra App and Baseline Redirect URIs
+- [ ] E11-T3: Configure Delegated Graph Permissions and Consent Strategy
+- [ ] E11-T4: Provision Secrets and Environment Configuration for Local and Staging
+- [ ] E11-T5: Expose a Public Webhook Endpoint and Validate Graph Callback Reachability
+- [ ] E11-T6: Run End-to-End Tenant Setup Verification and Operator Handoff
+
 ## Notes
 
 - Update high-level epics with `node scripts/set-epic-status.mjs <E#> <pending|done>`.
 - Update detailed tickets with `node scripts/set-ticket-status.mjs <ticket-id> <pending|done>`.
 - Rebuild this file with `node scripts/sync-checklist.mjs`.
-- Last status update: 2026-04-05
+- Last status update: 2026-04-11

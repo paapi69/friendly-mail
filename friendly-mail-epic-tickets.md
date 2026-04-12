@@ -6,7 +6,7 @@
 - Document type: Implementation Ticket Breakdown
 - Version: v0.2
 - Status: Draft
-- Date: 2026-04-05
+- Date: 2026-04-06
 - Related documents:
   - `friendly-mail-mvp-epics.md`
   - `friendly-mail-mvp-roadmap.md`
@@ -1647,3 +1647,756 @@ Epic 6 can be marked complete when:
 - folder suggestions, categories, and mailbox actions are explainable and auditable
 - invoice routing and outgoing numbering work for supported MVP scenarios
 - mailbox-action failures and unsupported capability cases are observable before user surfaces depend on them
+
+## Epic 7: Outlook Add-in Experience
+
+**Goal**
+
+Turn the now-stable workflow-state and mailbox-action backend into the primary Outlook-native user experience, with a read-mode-first add-in that shows message work clearly, supports high-trust task and filing actions, and handles compose-time numbering where required.
+
+**Includes**
+
+- add-in interaction and host-integration contract boundaries
+- compact desktop or web daily workflow navigation inside the Outlook task pane
+- manifest, Office host, supported client, and read or compose context baseline for the MVP
+- mailbox connect and sync-status visibility inside the add-in
+- message workflow summary with urgency, confidence, and explanation
+- task mutation actions such as done, snooze, delegate, dismiss, and reopen
+- filing decision, blocker, and suggestion-first approval UX
+- compose and draft numbering support where required for outbound workflows
+- add-in verification and rollout-readiness coverage before pilot-facing use
+
+**Dependencies**
+
+- Epic 5
+- Epic 6
+
+**Definition of Done**
+
+- a pilot user can review message workflow state and take core actions from inside Outlook on the web and new Outlook on Windows
+- the add-in acts as the primary desktop or web in-context workflow surface through `Today`, `This Email`, and `Review`
+- the add-in shows classification, urgency, tasks, blockers, and filing status clearly
+- suggestion-first mailbox actions remain explicit and auditable from the UI
+- supported compose workflows can request outgoing numbering safely
+- the add-in has enough verification coverage for controlled MVP rollout
+
+### Proposed Ticket List
+
+#### E7-T1: Define the Outlook Add-in Surface Contract and Interaction Flow
+
+**Goal**
+Lock the MVP add-in behavior, host assumptions, and trust boundaries before surface implementation deepens.
+
+**Scope**
+
+- define the read-mode-first add-in flow for mailbox status, message review, task actions, and filing approval
+- define the supported Outlook clients for the MVP and the selected-message read-mode assumption that anchors the first slice
+- define the supported mailbox and account contexts for MVP, including delegated user mailboxes and capability-gated shared-mailbox behavior
+- define when the add-in uses existing internal APIs versus add-in-specific aggregation or adaptation
+- define the boundary between Office host context, product auth or session state, and mailbox identity
+- define explicit UX rules for low-confidence classification, blocked filing, failed mailbox actions, unsupported item or host states, and degraded backend states
+- define the unsupported item and context matrix for MVP, including no usable item context and unsupported Outlook activation cases
+- define whether the task pane is pinnable in v1 and how item-change refresh should behave when the selected message changes
+- define where compose and draft numbering flows belong in the add-in versus later dashboard or automation work
+
+**Expected Output**
+
+- Epic 7 surface contract
+- documented add-in interaction flow
+- supported-client and supported-context matrix for MVP
+- explicit trust and fallback behavior for the primary Outlook surface
+
+**Definition of Done**
+
+- implementers have one documented add-in interaction model for the MVP
+- host-context, auth, workflow-state, and supported-client boundaries are explicit
+- blocked, unsupported, and low-confidence states are part of the contract instead of implicit edge cases
+- pinned-task-pane behavior and unsupported-context handling are locked before wireframing
+- later Epic 7 tickets can build without re-deciding the core add-in behavior
+
+#### E7-T2: Extend the Add-in Shell, Manifest, and Host Integration Baseline
+
+**Goal**
+Turn the existing add-in shell into a stable Outlook host baseline that can support the Epic 7 surface work safely.
+
+**Scope**
+
+- expand the current add-in shell structure for real read-mode message context handling
+- upgrade the manifest for the MVP requirement-set, command-surface, and permission baseline needed by the add-in
+- update the manifest and host bootstrapping as needed for supported read and compose experiences
+- establish the read command surface for the first slice and the compose command surface needed for the later numbering workflow
+- establish Office host readiness checks, mailbox item context retrieval, and environment-aware add-in startup behavior
+- add Office.js readiness handling and the item-context refresh behavior required for a pinnable task pane
+- add a typed API-client or host-adapter baseline inside the add-in app
+- keep the scope to surface infrastructure and bootstrapping, not full workflow UI implementation
+
+**Expected Output**
+
+- stable Outlook add-in shell baseline
+- supported manifest, requirement-set, and host-integration path
+- reusable add-in app and host adapter foundation
+
+**Definition of Done**
+
+- the add-in can start reliably inside the supported Outlook context
+- host readiness and missing-context states fail clearly
+- read-mode, compose-mode, and pinnable-task-pane assumptions are explicit in the codebase and manifest
+- command-surface and item-change handling are stable enough for the first add-in slice
+- later Epic 7 surface tickets can build on one bootstrapped add-in foundation
+
+#### E7-T3: Implement Mailbox Connect and Sync-Status Entry View
+
+**Goal**
+Give the user a trustworthy entry state inside Outlook that shows mailbox readiness, sync health, and whether Friendly Mail is currently ready to help.
+
+**Scope**
+
+- show mailbox connection state, sync freshness, and readiness signals from existing backend endpoints
+- show delegated or shared-mailbox capability limitations clearly where relevant
+- provide the user-facing entry state for disconnected, syncing, ready, and degraded conditions
+- keep the scope focused on mailbox readiness and status, not message work details
+- preserve explicit fallback behavior when the add-in cannot reach the backend or mailbox context is unavailable
+
+**Expected Output**
+
+- mailbox connect and sync-status view
+- Outlook-native entry-state experience
+- clear readiness and fallback handling for the add-in surface
+
+**Definition of Done**
+
+- users can tell whether Friendly Mail is connected and syncing from inside Outlook on the supported MVP clients
+- degraded or unsupported mailbox states are visible and understandable
+- the add-in has a stable first screen before message-specific workflow data is shown
+- later message workflow views can assume a known mailbox-ready baseline
+
+#### E7-T4: Implement the Message Workflow Summary and Explanation Panel
+
+**Goal**
+Show what Friendly Mail knows about the current message in one clear in-context panel without hiding confidence or workflow blockers.
+
+**Scope**
+
+- render message actionability, type, urgency, criticality, due dates, and key extracted entities
+- render confidence, explanation, and provenance summaries from the Epic 4 and Epic 5 read models
+- show explicit blockers for unresolved work and filing in the same message view
+- support clear empty, loading, low-confidence, and failed-read states
+- avoid task mutation controls and filing approval controls beyond summary affordances in this ticket
+
+**Expected Output**
+
+- message workflow summary panel
+- explanation and confidence view for the add-in
+- first in-context message intelligence surface for Outlook
+
+**Definition of Done**
+
+- a user can understand why a message is important and what state it is in without leaving Outlook on the supported MVP clients
+- confidence and blocker information are visible instead of hidden behind generic summaries
+- low-confidence or incomplete workflow cases fail clearly
+- later task and filing controls can build on one canonical message-summary surface
+
+#### E7-T5: Implement the Task Action Panel and Lifecycle Mutations
+
+**Goal**
+Let users act on extracted work from inside Outlook while preserving the explicit Epic 5 workflow-state rules.
+
+**Scope**
+
+- render linked task records, ownership, due dates, and current lifecycle state
+- support MVP task actions such as done, snooze, delegate, dismiss, and reopen
+- show task-mutation outcomes, optimistic or pending states, and failure handling clearly
+- preserve explanation for why a task state affects message workflow and filing blockers
+- avoid automatic mailbox moves or high-impact mailbox actions in this ticket
+
+**Expected Output**
+
+- add-in task panel
+- in-context task mutation flow
+- explicit lifecycle feedback for users working from Outlook
+
+**Definition of Done**
+
+- users can complete supported task actions from the add-in
+- task mutation results and failures are visible and understandable
+- workflow-state updates stay consistent with the Epic 5 backend contract
+- later filing actions can trust the task-state view inside the add-in
+
+#### E7-T6: Implement Filing Decision, Folder Suggestion, and Approval UX
+
+**Goal**
+Expose delayed-filing state inside Outlook in a suggestion-first way so users can see blockers, review targets, and approve mailbox actions intentionally.
+
+**Scope**
+
+- render filing decision state, blockers, folder suggestion, category suggestion, and mailbox-action rationale
+- support explicit approval or invocation of supported mailbox actions from the add-in
+- show successful, blocked, pending, and failed mailbox-action outcomes clearly
+- preserve suggestion-first handling for high-impact actions and specialized mailbox flows
+- avoid broad admin configuration or non-Outlook surfaces in this ticket
+
+**Expected Output**
+
+- delayed-filing and mailbox-action panel for the add-in
+- approval UX for supported mailbox actions
+- explicit blocker and result feedback for filing behavior
+
+**Definition of Done**
+
+- users can see whether a message can be filed and why
+- suggested targets and categories are visible before or alongside mailbox actions
+- mailbox-action results and failures are explicit from inside Outlook, with shared-mailbox behavior treated as capability-gated in MVP
+- the add-in preserves the trust-first Epic 6 behavior instead of hiding moves behind silent automation
+
+#### E7-T7: Implement Compose and Draft Numbering Experience
+
+**Goal**
+Support the MVP outbound workflow inside Outlook where a user needs a company-specific reference number while composing or preparing a draft.
+
+**Scope**
+
+- support the compose or draft user path for requesting and displaying outgoing numbering
+- show capability-gated and unsupported compose contexts clearly
+- render numbering results, failures, and audit-friendly context in the add-in
+- keep the scope focused on numbering and compose-state UX, not broad compose automation
+- avoid introducing send-time background automation beyond the supported MVP path
+
+**Expected Output**
+
+- compose-time numbering experience in the add-in
+- explicit draft-state and capability handling
+- user-facing outbound workflow baseline for the MVP
+
+**Definition of Done**
+
+- supported compose contexts can request and display outgoing numbering from the add-in
+- unsupported or capability-limited compose flows fail clearly
+- numbering behavior remains consistent with the Epic 6 backend contract
+- pilot users can complete the core outbound numbering flow without leaving Outlook
+
+#### E7-T8: Add Outlook Add-in Verification and Rollout Readiness
+
+**Goal**
+Finish Epic 7 with the verification, host-compatibility checks, and rollout-readiness evidence needed before Outlook-facing pilot use expands.
+
+**Scope**
+
+- add automated coverage for the core add-in states, task mutations, filing approvals, and compose numbering entry points
+- verify host-context handling, backend connectivity failure states, and unsupported-mode fallbacks
+- document the manual verification path for supported Outlook hosts and core workflow scenarios
+- surface rollout checks required before Epic 8 dashboard work or pilot-facing add-in use deepens
+- keep this baseline focused on MVP readiness, not full cross-client parity
+
+**Expected Output**
+
+- Outlook add-in verification baseline
+- host and workflow readiness checks
+- Epic 7 rollout checklist
+
+**Definition of Done**
+
+- the add-in has coverage for the core MVP workflow states and actions
+- unsupported host, connectivity, item-context, and client-scope states are explicit and testable
+- the team can verify the add-in from mailbox readiness through task and filing action flows
+- Epic 7 can hand off to later dashboard, digest, and pilot work without ambiguity about add-in readiness
+
+### Suggested Execution Order
+
+1. E7-T1 Add-in surface contract and interaction flow
+2. E7-T2 Add-in shell, manifest, and host integration baseline
+3. E7-T3 Mailbox connect and sync-status entry view
+4. E7-T4 Message workflow summary and explanation panel
+5. E7-T5 Task action panel and lifecycle mutations
+6. E7-T6 Filing decision, folder suggestion, and approval UX
+7. E7-T7 Compose and draft numbering experience
+8. E7-T8 Add-in verification and rollout readiness
+
+### Suggested First Implementation Slice
+
+The first practical build slice for Epic 7 should combine:
+
+- E7-T1 Add-in surface contract and interaction flow
+- E7-T2 Add-in shell, manifest, and host integration baseline
+- E7-T3 Mailbox connect and sync-status entry view
+- E7-T4 Message workflow summary and explanation panel
+
+That slice proves the first real Outlook-native workflow surface against the completed Epic 4 through Epic 6 backend before task mutations, filing approvals, compose numbering, and full rollout verification widen the add-in experience.
+
+### Epic 7 Exit Check
+
+Epic 7 can be marked complete when:
+
+- the add-in boots reliably in the supported Outlook context with explicit fallback handling
+- the first slice works on Outlook on the web and new Outlook on Windows with the locked read-mode-first scope
+- users can see mailbox readiness, message workflow state, and explanation data inside Outlook
+- task actions and delayed-filing approvals work from the add-in without breaking the trust-first workflow rules
+- supported compose workflows can request outgoing numbering safely
+- add-in failures, unsupported host states, and rollout readiness are observable before pilot expansion
+
+## Epic 8: Mobile-First Companion Dashboard and Triage Queue
+
+### Epic Goal
+
+Turn the now-stable workflow-state and mailbox-action backend into the mailbox-level triage surface that helps high-volume users understand the day without opening every message one by one.
+
+This epic is about mailbox-wide discovery, mobile detail, and deep queue management, not replacing Outlook as the primary inbox UI.
+
+It exists to make Friendly Mail feel like a daily operating system for email-driven work by combining Today queue visibility, low-noise batching, ready-to-file review, and mobile drill-down in one mobile-first companion dashboard that complements the Outlook add-in's compact task-pane command center.
+
+**Dependencies**
+
+- Epic 4 for explainable classification output
+- Epic 5 for task and workflow-state read models
+- Epic 6 for delayed-filing and mailbox-action readiness
+- Epic 7 for the message-level Outlook drill-down surface
+
+### Proposed Ticket List
+
+#### E8-T1: Define the Mobile-First Dashboard Triage Information Architecture
+
+**Goal**
+Lock the dashboard's mailbox-level information architecture so the companion web app clearly complements the Outlook add-in instead of duplicating the task-pane command center.
+
+**Scope**
+
+- define the mobile-first dashboard navigation, hierarchy, and primary queue structure
+- define the dashboard versus Outlook add-in responsibility split for mailbox discovery, mobile detail, and deeper review versus compact in-pane triage
+- define the first queue buckets for Needs Attention, FYI or CC, Junk Candidates, and Ready To File
+- define how users move from mailbox-wide buckets into message-level workflow detail and back again
+- define how the shared queue model supports the Outlook add-in `Today` and `Review` surfaces without forcing the dashboard to mimic the narrow task pane
+- define the dashboard entry states for empty, loading, degraded, mailbox-disconnected, and low-confidence cases
+- keep heavyweight admin configuration out of the first dashboard slice
+
+**Expected Output**
+
+- mobile-first dashboard information architecture
+- mailbox-level queue and bucket model
+- explicit add-in versus dashboard surface boundary
+- locked mobile-detail model that complements the Outlook add-in `This Email` view
+
+**Definition of Done**
+
+- implementers have one locked dashboard structure for the first mailbox-level triage slice
+- the product boundary between mailbox-level discovery and message-level drill-down is explicit
+- mobile-first layout assumptions are part of the dashboard contract before implementation begins
+- dashboard empty, degraded, and low-confidence states are defined instead of implied
+- the shared queue model between dashboard and Outlook task pane is explicit before UI implementation widens
+
+#### E8-T2: Add Mailbox-Wide Dashboard Aggregation APIs and Bucket Read Models
+
+**Goal**
+Expose one stable backend shape for the dashboard's Today queue, bucket counts, and mailbox-wide task review while also supporting the compact Outlook add-in queue surfaces.
+
+**Scope**
+
+- add mailbox-wide aggregation routes or read models for Today queue, Needs Attention, FYI or CC, Junk Candidates, and Ready To File buckets
+- expose queue counts, urgency summaries, due-soon summaries, and filing-readiness signals in one downstream-friendly shape
+- preserve explanation, confidence, and blocker context without forcing the dashboard to reconstruct workflow state manually
+- preserve compact rankable item summaries that can also power the add-in `Today` list in narrow task-pane real estate
+- support mobile-first pagination or chunked loading patterns where needed
+- avoid final dashboard presentation concerns beyond the stable read-model contract
+
+**Expected Output**
+
+- dashboard aggregation APIs
+- mailbox-wide queue and bucket read models
+- stable backend contract for dashboard implementation
+
+**Definition of Done**
+
+- the dashboard can read mailbox-wide queue summaries without calling many message-level endpoints ad hoc
+- bucket counts and task summaries are stable and explainable
+- ready-to-file and low-confidence states are exposed explicitly
+- later dashboard implementation work can build on one canonical backend shape
+- the same read-model family is compact enough to support an Outlook task-pane snapshot without creating a second competing aggregation contract
+
+#### E8-T3: Implement the Mobile-First Today Queue and Priority Buckets
+
+**Goal**
+Create the main dashboard view that shows today's most important work first on mobile-sized screens and larger layouts, while establishing the compact queue model that the Outlook add-in can mirror.
+
+**Scope**
+
+- implement the Today queue with a mobile-first layout that prioritizes Needs Attention work
+- render urgency, due-soon, task count, and key workflow indicators without forcing message-by-message drill-down
+- support quick scanning of mailbox-wide work from the dashboard home state
+- preserve clear links into add-in or message-level detail when a user needs explanation
+- avoid FYI or CC batching and junk-review controls beyond summary affordances in this ticket
+
+**Expected Output**
+
+- mobile-first Today queue
+- mailbox-wide priority bucket dashboard home
+- first real dashboard triage surface
+
+**Definition of Done**
+
+- a high-volume user can see what requires attention today without opening each message individually
+- the dashboard works on mobile-sized screens without collapsing into a desktop-only layout
+- the queue highlights urgent and due-soon work clearly
+- later batch-review and ready-to-file tickets can build on one canonical dashboard home
+
+#### E8-T4: Implement FYI and CC Batch-Review Surfaces
+
+**Goal**
+Give users a low-noise place to review informational or not-for-me mail without mixing it into their main action queue.
+
+**Scope**
+
+- render FYI and CC mailbox buckets with batch-review-friendly list treatment
+- show why a message was considered low-noise or not-for-me where confidence allows
+- support batch mark-as-reviewed or similar low-risk review actions where the contract already allows them
+- preserve explicit low-confidence handling when the system is not sure the mail belongs in a low-noise bucket
+- avoid junk handling and filing actions beyond summary visibility in this ticket
+
+**Expected Output**
+
+- FYI or CC review view
+- low-noise mailbox triage experience
+- explicit explanation and confidence for non-actionable grouping
+
+**Definition of Done**
+
+- users can review informational mail separately from Needs Attention work
+- low-noise grouping remains explainable and confidence-aware
+- batch review behavior stays low-risk and auditable
+- the main action queue is no longer the only place where mailbox triage can happen
+
+#### E8-T5: Implement Junk-Candidate Review and Safe Handling Controls
+
+**Goal**
+Let users inspect low-value or junk-like mail separately without silently hiding real work.
+
+**Scope**
+
+- render the Junk Candidate bucket with explicit confidence and risk cues
+- support safe review or confirm actions for junk-like mail where policy allows
+- preserve clear separation between junk suggestions and true auto-discard behavior
+- show why a message was treated as junk-like instead of silently burying it
+- avoid irreversible mailbox deletion or aggressive automation beyond policy-safe review controls
+
+**Expected Output**
+
+- junk-candidate review view
+- safe handling controls for low-value mail
+- explicit confidence-aware junk treatment
+
+**Definition of Done**
+
+- users can inspect junk candidates without losing visibility into uncertain cases
+- junk suggestions remain reversible and trust-first
+- the dashboard can separate obvious low-value mail from genuine work queues
+- irreversible mailbox cleanup is still out of scope for MVP
+
+#### E8-T6: Implement the Ready-to-File Queue and Post-Action Filing Overview
+
+**Goal**
+Surface messages that are now safe to move so users can review delayed-filing outcomes and pending ready-to-file work outside the add-in.
+
+**Scope**
+
+- render Ready To File work at the mailbox level with filing status, blockers cleared, target-folder context, and category context
+- show post-action filing outcomes for messages that recently became safe to move
+- support drill-down to filing detail and related task state where needed
+- preserve explicit blocked-versus-eligible distinctions instead of flattening everything into one archive-like list
+- avoid replacing the add-in approval flow for high-impact mailbox actions where Outlook remains the approval surface
+
+**Expected Output**
+
+- Ready To File dashboard queue
+- mailbox-wide filing overview
+- delayed-filing visibility outside Outlook
+
+**Definition of Done**
+
+- users can see which messages are ready to file without opening each message first
+- filing status remains explainable at the mailbox level
+- recently filed and ready-to-file work is visible without weakening workflow safety
+- the dashboard complements, rather than replaces, the Outlook approval surface
+
+#### E8-T7: Implement Dashboard Filters, Search, and Mobile Drill-Down Flows
+
+**Goal**
+Make the dashboard usable at real mailbox volume by supporting fast narrowing, drill-down, and return flows on mobile-first layouts.
+
+**Scope**
+
+- add filters for urgency, due date, bucket, owner, and filing state where the backend contract supports them
+- support lightweight search or lookup across mailbox-wide queue items
+- support mobile drill-down and return flows from queue cards into message or task detail
+- keep interaction density appropriate for mobile-first use without losing desktop utility
+- avoid broad analytics or admin configuration beyond the triage-navigation scope
+
+**Expected Output**
+
+- dashboard filters and search baseline
+- mobile drill-down navigation pattern
+- usable triage surface at real mailbox scale
+
+**Definition of Done**
+
+- users can narrow mailbox-wide work quickly on mobile or desktop
+- queue drill-down and back-navigation are stable and understandable
+- the dashboard stays usable at higher message volume without forcing users into long manual scans
+- the first dashboard slice feels like a daily triage surface rather than a static report
+
+#### E8-T8: Add Dashboard Verification and Rollout Readiness
+
+**Goal**
+Finish Epic 8 with enough verification to trust the mailbox-level dashboard before pilot-facing rollout broadens.
+
+**Scope**
+
+- add automated coverage for the main dashboard queue, bucket views, filters, and mobile-responsive states
+- verify dashboard behavior for empty, degraded, disconnected, low-confidence, and mailbox-wide loaded states
+- verify bucket counts, queue summaries, and ready-to-file visibility against the stable backend contract
+- document the manual review path for mobile-first layouts and mailbox-volume triage scenarios
+- keep this baseline focused on dashboard readiness, not full pilot analytics already covered later
+
+**Expected Output**
+
+- dashboard verification baseline
+- mailbox-wide triage readiness checks
+- Epic 8 rollout checklist
+
+**Definition of Done**
+
+- the dashboard has coverage for the core mailbox-level queue and bucket states
+- mobile-first behavior and degraded states are explicit and testable
+- the team can verify the dashboard from mailbox-wide discovery through ready-to-file review without ambiguity
+- Epic 8 can hand off to later digest, admin, and pilot work without ambiguity about dashboard readiness
+
+### Suggested Execution Order
+
+1. E8-T1 Mobile-first dashboard triage information architecture
+2. E8-T2 Dashboard aggregation APIs and bucket read models
+3. E8-T3 Mobile-first Today queue and priority buckets
+4. E8-T4 FYI and CC batch-review surfaces
+5. E8-T5 Junk-candidate review and safe handling controls
+6. E8-T6 Ready-to-file queue and post-action filing overview
+7. E8-T7 Dashboard filters, search, and mobile drill-down flows
+8. E8-T8 Dashboard verification and rollout readiness
+
+### Suggested First Implementation Slice
+
+The first practical build slice for Epic 8 should combine:
+
+- E8-T1 Mobile-first dashboard triage information architecture
+- E8-T2 Dashboard aggregation APIs and bucket read models
+- E8-T3 Mobile-first Today queue and priority buckets
+
+That slice proves the mailbox-level triage experience for high-volume users before FYI or CC batching, junk review, ready-to-file handling, and full rollout verification deepen the dashboard.
+
+### Epic 8 Exit Check
+
+Epic 8 can be marked complete when:
+
+- users can understand what requires attention today without opening every message in Outlook
+- the dashboard works well on mobile-sized screens as a responsive web surface
+- Needs Attention, FYI or CC, Junk Candidates, and Ready To File are visible as distinct mailbox-wide buckets
+- mailbox-level queue data remains consistent with the task and filing workflow engine
+- dashboard failures, low-confidence states, and degraded mailbox states are explicit before pilot expansion
+
+## Epic 11: Microsoft Tenant Registration and Deployment Setup
+
+### Epic Goal
+
+Turn the Microsoft-side prerequisites for Friendly Mail into a repeatable operator workflow so the product can be connected to a real tenant without ad hoc engineering interpretation.
+
+This is a final setup epic, not a new end-user surface epic.
+
+It exists to capture the tenant registration, app registration, consent, secret, and webhook steps that must happen outside the codebase before pilot or real-tenant validation can complete cleanly.
+
+**Dependencies**
+
+- Epic 2 for delegated Microsoft Graph onboarding
+- Epic 6 for mailbox-action scope implications
+- Epic 7 for Outlook add-in validation needs
+- Epic 10 for pilot-readiness expectations
+
+### Proposed Ticket List
+
+#### E11-T1: Define the Microsoft Tenant Setup Contract and Operator Guide
+
+**Goal**
+Document the exact operator-side inputs, environment values, and Microsoft-side steps required to run Friendly Mail against a real tenant.
+
+**Scope**
+
+- define which values must come from the tenant or admin side
+- define which values can be generated locally by engineering
+- map each Microsoft and local setup value to the repo environment model
+- document the delegated-first baseline, scope expansion path, and webhook prerequisites
+- create one step-by-step guide that can be followed without ad hoc handoff knowledge
+
+**Expected Output**
+
+- operator setup guide
+- environment-value matrix
+- clear responsibility split between tenant setup and engineering setup
+
+**Definition of Done**
+
+- the setup guide exists in the repo
+- the guide separates minimum local readiness from full MVP tenant setup
+- the guide explains all currently required Microsoft env vars and where they come from
+- the team can use the guide to request the right information from an operator or admin
+
+#### E11-T2: Register the Microsoft Entra App and Baseline Redirect URIs
+
+**Goal**
+Create or confirm the Microsoft Entra app registration baseline that Friendly Mail expects for delegated sign-in and local callback handling.
+
+**Scope**
+
+- create the app registration in the target tenant
+- choose and record the supported account type aligned with the current authority settings
+- configure the local redirect URI and any agreed staging or production redirect URIs
+- capture the tenant ID and application client ID
+- avoid broad production hardening beyond the baseline registration and redirect setup
+
+**Expected Output**
+
+- valid app registration baseline
+- confirmed redirect URI list
+- captured tenant and application IDs
+
+**Definition of Done**
+
+- the target tenant and app registration are known
+- redirect URIs are configured for the intended environments
+- the repo env model can be populated with real tenant and client IDs
+- local delegated onboarding no longer depends on placeholder IDs
+
+#### E11-T3: Configure Delegated Graph Permissions and Consent Strategy
+
+**Goal**
+Make the Graph permission and consent model explicit for Friendly Mail's delegated-first flows instead of relying on implied defaults.
+
+**Scope**
+
+- define the minimum delegated scope set for connect and readiness flows
+- define the wider scope set needed for full MVP mailbox actions
+- decide whether shared or delegated send flows are in scope now
+- document whether user consent is acceptable or administrator consent is required for the chosen tenant
+- avoid broad application-permission rollout unless the product explicitly expands into it later
+
+**Expected Output**
+
+- approved Graph delegated scope list
+- tenant consent decision
+- explicit minimum versus full-MVP permission guidance
+
+**Definition of Done**
+
+- the scope list is no longer implicit
+- the chosen tenant has a clear consent path for the required permissions
+- the team knows whether local connect testing is blocked on admin consent
+- shared-mailbox or delegated-send permission expansion is explicit, not accidental
+
+#### E11-T4: Provision Secrets and Environment Configuration for Local and Staging
+
+**Goal**
+Populate the Friendly Mail environments with the Microsoft-side values and local secrets required to boot the API and add-in against a real tenant.
+
+**Scope**
+
+- create a client secret or confirm the chosen confidential-client credential strategy
+- generate and store the local token-encryption key
+- fill local environment values for API and add-in flows
+- define where staging or later deployment secrets will live
+- avoid production deployment automation beyond the env and secret baseline
+
+**Expected Output**
+
+- working local env configuration
+- documented staging env contract
+- secret-handling baseline for Microsoft auth values
+
+**Definition of Done**
+
+- the local API can boot with real Microsoft config
+- the add-in and backend point at consistent API and callback values
+- secret handling is documented for non-local environments
+- no required Microsoft env var remains ambiguous
+
+#### E11-T5: Expose a Public Webhook Endpoint and Validate Graph Callback Reachability
+
+**Goal**
+Make the Graph subscription path usable by providing and validating a real public HTTPS callback base URL.
+
+**Scope**
+
+- choose the local tunnel or staging endpoint used for webhook delivery
+- set the webhook base URL for the environment being tested
+- validate that Graph can reach the notification and lifecycle callback endpoints
+- document the temporary versus durable webhook-hosting approach
+- avoid broad production hosting decisions beyond what is needed for the current validation target
+
+**Expected Output**
+
+- reachable public webhook base URL
+- validated callback path for Graph subscriptions
+- documented local versus staging webhook strategy
+
+**Definition of Done**
+
+- the configured webhook base URL is publicly reachable over HTTPS
+- Graph validation can succeed against the configured callback path
+- subscription testing is no longer blocked on missing public callback infrastructure
+- the team knows whether local tunnel or staging is the source of truth for webhook verification
+
+#### E11-T6: Run End-to-End Tenant Setup Verification and Operator Handoff
+
+**Goal**
+Close the setup loop by proving that the configured tenant, environment, and webhook baseline are enough to run Friendly Mail's real Microsoft flows safely.
+
+**Scope**
+
+- verify delegated mailbox connect with the configured tenant and app registration
+- verify mailbox readiness and add-in entry behavior against a real mailbox when possible
+- verify subscription creation and callback handling when webhook setup is included
+- capture the final operator handoff values and known limitations
+- keep the scope focused on setup verification, not broad pilot-quality evaluation already covered by Epic 10
+
+**Expected Output**
+
+- end-to-end Microsoft setup verification checklist
+- final operator handoff artifact
+- explicit known-gaps list for remaining tenant or mailbox limitations
+
+**Definition of Done**
+
+- the configured tenant setup can be exercised without placeholder values
+- the team has one handoff artifact listing real IDs, consent state, webhook base URL, and environment expectations
+- setup blockers are explicit if any part of the Microsoft path remains incomplete
+- Friendly Mail no longer depends on informal memory for tenant registration and deployment prerequisites
+
+### Suggested Execution Order
+
+1. E11-T1 Microsoft tenant setup contract and operator guide
+2. E11-T2 Microsoft Entra app registration and redirect URIs
+3. E11-T3 Delegated Graph permissions and consent strategy
+4. E11-T4 Secrets and environment configuration
+5. E11-T5 Public webhook endpoint and callback validation
+6. E11-T6 End-to-end tenant setup verification and operator handoff
+
+### Suggested First Implementation Slice
+
+The first practical slice for this final setup epic should combine:
+
+- E11-T1 Microsoft tenant setup contract and operator guide
+- E11-T2 Microsoft Entra app registration and redirect URIs
+- E11-T3 Delegated Graph permissions and consent strategy
+
+That slice turns the operator-side prerequisites into a concrete, reviewable setup baseline before local secrets, webhook reachability, and full end-to-end verification widen the deployment path.
+
+### Epic 11 Exit Check
+
+Epic 11 can be marked complete when:
+
+- the Microsoft-side setup values are no longer placeholders
+- app registration, redirect URIs, permissions, and consent are documented and verified
+- local or staging env configuration can be filled without ambiguity
+- webhook reachability is solved for the environment being validated
+- the operator handoff is complete enough that tenant setup no longer depends on ad hoc engineering memory

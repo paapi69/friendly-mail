@@ -29,8 +29,11 @@ Never let important email-driven work disappear before it is safely handled.
 - [ ] Keep actionable work visible until it is completed, delegated, dismissed, or snoozed
 - [ ] Move actionable emails into retrieval folders only after the related action is completed
 - [ ] Move informational emails into retrieval folders only after the user has read them
+- [ ] Deliver the primary Outlook add-in surface for read-mode-first workflow review, compact `Today` triage, task actions, and filing approval on Outlook on the web and new Outlook on Windows, then layer in compose numbering and rollout verification
+- [ ] Deliver a mobile-first companion dashboard that shows mailbox-wide triage buckets, deeper queue review, and mobile detail so users do not need to open every message to understand the day
 - [ ] Surface critical items through digests and alerts
 - [ ] Support routing workflows such as invoice forwarding and outgoing numbering
+- [ ] Complete operator-side Microsoft tenant registration, consent, secret provisioning, and webhook setup before pilot validation
 
 ### Out of Scope
 
@@ -61,6 +64,7 @@ Never let important email-driven work disappear before it is safely handled.
 | Separate task state from mailbox state | Filing cannot be the same as work completion | Adopted in architecture and persistence baselines |
 | Delay filing until safe state | Prevent important emails from disappearing before handling | Locked in the PRD, technical design, and filing model |
 | Use Microsoft Graph for mailbox integration | Align implementation with Outlook-native APIs | Adopted as the mailbox source of truth with immutable-ID handling |
+| Split discovery and drill-down across two surfaces | High-volume users should not open every message just to find important work | Locked as compact Outlook add-in triage on desktop or web plus dashboard deep triage and mobile detail |
 
 ---
-*Last updated: 2026-04-05 after Epic 6 implementation and mailbox-action rollout baseline*
+*Last updated: 2026-04-11 after the add-in `Today` IA and dashboard mobile or deep-triage split were locked*

@@ -278,4 +278,52 @@
       <item>The established shorthand `/auto ...` means continue autonomously without ticket-by-ticket approval unless there is a blocker, risky fork, unrelated-work conflict, or required planning gate.</item>
     </importantNotes>
   </handoffAppend>
+  <handoffAppend updatedAt="2026-04-11T23:10:00+05:30">
+    <summary>
+      <item>The product direction is now explicitly locked around two user surfaces: the Outlook add-in for selected-message drill-down and the companion dashboard for mailbox-level triage.</item>
+      <item>The Outlook add-in remains the primary in-context surface for explanation, task actions, delayed-filing approval, and later compose numbering.</item>
+      <item>The companion dashboard is now explicitly the mailbox-level discovery layer for high-volume users who should not need to open every message to understand the day.</item>
+      <item>The dashboard is now locked as a mobile-first responsive web surface, not a native mobile app.</item>
+      <item>The mailbox-wide bucket model is now part of product truth: Needs Attention, FYI or CC, Junk Candidates, and Ready To File.</item>
+      <item>The Today queue is now expected to surface the tasks created from email at the mailbox level, while Outlook remains the place where a selected message is reviewed in detail.</item>
+      <item>`friendly-mail-prd.md`, `friendly-mail-technical-design.md`, `friendly-mail-frontend-strategy.md`, `.planning/PROJECT.md`, `.planning/ROADMAP.md`, and `.planning/STATE.md` were updated to reflect this locked split between dashboard discovery and add-in drill-down.</item>
+      <item>Epic 8 was redefined from a generic dashboard and admin placeholder into `Mobile-First Companion Dashboard and Triage Queue`.</item>
+      <item>The Epic 8 ticket set is now locked as `E8-T1` through `E8-T8`, covering dashboard IA, mailbox-wide aggregation APIs, Today queue, FYI or CC review, junk-candidate review, ready-to-file visibility, filters and drill-down, and verification.</item>
+      <item>The planning board and dashboard board sources were updated so Epic 8 now reflects the real mailbox-triage story instead of the old two-card prototype wording.</item>
+    </summary>
+
+    <nextRecommendedWork>
+      <item>Finish Epic 7 with `E7-T7` and `E7-T8` before starting Epic 8 implementation work.</item>
+      <item>When Epic 8 starts, begin with `E8-T1`, `E8-T2`, and `E8-T3` as the first implementation slice for the mobile-first Today queue.</item>
+      <item>Keep the dashboard focused on mailbox-level triage first; admin, digest, and broader operations work should remain secondary to the queue experience.</item>
+    </nextRecommendedWork>
+
+    <importantNotes>
+      <item>The dashboard should not be treated as an Outlook replacement inbox; it is the mailbox-level triage layer that complements the Outlook add-in.</item>
+      <item>The Outlook inbox itself may still carry lightweight triage signals through supported mailbox metadata such as categories, but the full mailbox-wide queue belongs in the dashboard surface.</item>
+      <item>This session changed planning truth as well as product truth, so new sessions should read `session_summary.md`, `.planning/STATE.md`, `friendly-mail-prd.md`, and `friendly-mail-technical-design.md` before continuing Epic 7 or starting Epic 8.</item>
+    </importantNotes>
+  </handoffAppend>
+  <handoffAppend updatedAt="2026-04-12T00:15:00+05:30">
+    <summary>
+      <item>The Outlook add-in interaction model is now additionally locked around `Today`, `This Email`, and `Review` for supported desktop and web MVP clients.</item>
+      <item>`Today` is now the compact in-pane command center for ranked work, Needs You, Due Today, Ready To File, and Waiting or Delegated states instead of leaving all mailbox-wide triage to the dashboard.</item>
+      <item>`This Email` is now the user-facing name for the selected-message drill-down view that shows classification, task state, blockers, and filing decision.</item>
+      <item>`Review` is now the compact in-pane place for FYI or CC and junk-review flows that should not crowd the primary queue.</item>
+      <item>Bucket clicks in the add-in are now locked to open filtered in-panel queue views, while ranked-item clicks open in-panel detail rather than relying on Outlook to focus a matching inbox row automatically.</item>
+      <item>The companion dashboard remains locked as the mobile-first and deep-triage surface, especially for mobile detail, longer lists, and heavier batch review that do not fit the narrow Outlook task pane well.</item>
+      <item>The locked product truth is now recorded in `friendly-mail-prd.md`, `friendly-mail-technical-design.md`, `friendly-mail-frontend-strategy.md`, `.planning/PROJECT.md`, `.planning/ROADMAP.md`, `.planning/STATE.md`, `friendly-mail-mvp-epics.md`, `friendly-mail-epic-tickets.md`, and `docs/outlook-addin-design-brief.md`.</item>
+      <item>A new `docs/dashboard-design-brief.md` now captures the companion dashboard's role as the mailbox-level and mobile triage surface that complements the add-in.</item>
+    </summary>
+
+    <nextRecommendedWork>
+      <item>Use the locked add-in IA and dashboard design brief as the basis for Stitch generation and later Figma refinement.</item>
+      <item>Keep Epic 7 implementation focused on the Outlook shell while Epic 8 picks up the shared queue model for dashboard and compact add-in triage.</item>
+    </nextRecommendedWork>
+
+    <importantNotes>
+      <item>The product should not promise automatic Outlook inbox-row focusing when a ranked item is clicked; the guaranteed interaction is in-panel queue to in-panel detail.</item>
+      <item>Mobile detail should be designed in the dashboard surface rather than assuming a full Outlook mobile task-pane experience for the MVP.</item>
+    </importantNotes>
+  </handoffAppend>
 </sessionSummary>

@@ -326,18 +326,39 @@ Reminder logic should be driven by task state, not folder state.
 
 Expected user surfaces:
 
-- Outlook add-in for in-context review and approval
-- Web dashboard for task list, digests, and admin settings
+- Outlook add-in for desktop or web daily triage, selected-message review, task actions, and filing approval
+- Mobile-first companion web dashboard for mailbox-wide triage, deep review, mobile detail, and later digest or admin access
+
+Surface responsibilities:
+
+- Outlook inbox remains the message list and can carry lightweight triage signals through native mailbox metadata such as categories
+- The Outlook add-in is the primary desktop or web command-center surface on supported MVP clients, with a compact `Today` view for ranked work and bucket counts
+- The Outlook add-in uses `This Email` as the selected-message drill-down surface and `Review` as the compact low-noise batch-handling surface
+- Bucket clicks in the add-in open filtered queue views in-panel, while ranked-item clicks open in-panel detail instead of relying on guaranteed Outlook inbox focus behavior
+- The dashboard is the mailbox-level and mobile triage surface that helps users understand the whole day without opening every message and supports deeper review than the narrow add-in pane can carry well
+- The dashboard should group work into Needs Attention, FYI or CC, Junk Candidates, and Ready To File views
+- Tasks created from email for the day should be visible in both the compact add-in `Today` surface and the mailbox-wide dashboard queue, with the dashboard owning deeper mobile and long-list review behavior
 
 Primary user actions:
 
-- approve filing suggestion
-- correct classification
-- mark done
-- delegate
-- snooze
-- dismiss
-- mark informational item as reviewed if needed
+- In Outlook:
+  - scan `Today` for urgent work, due-today work, ready-to-file counts, and top-ranked actions
+  - open filtered queue views from bucket clicks
+  - open `This Email` detail from a ranked item or the current Outlook selection
+  - approve filing suggestion
+  - correct classification
+  - mark done
+  - delegate
+  - snooze
+  - dismiss
+  - mark informational item as reviewed if needed
+- In the dashboard:
+  - scan today's priority queue
+  - batch-review FYI or CC work
+  - review junk candidates
+  - inspect ready-to-file items
+  - drill from mailbox-level queue to message-level workflow detail
+  - handle mobile message or task detail when the Outlook add-in pane is not the active surface
 
 ## 8. Core Domain Model
 

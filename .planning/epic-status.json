@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-05",
+  "lastUpdated": "2026-04-11",
   "epics": [
     {
       "id": "E1",
@@ -296,12 +296,96 @@
     {
       "id": "E7",
       "title": "Outlook Add-in Experience",
-      "status": "pending"
+      "status": "pending",
+      "tickets": [
+        {
+          "id": "E7-T1",
+          "title": "Define the Outlook Add-in Surface Contract and Interaction Flow",
+          "status": "done"
+        },
+        {
+          "id": "E7-T2",
+          "title": "Extend the Add-in Shell, Manifest, and Host Integration Baseline",
+          "status": "done"
+        },
+        {
+          "id": "E7-T3",
+          "title": "Implement Mailbox Connect and Sync-Status Entry View",
+          "status": "done"
+        },
+        {
+          "id": "E7-T4",
+          "title": "Implement the Message Workflow Summary and Explanation Panel",
+          "status": "done"
+        },
+        {
+          "id": "E7-T5",
+          "title": "Implement the Task Action Panel and Lifecycle Mutations",
+          "status": "done"
+        },
+        {
+          "id": "E7-T6",
+          "title": "Implement Filing Decision, Folder Suggestion, and Approval UX",
+          "status": "done"
+        },
+        {
+          "id": "E7-T7",
+          "title": "Implement Compose and Draft Numbering Experience",
+          "status": "pending"
+        },
+        {
+          "id": "E7-T8",
+          "title": "Add Outlook Add-in Verification and Rollout Readiness",
+          "status": "pending"
+        }
+      ]
     },
     {
       "id": "E8",
-      "title": "Companion Web Dashboard and Admin",
-      "status": "pending"
+      "title": "Mobile-First Companion Dashboard and Triage Queue",
+      "status": "pending",
+      "tickets": [
+        {
+          "id": "E8-T1",
+          "title": "Define the Mobile-First Dashboard Triage Information Architecture",
+          "status": "pending"
+        },
+        {
+          "id": "E8-T2",
+          "title": "Add Mailbox-Wide Dashboard Aggregation APIs and Bucket Read Models",
+          "status": "pending"
+        },
+        {
+          "id": "E8-T3",
+          "title": "Implement the Mobile-First Today Queue and Priority Buckets",
+          "status": "pending"
+        },
+        {
+          "id": "E8-T4",
+          "title": "Implement FYI and CC Batch-Review Surfaces",
+          "status": "pending"
+        },
+        {
+          "id": "E8-T5",
+          "title": "Implement Junk-Candidate Review and Safe Handling Controls",
+          "status": "pending"
+        },
+        {
+          "id": "E8-T6",
+          "title": "Implement the Ready-to-File Queue and Post-Action Filing Overview",
+          "status": "pending"
+        },
+        {
+          "id": "E8-T7",
+          "title": "Implement Dashboard Filters, Search, and Mobile Drill-Down Flows",
+          "status": "pending"
+        },
+        {
+          "id": "E8-T8",
+          "title": "Add Dashboard Verification and Rollout Readiness",
+          "status": "pending"
+        }
+      ]
     },
     {
       "id": "E9",
@@ -312,6 +396,43 @@
       "id": "E10",
       "title": "Quality, Evaluation, and Pilot Readiness",
       "status": "pending"
+    },
+    {
+      "id": "E11",
+      "title": "Microsoft Tenant Registration and Deployment Setup",
+      "status": "pending",
+      "tickets": [
+        {
+          "id": "E11-T1",
+          "title": "Define the Microsoft Tenant Setup Contract and Operator Guide",
+          "status": "done"
+        },
+        {
+          "id": "E11-T2",
+          "title": "Register the Microsoft Entra App and Baseline Redirect URIs",
+          "status": "pending"
+        },
+        {
+          "id": "E11-T3",
+          "title": "Configure Delegated Graph Permissions and Consent Strategy",
+          "status": "pending"
+        },
+        {
+          "id": "E11-T4",
+          "title": "Provision Secrets and Environment Configuration for Local and Staging",
+          "status": "pending"
+        },
+        {
+          "id": "E11-T5",
+          "title": "Expose a Public Webhook Endpoint and Validate Graph Callback Reachability",
+          "status": "pending"
+        },
+        {
+          "id": "E11-T6",
+          "title": "Run End-to-End Tenant Setup Verification and Operator Handoff",
+          "status": "pending"
+        }
+      ]
     }
   ]
 }
